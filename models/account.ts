@@ -1,0 +1,29 @@
+export interface Account {
+    id:                       number;
+    user_id:                  number;
+    type:                     string;
+    name:                     string;
+    number:                   null;
+    expiry_date:              null;
+    bank:                     null;
+    credit_limit:             null;
+    interest_rate:            null;
+    min_payment_rate:         null;
+    cut_off_date:             null;
+    payment_due_date:         null;
+    programmed_amount:        null;
+    generates_interest:       boolean;
+    interest_type:            null;
+    yield_rate:               null;
+    yield_period:             null;
+    goal_amount:              null;
+    goal_due_date:            null;
+    auto_compound_daily:      boolean;
+    last_interest_applied_at: null;
+    current_balance:          string;
+    available_balance:        string;
+    interest_enabled:         boolean;
+    created_at:               Date;
+    updated_at:               Date;
+    tags:                     any[];
+}
