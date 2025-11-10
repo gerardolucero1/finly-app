@@ -1,50 +1,30 @@
+import { ExpenseFormModal } from '@/app/components/ExpenseFormModal';
+import { TransferFormModal } from '@/app/components/TransferFormModal';
 import { useInput } from '@/hooks/useInput';
 import { Account } from '@/models/account';
+import { Expense } from '@/models/expense';
 import { AccountsService } from '@/services/accounts';
+import { ExpensesService } from '@/services/expenses';
+import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
-import React, { useEffect, useMemo, useState } from 'react';
+import { DateTime } from 'luxon';
+
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Animated,
     Dimensions,
     FlatList,
+    PanResponder,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-
-interface Transaction {
-    id: string;
-    description: string;
-    amount: number;
-    date: string;
-    icon: string;
+interface TransactionItemProps {
+    item: Expense;
 }
-
-const mockTransactions: { [key: number]: Transaction[] } = {
-    1: [
-        { id: 't1', description: 'Netflix', amount: -15.99, date: 'Hoy, 10:30 AM', icon: 'movie-open' },
-        { id: 't2', description: 'Starbucks', amount: -7.50, date: 'Ayer, 4:15 PM', icon: 'coffee' },
-        { id: 't3', description: 'Salario', amount: 1500.00, date: '28 Nov, 9:00 AM', icon: 'cash-plus' },
-    ],
-    2: [
-        { id: 't4', description: 'Amazon', amount: -124.50, date: 'Hoy, 1:00 PM', icon: 'amazon' },
-        { id: 't5', description: 'Uber Eats', amount: -22.30, date: '29 Nov, 8:00 PM', icon: 'food' },
-    ],
-    // Añade más mocks si tienes más cuentas de prueba
-};
-
-const TransactionsService = {
-    getByAccountId: (accountId: number): Promise<Transaction[]> => {
-        console.log(`Fetching transactions for account ID: ${accountId}`);
-        return new Promise(resolve =>
-            setTimeout(() => resolve(mockTransactions[accountId] || []), 1000)
-        );
-    }
-};
-
 
 // --- COMPONENTES VISUALES ---
 
@@ -58,11 +38,17 @@ const AccountCard = ({ item, isAddCard }: { item: Account | { id: 'add' }, isAdd
     if (isAddCard) {
         return (
             <TouchableOpacity style={[styles.card, styles.addCard]}>
-                <Icon name="plus" size={40} color="#4F46E5" />
+                <Lucide name="plus" size={40} color="#4F46E5" />
             </TouchableOpacity>
         );
     }
     const account = item as Account;
+    
+    let icon: any = 'card-sim';
+    if (account.type == 'cash') {
+        icon = 'wallet'
+    }
+
     return (
         <View style={styles.card}>
             {/* Elementos decorativos */}
@@ -71,70 +57,192 @@ const AccountCard = ({ item, isAddCard }: { item: Account | { id: 'add' }, isAdd
             
             <View style={styles.cardHeader}>
                 <Text style={styles.cardType}>{account.type}</Text>
-                <Icon name="integrated-circuit-chip" size={36} color="rgba(255,255,255,0.5)" />
+                <Lucide name={icon} size={36} color="rgba(255,255,255,0.5)" />
+                
             </View>
             <View style={styles.cardBody}>
                 <Text style={styles.cardBalanceLabel}>Balance</Text>
                 <Text style={styles.cardBalance}>{formatCurrency(account.available_balance)}</Text>
             </View>
-            <View style={styles.cardFooter}>
-                <Text style={styles.cardNumber}>**** **** **** {account.name.slice(-4)}</Text>
-                <Icon name="credit-card-wireless-outline" size={30} color="#FFF" style={{transform: [{rotate: '90deg'}]}}/>
-            </View>
+            {account.type !== 'cash' && (
+                <View style={styles.cardFooter}>
+                    <Text style={styles.cardNumber}>**** **** **** {account.number}</Text>
+                    <Lucide name="nfc" size={30} color="#FFF" />
+                </View>
+            )}
+            
         </View>
     );
 };
 
 // Componente de Botón de Acción
-const ActionButton = ({ icon, label, onPress }: { icon: string, label: string, onPress: () => void }) => (
+const ActionButton = ({ icon, label, onPress }: { icon: any, label: string, onPress: () => void }) => (
     <TouchableOpacity style={styles.actionButton} onPress={onPress}>
         <View style={styles.actionButtonIconContainer}>
-            <Icon name={icon} size={24} color="#4F46E5" />
+            <Lucide name={icon} size={24} color="#4F46E5" />
         </View>
         <Text style={styles.actionButtonLabel}>{label}</Text>
     </TouchableOpacity>
 );
 
 // Componente de Item de Transacción
-const TransactionItem = ({ item }: { item: Transaction }) => (
-    <View style={styles.transactionItem}>
-        <View style={[styles.transactionIconContainer, { backgroundColor: item.amount > 0 ? '#E0F2F1' : '#F1F5F9' }]}>
-            <Icon name={item.icon} size={22} color={item.amount > 0 ? '#00796B' : '#475569'} />
+const TransactionItem: React.FC<TransactionItemProps> = ({ item }) => {
+    const amount = parseFloat(item.amount);
+    const isPositive = amount > 0;
+
+    // Formatear fecha
+    const formattedDate = item.due_date
+        ? DateTime.fromISO(item.due_date).setLocale('es').toFormat("d 'de' LLLL yyyy")
+        : '';
+
+    // Icono según categoría (opcional)
+    const getIconName = () => {
+        if (item.sub_category?.name?.toLowerCase().includes('comida rápida')) return 'hamburger';
+        if (item.sub_category?.name?.toLowerCase().includes('snacks')) return 'donut';
+        if (item.sub_category?.name?.toLowerCase().includes('despensa')) return 'store';
+        return 'circle-dollar-sign';
+    };
+
+    return (
+        <View style={styles.transactionItem}>
+            <View style={[
+                styles.transactionIconContainer,
+                { backgroundColor: isPositive ? '#E0F2F1' : '#F1F5F9' }
+            ]}>
+                <Lucide name={getIconName()} size={22} color={isPositive ? '#00796B' : '#475569'} />
+            </View>
+
+            <View style={styles.transactionDetails}>
+                <Text style={styles.transactionName}>{item.name}</Text>
+
+                <Text style={styles.transactionCategory}>
+                    {item.category?.name || 'Sin categoría'}
+                    {item.sub_category ? ` · ${item.sub_category.name}` : ''}
+                </Text>
+
+                <Text style={styles.transactionDate}>{formattedDate}</Text>
+            </View>
+
+            <Text style={[
+                styles.transactionAmount,
+                { color: isPositive ? '#2E7D32' : '#1E293B' }
+            ]}>
+                {isPositive ? `+${formatCurrency(amount)}` : `-${formatCurrency(amount)}`}
+            </Text>
         </View>
-        <View style={styles.transactionDetails}>
-            <Text style={styles.transactionDescription}>{item.description}</Text>
-            <Text style={styles.transactionDate}>{item.date}</Text>
-        </View>
-        <Text style={[styles.transactionAmount, { color: item.amount > 0 ? '#2E7D32' : '#1E293B' }]}>
-            {item.amount > 0 ? `+${formatCurrency(item.amount)}` : formatCurrency(item.amount)}
-        </Text>
-    </View>
-);
+    );
+};
 
 
 // --- PANTALLA PRINCIPAL ---
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth * 0.8;
 const SPACING = 10;
 const SIDECARD_SPACING = (screenWidth - CARD_WIDTH) / 2;
 
+// Posiciones del Bottom Sheet
+const COLLAPSED_HEIGHT = 300; // Altura cuando está colapsado
+const EXPANDED_HEIGHT = screenHeight * 0.85; // 85% de la pantalla cuando está expandido
+
 export default function AccountsScreen() {
     const accounts = useInput<Account[]>([]);
     const loading = useInput(true);
+    const isExpenseModalVisible = useInput(false);
+    const isTransferModalVisible = useInput(false);
     const headerHeight = useHeaderHeight();
     const [activeIndex, setActiveIndex] = useState(0);
     
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [transactions, setTransactions] = useState<Expense[]>([]);
     const [transactionsLoading, setTransactionsLoading] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    // Animación del Bottom Sheet
+    const bottomSheetHeight = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
+    const overlayOpacity = useRef(new Animated.Value(0)).current;
+    const flatListRef = useRef<FlatList>(null);
+
+    // PanResponder para manejar gestos
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: (_, gestureState) => {
+                // Solo activar si el movimiento es vertical
+                return Math.abs(gestureState.dy) > 5;
+            },
+            onPanResponderMove: (_, gestureState) => {
+                // Limitar el movimiento
+                const newHeight = isExpanded 
+                    ? EXPANDED_HEIGHT - gestureState.dy 
+                    : COLLAPSED_HEIGHT - gestureState.dy;
+                
+                if (newHeight >= COLLAPSED_HEIGHT && newHeight <= EXPANDED_HEIGHT) {
+                    bottomSheetHeight.setValue(newHeight);
+                }
+            },
+            onPanResponderRelease: (_, gestureState) => {
+                // Determinar si expandir o colapsar basado en la velocidad y dirección
+                if (gestureState.dy < -50 || gestureState.vy < -0.5) {
+                    // Arrastrar hacia arriba
+                    expandBottomSheet();
+                } else if (gestureState.dy > 50 || gestureState.vy > 0.5) {
+                    // Arrastrar hacia abajo
+                    collapseBottomSheet();
+                } else {
+                    // Volver al estado actual
+                    if (isExpanded) {
+                        expandBottomSheet();
+                    } else {
+                        collapseBottomSheet();
+                    }
+                }
+            },
+        })
+    ).current;
+
+    const expandBottomSheet = () => {
+        setIsExpanded(true);
+        Animated.parallel([
+            Animated.spring(bottomSheetHeight, {
+                toValue: EXPANDED_HEIGHT,
+                useNativeDriver: false,
+                tension: 50,
+                friction: 8,
+            }),
+            Animated.timing(overlayOpacity, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            })
+        ]).start();
+    };
+
+    const collapseBottomSheet = () => {
+        setIsExpanded(false);
+        Animated.parallel([
+            Animated.spring(bottomSheetHeight, {
+                toValue: COLLAPSED_HEIGHT,
+                useNativeDriver: false,
+                tension: 50,
+                friction: 8,
+            }),
+            Animated.timing(overlayOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            })
+        ]).start(() => {
+            // Scroll al inicio cuando colapse
+            if (flatListRef.current) {
+                flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+            }
+        });
+    };
 
     // useEffect para cargar las cuentas iniciales
     useEffect(() => {
         const fetchAccounts = async () => {
             try {
-                // Suponemos que getAll(1) trae todas las cuentas sin paginar por ahora
-                // para la simplicidad del carrusel. Si necesitas paginación aquí,
-                // la lógica se complica un poco más.
                 const response = await AccountsService.getAll(1);
                 accounts.setValue(response.data);
             } catch (error) {
@@ -156,10 +264,10 @@ export default function AccountsScreen() {
         const fetchTransactions = async () => {
             setTransactionsLoading(true);
             try {
-                const response = await TransactionsService.getByAccountId(activeAccount.id);
-                setTransactions(response);
-            } catch (error) {
-                console.error("Failed to fetch transactions", error);
+                const response = await ExpensesService.getAll(1, activeAccount.id)
+                setTransactions(response.data);
+            } catch (error: any) {
+                console.error("Failed to fetch transactions", error.response);
             } finally {
                 setTransactionsLoading(false);
             }
@@ -168,27 +276,35 @@ export default function AccountsScreen() {
         fetchTransactions();
     }, [activeIndex, accounts.value]);
 
+    const openExpenseModal = () => isExpenseModalVisible.setValue(true);
+    const closeExpenseModal = () => isExpenseModalVisible.setValue(false);
+
+    const openTransferModal = () => isTransferModalVisible.setValue(true)
+    const closeTransferModal = () => isTransferModalVisible.setValue(false);
+
     const carouselData = useMemo(() => {
-        // Añadimos un item placeholder para el botón "Añadir"
         return [{ id: 'add' }, ...accounts.value];
     }, [accounts.value]);
 
     const onScroll = (event: any) => {
         const index = Math.round(event.nativeEvent.contentOffset.x / (CARD_WIDTH + SPACING));
-        // El índice real de la cuenta es `index - 1` porque el primer item es el botón de añadir.
         if (index - 1 !== activeIndex && index > 0) {
             setActiveIndex(index - 1);
         }
     };
+
+    const openIncomeModal = () => {
+        //Logica para crear un ingreso
+    }
     
     if (loading.value) {
         return <View style={styles.centered}><ActivityIndicator size="large" color="#4F46E5" /></View>;
     }
 
     return (
-        <View style={styles.container}>
-            <View style={[styles.header, { paddingTop: headerHeight + 10 }]}> 
-                <Text style={styles.headerTitle}>Mis Cuentas</Text>
+        <View style={[styles.container, { paddingTop: headerHeight - 20}]}>
+            <View> 
+                <Text className=' text-center text-2xl font-bold py-6'>Mis Cuentas</Text>
             </View>
 
             {/* Carrusel de Tarjetas */}
@@ -203,30 +319,87 @@ export default function AccountsScreen() {
                 snapToInterval={CARD_WIDTH + SPACING}
                 decelerationRate="fast"
                 onScroll={onScroll}
-                scrollEventThrottle={16} // Para un onScroll más fluido
+                scrollEventThrottle={16}
             />
 
             {/* Botones de Acción */}
             <View style={styles.actionsContainer}>
-                <ActionButton icon="arrow-down-bold-circle-outline" label="Ingreso" onPress={() => {}} />
-                <ActionButton icon="arrow-up-bold-circle-outline" label="Gasto" onPress={() => {}} />
-                <ActionButton icon="swap-horizontal" label="Transferir" onPress={() => {}} />
+                <ActionButton icon="banknote-arrow-up" label="Ingreso" onPress={() => openIncomeModal()} />
+                <ActionButton icon="banknote-arrow-down" label="Gasto" onPress={openExpenseModal} />
+                <ActionButton icon="arrow-right-left" label="Transferir" onPress={openTransferModal} />
             </View>
 
-            {/* Lista de Transacciones */}
-            <View style={styles.transactionsSection}>
-                <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
+            {/* Overlay oscuro */}
+            <Animated.View 
+                style={[
+                    styles.overlay,
+                    {
+                        opacity: overlayOpacity,
+                        pointerEvents: isExpanded ? 'auto' : 'none',
+                    }
+                ]}
+                onTouchEnd={collapseBottomSheet}
+            />
+
+            {/* Bottom Sheet Expandible de Transacciones */}
+            <Animated.View 
+                style={[
+                    styles.transactionsSection,
+                    { height: bottomSheetHeight }
+                ]}
+            >
+                {/* Handle del Bottom Sheet */}
+                <View {...panResponder.panHandlers} style={styles.handleContainer}>
+                    <View style={styles.handle} />
+                </View>
+
+                {/* Header con título y botón de expansión */}
+                <View style={styles.transactionHeader}>
+                    <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
+                    <TouchableOpacity 
+                        onPress={isExpanded ? collapseBottomSheet : expandBottomSheet}
+                        style={styles.expandButton}
+                    >
+                        <Lucide 
+                            name={isExpanded ? "chevron-down" : "chevron-up"} 
+                            size={24} 
+                            color="#64748B" 
+                        />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Lista de Transacciones */}
                 {transactionsLoading ? (
                     <ActivityIndicator style={{ marginTop: 20 }} color="#4F46E5" />
                 ) : (
                     <FlatList
+                        ref={flatListRef}
                         data={transactions}
                         keyExtractor={item => item.id}
                         renderItem={({ item }) => <TransactionItem item={item} />}
                         ListEmptyComponent={<Text style={styles.emptyText}>No hay transacciones recientes.</Text>}
+                        showsVerticalScrollIndicator={true}
+                        scrollEnabled={isExpanded} // Solo scroll cuando está expandido
+                        contentContainerStyle={{ paddingBottom: 20 }}
                     />
                 )}
-            </View>
+            </Animated.View>
+
+            {/* Modal de Gasto */}
+            <ExpenseFormModal
+                visible={isExpenseModalVisible.value}
+                onClose={closeExpenseModal}
+                accounts={accounts.value}
+                selectedAccount={accounts.value[activeIndex] || null}
+            />
+
+            {/* Modal de Transferencia */}
+            <TransferFormModal
+                visible={isTransferModalVisible.value}
+                onClose={closeTransferModal}
+                accounts={accounts.value}
+                selectedAccount={accounts.value[activeIndex] || null}
+            />
         </View>
     );
 }
@@ -248,23 +421,23 @@ const styles = StyleSheet.create({
         paddingBottom: 10,
     },
     headerTitle: {
+        alignItems: 'center',
         fontSize: 28,
         fontWeight: 'bold',
         color: '#1E293B',
     },
     carousel: {
-        maxHeight: 220, // Altura del carrusel
+        maxHeight: 220,
     },
-    // Estilos de la tarjeta
     card: {
         width: CARD_WIDTH,
         height: 200,
-        backgroundColor: '#4F46E5', // Color principal indigo
+        backgroundColor: '#4F46E5',
         borderRadius: 20,
         marginHorizontal: SPACING / 2,
         padding: 20,
         justifyContent: 'space-between',
-        overflow: 'hidden', // Importante para que las decoraciones no se salgan
+        overflow: 'hidden',
     },
     addCard: {
         backgroundColor: '#E0E7FF',
@@ -292,14 +465,36 @@ const styles = StyleSheet.create({
         bottom: -60,
         left: -40,
     },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    cardType: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+    cardHeader: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center' 
+    },
+    cardType: { 
+        color: '#FFF', 
+        fontSize: 16, 
+        fontWeight: '600' 
+    },
     cardBody: {},
-    cardBalanceLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 14 },
-    cardBalance: { color: '#FFF', fontSize: 32, fontWeight: 'bold' },
-    cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    cardNumber: { color: '#FFF', fontSize: 16, letterSpacing: 2 },
-    // Estilos de botones de acción
+    cardBalanceLabel: { 
+        color: 'rgba(255,255,255,0.7)', 
+        fontSize: 14 
+    },
+    cardBalance: { 
+        color: '#FFF', 
+        fontSize: 32, 
+        fontWeight: 'bold' 
+    },
+    cardFooter: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center' 
+    },
+    cardNumber: { 
+        color: '#FFF', 
+        fontSize: 16, 
+        letterSpacing: 2 
+    },
     actionsContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
@@ -328,54 +523,98 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '500',
     },
-    // Estilos de la sección de transacciones
+    overlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 1,
+    },
     transactionsSection: {
-        flex: 1,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         backgroundColor: '#FFF',
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
-        padding: 20,
-        paddingTop: 25,
+        paddingHorizontal: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+        zIndex: 2,
+    },
+    handleContainer: {
+        alignItems: 'center',
+        paddingVertical: 12,
+    },
+    handle: {
+        width: 40,
+        height: 4,
+        backgroundColor: '#CBD5E1',
+        borderRadius: 2,
+    },
+    transactionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
     },
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#1E293B',
-        marginBottom: 15,
     },
-    transactionItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-    },
-    transactionIconContainer: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 15,
-    },
-    transactionDetails: {
-        flex: 1,
-    },
-    transactionDescription: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#1E293B',
-    },
-    transactionDate: {
-        fontSize: 12,
-        color: '#64748B',
-        marginTop: 2,
-    },
-    transactionAmount: {
-        fontSize: 16,
-        fontWeight: 'bold',
+    expandButton: {
+        padding: 4,
     },
     emptyText: {
         textAlign: 'center',
         marginTop: 30,
         color: '#64748B',
+    },
+    transactionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E2E8F0',
+    },
+    transactionIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    transactionDetails: {
+        flex: 1,
+        marginLeft: 10,
+    },
+    transactionName: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1E293B',
+    },
+    transactionCategory: {
+        fontSize: 13,
+        color: '#64748B',
+        marginTop: 2,
+    },
+    transactionDate: {
+        fontSize: 12,
+        color: '#94A3B8',
+        marginTop: 1,
+    },
+    transactionAmount: {
+        fontSize: 15,
+        fontWeight: '700',
+        minWidth: 80,
+        textAlign: 'right',
     },
 });

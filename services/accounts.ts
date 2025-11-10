@@ -22,4 +22,9 @@ export const AccountsService = {
     async delete(id: number) {
         await api.delete(`${API_ENDPOINTS.ACCOUNTS}/${id}`);
     },
+
+    async transfer(id: number, transfer: Partial<any>) {
+        const { data } = await api.post(`${API_ENDPOINTS.ACCOUNTS}/${id}/transfer`, transfer);
+        return data;
+    },
 };
