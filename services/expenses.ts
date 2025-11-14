@@ -1,4 +1,3 @@
-import { Account } from '@/models/account';
 import { Expense } from '@/models/expense';
 import { PaginatedResponse } from '@/models/paginated_response';
 import { API_ENDPOINTS } from '../constants/api';
@@ -11,12 +10,12 @@ export const ExpensesService = {
         return data;
     },
 
-    async create(expense: Partial<Account>) {
+    async create(expense: Partial<Expense>) {
         const { data } = await api.post(API_ENDPOINTS.EXPENSES, expense);
         return data;
     },
 
-    async update(id: number, expense: Partial<Account>) {
+    async update(id: number, expense: Partial<Expense>) {
         const { data } = await api.put(`${API_ENDPOINTS.EXPENSES}/${id}`, expense);
         return data;
     },

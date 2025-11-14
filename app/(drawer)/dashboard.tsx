@@ -1,213 +1,306 @@
+import { DashboardService } from '@/services/dashboard';
+import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
-import React, { useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LineChart, PieChart } from "react-native-chart-kit";
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { PieChart } from "react-native-chart-kit";
+import Svg, { Circle } from 'react-native-svg';
 
 const screenWidth = Dimensions.get("window").width;
 
-// --- DATOS MOCK EN ESPAÑOL ---
-const totalBalance = 13250;
-const totalIncome = 45600;
-const totalExpenses = 32350;
+// --- TIPOS DE DATOS DE LA API ---
+interface TrendData {
+    value: number;
+    trend: 'up' | 'down' | 'neutral';
+    percentage: number;
+}
+interface UpcomingPayment {
+    id: number;
+    type: 'expense' | 'debt';
+    name: string;
+    amount: number;
+    next_payment_date: string;
+}
+interface SpendingChartData {
+    labels: string[];
+    datasets: {
+        data: number[];
+        backgroundColor: string[];
+    }[];
+}
+interface DashboardData {
+    totalBalance: TrendData;
+    totalSavings: TrendData;
+    totalDebts: TrendData;
+    spendingChartData: SpendingChartData;
+    financialHealthScore: number;
+    financialHealthLabel: string;
+    financialHealthVariation: number;
+    upcomingPayments: UpcomingPayment[];
+    activeStrategy: { name: string } | null;
+}
 
-// Datos para gráfico de flujo mensual
-const monthlyFlow = [5000, 6200, 7800, 6500, 9100, 8500, 9300];
-const monthlyExpenses = [4500, 5200, 6000, 5800, 8300, 7500, 8200];
-const labels = ['May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov'];
-
-// Distribución de gastos por categoría
-const expensesByCategory = [
-  { name: 'Vivienda', amount: 8500, color: '#4F46E5', legendFontColor: '#64748B' },
-  { name: 'Comida', amount: 5200, color: '#F97316', legendFontColor: '#64748B' },
-  { name: 'Transporte', amount: 3800, color: '#10B981', legendFontColor: '#64748B' },
-  { name: 'Ocio', amount: 2400, color: '#EC4899', legendFontColor: '#64748B' },
-  { name: 'Otros', amount: 4100, color: '#8B5CF6', legendFontColor: '#64748B' },
-];
-
-// Estrategias de deuda activas
-const debtStrategies = [
-  { name: 'Tarjeta de Crédito A', total: 12500, paid: 4200, priority: 'Alta', color: '#EF4444' },
-  { name: 'Préstamo Personal', total: 8200, paid: 2800, priority: 'Media', color: '#F97316' },
-  { name: 'Tarjeta de Crédito B', total: 4000, paid: 1500, priority: 'Baja', color: '#FCD34D' },
-];
-
-// Próximos pagos
-const upcomingPayments = [
-  { name: 'Renta', amount: 1200, date: '15 Nov', category: 'Vivienda' },
-  { name: 'Tarjeta de Crédito A', amount: 350, date: '18 Nov', category: 'Deuda' },
-  { name: 'Internet', amount: 65, date: '20 Nov', category: 'Servicios' },
-];
-
-// Presupuestos
-const budgets = [
-  { category: 'Comida', spent: 420, limit: 600, color: '#F97316' },
-  { category: 'Ocio', spent: 210, limit: 200, color: '#EC4899' },
-  { category: 'Transporte', spent: 95, limit: 300, color: '#10B981' },
-];
-
-const formatCurrency = (value) => {
-    return value.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
+// --- FUNCIÓN HELPER ---
+const formatCurrency = (value: any = 0) => {
+    const number = Number(value) || 0;
+    return number.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 };
 
-// --- COMPONENTES VISUALES ---
+// --- COMPONENTES VISUALES MEJORADOS ---
 
-const BalanceCard = ({ balance, income, expenses }) => {
-  const netFlow = income - expenses;
-  const isPositive = netFlow >= 0;
-  
-  return (
-    <View style={styles.balanceCard}>
-      <Text style={styles.balanceCardLabel}>Balance Total</Text>
-      <Text style={styles.balanceCardAmount}>
-        {formatCurrency(balance)}
-      </Text>
-      
-      <View style={styles.balanceCardRow}>
-        <View>
-          <Text style={styles.balanceCardSubLabel}>Ingresos</Text>
-          <Text style={styles.balanceCardIncome}>{formatCurrency(income)}</Text>
-        </View>
-        <View>
-          <Text style={styles.balanceCardSubLabel}>Gastos</Text>
-          <Text style={styles.balanceCardExpenses}>{formatCurrency(expenses)}</Text>
-        </View>
-        <View>
-          <Text style={styles.balanceCardSubLabel}>Neto</Text>
-          <Text style={[styles.balanceCardNet, { color: isPositive ? '#10B981' : '#EF4444' }]}>
-            {isPositive ? '+' : ''}{formatCurrency(netFlow)}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-};
+// Tarjeta principal de Salud Financiera con un anillo de progreso
+const FinancialHealthCard = ({ score = 0, label = 'N/A', variation = 0 }) => {
+    const size = 120;
+    const strokeWidth = 12;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const progress = score / 100;
+    const strokeDashoffset = circumference - circumference * progress;
 
-const MonthlyFlowChart = ({ incomeData, expensesData, labels }) => {
-    const chartData = {
-        labels: labels,
-        datasets: [ { data: expensesData }, { data: incomeData } ],
+    const getScoreColor = () => {
+        if (score >= 80) return '#10B981'; // Verde
+        if (score >= 60) return '#F59E0B'; // Ámbar
+        if (score >= 40) return '#F97316'; // Naranja
+        return '#EF4444'; // Rojo
     };
-    const chartConfig = {
-        backgroundGradientFrom: "#FFF", backgroundGradientTo: "#FFF", decimalPlaces: 0,
-        color: (opacity = 1) => `rgba(79, 70, 229, ${opacity})`, labelColor: () => '#64748B',
-        propsForDots: { r: "0" },
-    };
-    return <LineChart data={chartData} width={screenWidth - 60} height={200} chartConfig={chartConfig} bezier withHorizontalLines={false} withVerticalLines={false} />;
+    
+    const TrendIndicator = () => (
+        <View style={styles.healthTrend}>
+            <Lucide 
+                name={variation > 0 ? 'TrendingUp' : 'TrendingDown'} 
+                size={16} 
+                color={variation > 0 ? '#10B981' : '#EF4444'} 
+            />
+            <Text style={[styles.healthTrendText, { color: variation > 0 ? '#10B981' : '#EF4444' }]}>
+                {Math.abs(variation)}% vs mes pasado
+            </Text>
+        </View>
+    );
+
+    return (
+        <View style={styles.healthCard}>
+            <View style={styles.healthInfo}>
+                <Text style={styles.healthTitle}>Salud Financiera</Text>
+                <Text style={[styles.healthLabel, { backgroundColor: `${getScoreColor()}20`, color: getScoreColor() }]}>
+                    {label}
+                </Text>
+                {variation !== 0 && <TrendIndicator />}
+            </View>
+            <View style={styles.healthCircleContainer}>
+                <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                    <Circle
+                        stroke="#E2E8F0"
+                        cx={size / 2} cy={size / 2} r={radius}
+                        strokeWidth={strokeWidth}
+                    />
+                    <Circle
+                        stroke={getScoreColor()}
+                        cx={size / 2} cy={size / 2} r={radius}
+                        strokeWidth={strokeWidth}
+                        strokeDasharray={circumference}
+                        strokeDashoffset={strokeDashoffset}
+                        strokeLinecap="round"
+                        transform={`rotate(-90 ${size/2} ${size/2})`}
+                    />
+                </Svg>
+                <Text style={[styles.healthScore, { color: getScoreColor() }]}>{score}<Text style={{fontSize: 24}}>%</Text></Text>
+            </View>
+        </View>
+    );
 };
 
-const ExpensesByCategoryChart = ({ data }) => {
-    const chartConfig = { color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})` };
-    return <PieChart data={data} width={screenWidth - 60} height={180} chartConfig={chartConfig} accessor="amount" backgroundColor="transparent" paddingLeft="15" absolute />;
+// Tarjetas para Balance, Ahorros y Deudas
+const StatCard = ({ label, data, icon, color }) => {
+    const isPositiveTrend = data.trend === 'up';
+    const isDebt = label.toLowerCase().includes('deuda');
+    
+    // Para deudas, una tendencia "up" es mala (roja), y "down" es buena (verde)
+    const trendColor = isDebt 
+        ? (isPositiveTrend ? '#EF4444' : '#10B981')
+        : (isPositiveTrend ? '#10B981' : '#EF4444');
+
+    return (
+        <View style={styles.statCard}>
+            <View style={styles.statHeader}>
+                <View style={[styles.statIconContainer, { backgroundColor: `${color}20` }]}>
+                    <Lucide name={icon} size={20} color={color} />
+                </View>
+                <Text style={styles.statLabel}>{label}</Text>
+            </View>
+            <Text style={styles.statValue} className=' text-xs'>{formatCurrency(data.value)}</Text>
+            {data.percentage > 0 && (
+                <View style={styles.statTrend}>
+                    <Lucide name={data.trend === 'neutral' ? 'Minus' : (isPositiveTrend ? 'arrow-up-right' : 'arrow-down-right')} size={14} color={trendColor} />
+                    <Text style={[styles.statPercentage, { color: trendColor }]}>
+                        {data.percentage}%
+                    </Text>
+                </View>
+            )}
+        </View>
+    );
 };
 
-const Section = ({ title, children }) => (
-  <View style={styles.sectionContainer}>
-    <Text style={styles.sectionTitle}>{title}</Text>
-    {children}
-  </View>
-);
+// Componente para el gráfico de gastos
+const SpendingChart = ({ data }) => {
+    if (!data || data.datasets[0].data.length === 0) {
+        return <Text style={styles.noDataText}>No hay gastos registrados este mes.</Text>;
+    }
 
-const TabSelector = ({ tabs, activeTab, onTabPress }) => (
-  <View style={styles.tabContainer}>
-    {tabs.map((tab) => (
-      <TouchableOpacity key={tab} style={[styles.tabButton, activeTab === tab && styles.activeTabButton]} onPress={() => onTabPress(tab)}>
-        <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-          {tab}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-);
+    const chartData = data.labels.map((label, index) => ({
+        name: label,
+        amount: data.datasets[0].data[index],
+        color: data.datasets[0].backgroundColor[index] || '#94A3B8',
+        legendFontColor: '#334155',
+        legendFontSize: 14,
+    }));
 
-const SectionCard = ({ title, subtitle, icon, color, onPress }) => (
-    <TouchableOpacity style={styles.sectionCard} onPress={onPress}>
-        <View style={[styles.sectionCardIcon, { backgroundColor: color + '20' }]}>
-            <Icon name={icon} size={24} color={color} />
+    return (
+        <PieChart
+            data={chartData}
+            width={screenWidth - 40} // Ajustado al padding del contenedor
+            height={200}
+            chartConfig={{ color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})` }}
+            accessor="amount"
+            backgroundColor="transparent"
+            paddingLeft="15"
+            absolute
+        />
+    );
+};
+
+// Componente para un item de la lista de próximos pagos
+const UpcomingPaymentItem = ({ name, amount, date, type }) => {
+    const formattedDate = new Date(date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    const icon = type === 'debt' ? 'landmark' : 'receipt-text';
+    const color = type === 'debt' ? '#EF4444' : '#3B82F6';
+
+    return (
+        <View style={styles.paymentRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View style={[styles.paymentIconContainer, { backgroundColor: `${color}20` }]}>
+                   <Lucide name={icon} size={20} color={color} />
+                </View>
+               <View>
+                    <Text style={styles.paymentName}>{name}</Text>
+                    <Text style={styles.paymentDate}>{formattedDate}</Text>
+               </View>
+            </View>
+            <Text style={styles.paymentAmount}>{formatCurrency(amount)}</Text>
         </View>
-        <View style={{ flex: 1 }}>
-            <Text style={styles.sectionCardTitle}>{title}</Text>
-            <Text style={styles.sectionCardSubtitle}>{subtitle}</Text>
-        </View>
-        <Icon name="chevron-right" size={24} color="#94A3B8" />
-    </TouchableOpacity>
-);
+    );
+};
 
-// --- PANTALLA PRINCIPAL REESTRUCTURADA ---
+// --- PANTALLA PRINCIPAL DEL DASHBOARD ---
 export default function DashboardScreen() {
     const headerHeight = useHeaderHeight();
-    const [activeReportTab, setActiveReportTab] = useState('Flow'); // Flow | Categories
+    const [data, setData] = useState<DashboardData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchData = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            // Simulación de llamada a la API
+            // En una app real, reemplazarías esto con tu llamada fetch o axios
+            const response = await DashboardService.getAll()
+            
+            const apiData = response;
+            setData(apiData);
+            
+            // Usando tus datos de ejemplo de la API para el diseño
+            // const apiData: DashboardData = {
+            //     totalBalance: { value: 13250, trend: 'up', percentage: 5.2 },
+            //     totalSavings: { value: 25000, trend: 'up', percentage: 10 },
+            //     totalDebts: { value: 8500, trend: 'down', percentage: 2.1 },
+            //     spendingChartData: {
+            //         labels: ['Comida', 'Transporte', 'Ocio', 'Vivienda'],
+            //         datasets: [{ data: [5200, 3800, 2400, 8500], backgroundColor: ['#f97316', '#22c55e', '#ec4899', '#3b82f6'] }]
+            //     },
+            //     financialHealthScore: 78,
+            //     financialHealthLabel: 'Buena',
+            //     financialHealthVariation: 3.5,
+            //     upcomingPayments: [
+            //         { id: 1, type: 'expense', name: 'Renta', amount: 8500, next_payment_date: '2023-11-30T00:00:00.000Z' },
+            //         { id: 2, type: 'debt', name: 'Pago Tarjeta BBVA', amount: 1200, next_payment_date: '2023-12-05T00:00:00.000Z' },
+            //         { id: 3, type: 'expense', name: 'Internet Telmex', amount: 499, next_payment_date: '2023-12-10T00:00:00.000Z' },
+            //     ],
+            //     activeStrategy: { name: 'Bola de Nieve' }
+            // };
+            // setData(apiData);
+
+        } catch (e) {
+            setError('No se pudo cargar la información.');
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchData();
+        }, [fetchData])
+    );
     
-    const overBudgetCount = budgets.filter(b => b.spent > b.limit).length;
-    
+    if (loading) {
+        return <View style={styles.centerContainer}><ActivityIndicator size="large" color="#4F46E5" /></View>;
+    }
+
+    if (error || !data) {
+        return <View style={styles.centerContainer}><Text>{error || 'No hay datos disponibles.'}</Text></View>;
+    }
+
     return (
         <ScrollView 
-            contentContainerStyle={{ paddingTop: headerHeight + 20, paddingBottom: 30 }}
+            contentContainerStyle={{ paddingTop: headerHeight + 10, paddingBottom: 40, paddingHorizontal: 15 }}
             style={styles.container}
             showsVerticalScrollIndicator={false}
         >
-            <BalanceCard 
-                balance={totalBalance} 
-                income={totalIncome} 
-                expenses={totalExpenses} 
+            <FinancialHealthCard 
+                score={data.financialHealthScore}
+                label={data.financialHealthLabel}
+                variation={data.financialHealthVariation}
             />
-            
-            <Section title="Upcoming Payments">
-                {upcomingPayments.slice(0, 2).map((payment, index) => (
-                    <View key={index} style={styles.paymentRow}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                           <View style={[styles.paymentDot, {backgroundColor: '#EF4444'}]}/>
-                           <View>
-                                <Text style={styles.paymentName}>{payment.name}</Text>
-                                <Text style={styles.paymentDate}>{payment.date}</Text>
-                           </View>
-                        </View>
-                        <Text style={styles.paymentAmount}>{formatCurrency(payment.amount)}</Text>
-                    </View>
-                ))}
-                <TouchableOpacity style={styles.viewAllButton}>
-                    <Text style={styles.viewAllText}>View All Payments</Text>
-                </TouchableOpacity>
-            </Section>
 
-            <Section title="Financial Reports">
-                <TabSelector 
-                    tabs={['Flow', 'Categories']}
-                    activeTab={activeReportTab}
-                    onTabPress={setActiveReportTab}
-                />
-                <View style={{ marginTop: 20 }}>
-                    {activeReportTab === 'Flow' && (
-                        <MonthlyFlowChart 
-                            incomeData={monthlyFlow}
-                            expensesData={monthlyExpenses}
-                            labels={labels}
-                        />
-                    )}
-                    {activeReportTab === 'Categories' && (
-                        <ExpensesByCategoryChart data={expensesByCategory} />
-                    )}
+            <View style={styles.statsContainer}>
+                {/* Fila solo para las dos primeras tarjetas */}
+                <View style={styles.topStatsRow}>
+                    <StatCard label="Balance" data={data.totalBalance} icon="hand-coins" color="#4F46E5" />
+                    <StatCard label="Ahorros" data={data.totalSavings} icon="piggy-bank" color="#10B981" />
                 </View>
-            </Section>
+                
+                {/* La tercera tarjeta va por fuera, ocupando todo el ancho disponible */}
+                <StatCard label="Deudas" data={data.totalDebts} icon="landmark" color="#EF4444" />
+            </View>
 
-            <Section title="Manage">
-                <SectionCard 
-                    title="Budgets"
-                    subtitle={`${overBudgetCount} presupuesto(s) excedido(s)`}
-                    icon="wallet"
-                    color="#10B981"
-                    onPress={() => { /* Navegar a la pantalla de Presupuestos */ }}
-                />
-                 <SectionCard 
-                    title="Debt Strategies"
-                    subtitle={`${debtStrategies.length} planes activos`}
-                    icon="chart-gantt"
-                    color="#4F46E5"
-                    onPress={() => { /* Navegar a la pantalla de Deudas */ }}
-                />
-            </Section>
+            <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Gastos del Mes</Text>
+                <SpendingChart data={data.spendingChartData} />
+            </View>
             
-            <View style={{ height: 30 }} />
+            <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Próximos Pagos</Text>
+                {data.upcomingPayments.slice(0, 3).map(payment => (
+                    <UpcomingPaymentItem key={`${payment.type}-${payment.id}`} {...payment} />
+                ))}
+                {data.upcomingPayments.length > 3 && (
+                    <TouchableOpacity style={styles.viewAllButton}>
+                        <Text style={styles.viewAllText}>Ver todos los pagos</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+            
+            {data.activeStrategy && (
+                <View style={styles.strategyCard}>
+                    <Lucide name="target" size={20} color="#F59E0B" />
+                    <Text style={styles.strategyText}>
+                        Estrategia activa: <Text style={{fontWeight: 'bold'}}>{data.activeStrategy.name}</Text>
+                    </Text>
+                </View>
+            )}
+
         </ScrollView>
     );
 }
@@ -216,68 +309,146 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: '#F8FAFC', // Gris muy claro
     },
-    balanceCard: {
-      backgroundColor: '#4F46E5', borderRadius: 20, padding: 24, marginHorizontal: 10,
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    balanceCardLabel: { color: 'rgba(255, 255, 255, 0.8)', fontSize: 14 },
-    balanceCardAmount: { color: '#FFF', fontSize: 42, fontWeight: 'bold', marginTop: 8 },
-    balanceCardRow: { flexDirection: 'row', marginTop: 20, justifyContent: 'space-between' },
-    balanceCardSubLabel: { color: 'rgba(255, 255, 255, 0.7)', fontSize: 12 },
-    balanceCardIncome: { color: '#10B981', fontSize: 18, fontWeight: '600', marginTop: 4 },
-    balanceCardExpenses: { color: '#F97316', fontSize: 18, fontWeight: '600', marginTop: 4 },
-    balanceCardNet: { fontSize: 18, fontWeight: '600', marginTop: 4 },
-    sectionContainer: {
-        marginHorizontal: 10,
-        marginTop: 25,
-        backgroundColor: '#FFF',
+    // Health Card
+    healthCard: {
+        backgroundColor: '#FFFFFF',
         borderRadius: 20,
         padding: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        elevation: 2,
+        shadowColor: '#94A3B8',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+    },
+    healthInfo: {
+        flex: 1,
+    },
+    healthTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#1E293B',
+    },
+    healthLabel: {
+        marginTop: 8,
+        fontSize: 12,
+        fontWeight: 'bold',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
+    },
+    healthTrend: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 12,
+    },
+    healthTrendText: {
+        marginLeft: 4,
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    healthCircleContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    healthScore: {
+        position: 'absolute',
+        fontSize: 32,
+        fontWeight: 'bold',
+    },
+    // Stats Row
+    statsContainer: {
+        marginBottom: 20,
+        gap: 10, // Espacio vertical entre la fila superior y la tarjeta inferior
+    },
+    topStatsRow: {
+        flexDirection: 'row', // Pone las dos primeras tarjetas una al lado de la otra
+        gap: 10, // Espacio horizontal entre las dos tarjetas
+    },
+    statCard: {
+        flex: 1,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 16,
+    },
+    statHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    statIconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 8,
+    },
+    statLabel: {
+        fontSize: 14,
+        color: '#475569',
+        fontWeight: '500',
+    },
+    statValue: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: '#1E293B',
+        marginTop: 12,
+        textAlign: 'left'
+    },
+    statTrend: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4,
+    },
+    statPercentage: {
+        fontSize: 12,
+        fontWeight: '600',
+        marginLeft: 4,
+    },
+    // Sections
+    sectionContainer: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 20,
     },
     sectionTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
         color: '#1E293B',
         marginBottom: 16,
     },
-    tabContainer: {
-        flexDirection: 'row',
-        backgroundColor: '#F1F5F9',
-        borderRadius: 16,
-        padding: 4,
-    },
-    tabButton: {
-      flex: 1,
-      paddingVertical: 8,
-      borderRadius: 12,
-    },
-    activeTabButton: {
-      backgroundColor: '#FFF',
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOpacity: 0.1,
-      shadowRadius: 5
-    },
-    tabText: {
+    noDataText: {
         textAlign: 'center',
-        fontSize: 14,
-        fontWeight: '600',
         color: '#64748B',
+        paddingVertical: 40,
     },
-    activeTabText: {
-        color: '#4F46E5',
-    },
+    // Upcoming Payments
     paymentRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
     },
-    paymentDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
+    paymentIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
         marginRight: 12,
     },
     paymentName: {
@@ -286,7 +457,7 @@ const styles = StyleSheet.create({
         color: '#1E293B',
     },
     paymentDate: {
-        fontSize: 12,
+        fontSize: 13,
         color: '#64748B',
         marginTop: 2,
     },
@@ -296,7 +467,7 @@ const styles = StyleSheet.create({
         color: '#1E293B',
     },
     viewAllButton: {
-        marginTop: 12,
+        marginTop: 16,
         alignItems: 'center',
     },
     viewAllText: {
@@ -304,30 +475,19 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
-    sectionCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F8FAFC',
+    // Strategy Card
+    strategyCard: {
+        backgroundColor: '#FFFBEB', // Amber-50
+        borderColor: '#FDE68A', // Amber-200
+        borderWidth: 1,
         borderRadius: 16,
         padding: 16,
-        marginBottom: 12,
-    },
-    sectionCardIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        justifyContent: 'center',
+        flexDirection: 'row',
         alignItems: 'center',
-        marginRight: 16,
     },
-    sectionCardTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#1E293B',
-    },
-    sectionCardSubtitle: {
-        fontSize: 13,
-        color: '#64748B',
-        marginTop: 2,
+    strategyText: {
+        marginLeft: 12,
+        color: '#B45309', // Amber-700
+        fontSize: 14,
     },
 });

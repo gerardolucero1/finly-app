@@ -1,10 +1,15 @@
+import { AccountFormModal } from '@/app/components/AccountFormModal';
 import { ExpenseFormModal } from '@/app/components/ExpenseFormModal';
+import { IncomeFormModal } from '@/app/components/IncomeFormModal';
 import { TransferFormModal } from '@/app/components/TransferFormModal';
 import { useInput } from '@/hooks/useInput';
 import { Account } from '@/models/account';
 import { Expense } from '@/models/expense';
+import { Income } from '@/models/income';
+import { Transaction } from '@/models/transaction';
 import { AccountsService } from '@/services/accounts';
 import { ExpensesService } from '@/services/expenses';
+import { IncomesService } from '@/services/incomes';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { DateTime } from 'luxon';
@@ -16,6 +21,7 @@ import {
     Dimensions,
     FlatList,
     PanResponder,
+    Pressable,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -23,21 +29,23 @@ import {
 } from 'react-native';
 
 interface TransactionItemProps {
-    item: Expense;
+    item: Transaction;
 }
 
 // --- COMPONENTES VISUALES ---
 
-const formatCurrency = (value: string | number): string => {
+const formatCurrency = (value?: string | number): string => {
+    if (value === undefined || value === null || value === '') return '';
     const numberValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (Number.isNaN(numberValue)) return '';
     return numberValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
 // Componente de Tarjeta del Carrusel
-const AccountCard = ({ item, isAddCard }: { item: Account | { id: 'add' }, isAddCard: boolean }) => {
+const AccountCard = ({ item, isAddCard, onPressAccount }: { item: Account | { id: 'add' }, isAddCard: boolean, onPressAccount: () => void }) => {
     if (isAddCard) {
         return (
-            <TouchableOpacity style={[styles.card, styles.addCard]}>
+            <TouchableOpacity style={[styles.card, styles.addCard]} onPress={() => onPressAccount()}>
                 <Lucide name="plus" size={40} color="#4F46E5" />
             </TouchableOpacity>
         );
@@ -50,28 +58,30 @@ const AccountCard = ({ item, isAddCard }: { item: Account | { id: 'add' }, isAdd
     }
 
     return (
-        <View style={styles.card}>
-            {/* Elementos decorativos */}
-            <View style={styles.cardDecoration1} />
-            <View style={styles.cardDecoration2} />
-            
-            <View style={styles.cardHeader}>
-                <Text style={styles.cardType}>{account.type}</Text>
-                <Lucide name={icon} size={36} color="rgba(255,255,255,0.5)" />
+        <Pressable onPress={() => onPressAccount()}>
+            <View style={styles.card}>
+                {/* Elementos decorativos */}
+                <View style={styles.cardDecoration1} />
+                <View style={styles.cardDecoration2} />
+                
+                <View style={styles.cardHeader}>
+                    <Text style={styles.cardType}>{account.name}</Text>
+                    <Lucide name={icon} size={36} color="rgba(255,255,255,0.5)" />
+                    
+                </View>
+                <View style={styles.cardBody}>
+                    <Text style={styles.cardBalanceLabel}>Balance</Text>
+                    <Text style={styles.cardBalance}>{formatCurrency(account.available_balance)}</Text>
+                </View>
+                {account.type !== 'cash' && (
+                    <View style={styles.cardFooter}>
+                        <Text style={styles.cardNumber}>**** **** **** {account.number}</Text>
+                        <Lucide name="nfc" size={30} color="#FFF" />
+                    </View>
+                )}
                 
             </View>
-            <View style={styles.cardBody}>
-                <Text style={styles.cardBalanceLabel}>Balance</Text>
-                <Text style={styles.cardBalance}>{formatCurrency(account.available_balance)}</Text>
-            </View>
-            {account.type !== 'cash' && (
-                <View style={styles.cardFooter}>
-                    <Text style={styles.cardNumber}>**** **** **** {account.number}</Text>
-                    <Lucide name="nfc" size={30} color="#FFF" />
-                </View>
-            )}
-            
-        </View>
+        </Pressable>
     );
 };
 
@@ -87,19 +97,21 @@ const ActionButton = ({ icon, label, onPress }: { icon: any, label: string, onPr
 
 // Componente de Item de Transacción
 const TransactionItem: React.FC<TransactionItemProps> = ({ item }) => {
-    const amount = parseFloat(item.amount);
-    const isPositive = amount > 0;
+    const amount = item.amount;
+    const isPositive = item.type == 'income';
 
     // Formatear fecha
-    const formattedDate = item.due_date
-        ? DateTime.fromISO(item.due_date).setLocale('es').toFormat("d 'de' LLLL yyyy")
+    const formattedDate = item.date
+        ? DateTime.fromJSDate(item.date)
+            .setLocale('es')
+            .toFormat("d 'de' LLLL yyyy")
         : '';
 
     // Icono según categoría (opcional)
     const getIconName = () => {
-        if (item.sub_category?.name?.toLowerCase().includes('comida rápida')) return 'hamburger';
-        if (item.sub_category?.name?.toLowerCase().includes('snacks')) return 'donut';
-        if (item.sub_category?.name?.toLowerCase().includes('despensa')) return 'store';
+        if (item.sub_category?.toLowerCase().includes('comida rápida')) return 'hamburger';
+        if (item.sub_category?.toLowerCase().includes('snacks')) return 'donut';
+        if (item.sub_category?.toLowerCase().includes('despensa')) return 'store';
         return 'circle-dollar-sign';
     };
 
@@ -116,8 +128,8 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item }) => {
                 <Text style={styles.transactionName}>{item.name}</Text>
 
                 <Text style={styles.transactionCategory}>
-                    {item.category?.name || 'Sin categoría'}
-                    {item.sub_category ? ` · ${item.sub_category.name}` : ''}
+                    {item.category || 'Sin categoría'}
+                    {item.sub_category ? ` · ${item.sub_category}` : ''}
                 </Text>
 
                 <Text style={styles.transactionDate}>{formattedDate}</Text>
@@ -125,7 +137,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item }) => {
 
             <Text style={[
                 styles.transactionAmount,
-                { color: isPositive ? '#2E7D32' : '#1E293B' }
+                { color: isPositive ? '#2E7D32' : '#DC2626' }
             ]}>
                 {isPositive ? `+${formatCurrency(amount)}` : `-${formatCurrency(amount)}`}
             </Text>
@@ -150,10 +162,12 @@ export default function AccountsScreen() {
     const loading = useInput(true);
     const isExpenseModalVisible = useInput(false);
     const isTransferModalVisible = useInput(false);
+    const isIncomeModalVisible = useInput(false);
+    const isAccountModalVisible = useInput(false);
     const headerHeight = useHeaderHeight();
     const [activeIndex, setActiveIndex] = useState(0);
     
-    const [transactions, setTransactions] = useState<Expense[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [transactionsLoading, setTransactionsLoading] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -239,42 +253,80 @@ export default function AccountsScreen() {
         });
     };
 
+    const fetchAccounts = async () => {
+        try {
+            const response = await AccountsService.getAll(1);
+            accounts.setValue(response.data);
+        } catch (error) {
+            console.log(error);
+        } finally {
+            loading.setValue(false);
+        }
+    };
+
     // useEffect para cargar las cuentas iniciales
     useEffect(() => {
-        const fetchAccounts = async () => {
-            try {
-                const response = await AccountsService.getAll(1);
-                accounts.setValue(response.data);
-            } catch (error) {
-                console.log(error);
-            } finally {
-                loading.setValue(false);
-            }
-        };
         fetchAccounts();
     }, []);
 
     // useEffect para cargar las transacciones cuando la tarjeta activa cambia
     useEffect(() => {
         if (accounts.value.length === 0) return;
-        
+
         const activeAccount = accounts.value[activeIndex];
         if (!activeAccount) return;
 
-        const fetchTransactions = async () => {
+        const fetchData = async () => {
             setTransactionsLoading(true);
             try {
-                const response = await ExpensesService.getAll(1, activeAccount.id)
-                setTransactions(response.data);
+                const [expenseRes, incomeRes] = await Promise.all([
+                    ExpensesService.getAll(1, activeAccount.id),
+                    IncomesService.getAll(1, activeAccount.id),
+                ]);
+
+                const expenses: Transaction[] = expenseRes.data.map((e: Expense) => ({
+                    id: e.id,
+                    name: e.name,
+                    amount: parseFloat(e.amount),
+                    description: e.description,
+                    date: DateTime.fromISO(e.due_date).toJSDate(),
+                    category: e.category?.name,
+                    sub_category: e.sub_category?.name,
+                    type: "expense",
+                }));
+
+                const incomes: Transaction[] = incomeRes.data.map((i: Income) => ({
+                    id: i.id,
+                    name: i.source,
+                    amount: parseFloat(i.amount),
+                    description: i.description,
+                    date: DateTime.fromISO(i.date).toJSDate(),
+                    category: '',
+                    sub_category: '',
+                    type: "income",
+                }));
+
+                // Unimos
+                const merged = [...expenses, ...incomes];
+
+                // Ordenar por fecha descendente (más reciente primero)
+                merged.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+                setTransactions(merged);
+                
             } catch (error: any) {
-                console.error("Failed to fetch transactions", error.response);
+                console.error("Failed to fetch movements", error.response);
             } finally {
                 setTransactionsLoading(false);
             }
         };
 
-        fetchTransactions();
+        fetchData();
     }, [activeIndex, accounts.value]);
+
+
+    const openIncomeModal = () => isIncomeModalVisible.setValue(true);
+    const closeIncomeModal = () => isIncomeModalVisible.setValue(false);
 
     const openExpenseModal = () => isExpenseModalVisible.setValue(true);
     const closeExpenseModal = () => isExpenseModalVisible.setValue(false);
@@ -282,20 +334,19 @@ export default function AccountsScreen() {
     const openTransferModal = () => isTransferModalVisible.setValue(true)
     const closeTransferModal = () => isTransferModalVisible.setValue(false);
 
+    const openAccountModal = () => isAccountModalVisible.setValue(true)
+    const closeAccountModal = () => isAccountModalVisible.setValue(false)
+
     const carouselData = useMemo(() => {
-        return [{ id: 'add' }, ...accounts.value];
+        return [...accounts.value, { id: 'add' }];
     }, [accounts.value]);
 
     const onScroll = (event: any) => {
         const index = Math.round(event.nativeEvent.contentOffset.x / (CARD_WIDTH + SPACING));
-        if (index - 1 !== activeIndex && index > 0) {
-            setActiveIndex(index - 1);
+        if (index !== activeIndex) {
+            setActiveIndex(index);
         }
     };
-
-    const openIncomeModal = () => {
-        //Logica para crear un ingreso
-    }
     
     if (loading.value) {
         return <View style={styles.centered}><ActivityIndicator size="large" color="#4F46E5" /></View>;
@@ -312,7 +363,9 @@ export default function AccountsScreen() {
                 horizontal
                 data={carouselData}
                 keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item, index }) => <AccountCard item={item} isAddCard={index === 0} />}
+                renderItem={({ item, index }) => (
+                    <AccountCard item={item} isAddCard={item.id === 'add'} onPressAccount={openAccountModal} />
+                )}
                 showsHorizontalScrollIndicator={false}
                 style={styles.carousel}
                 contentContainerStyle={{ paddingHorizontal: SIDECARD_SPACING }}
@@ -384,6 +437,22 @@ export default function AccountsScreen() {
                     />
                 )}
             </Animated.View>
+
+            {/* Modal de Gasto */}
+            <AccountFormModal
+                visible={isAccountModalVisible.value}
+                onClose={closeAccountModal}
+                onSave={fetchAccounts}
+                editingAccount={accounts.value[activeIndex] || null}
+            />
+
+            {/* Modal de Ingreso */}
+            <IncomeFormModal
+                visible={isIncomeModalVisible.value}
+                onClose={closeIncomeModal}
+                accounts={accounts.value}
+                selectedAccount={accounts.value[activeIndex] || null}
+            />
 
             {/* Modal de Gasto */}
             <ExpenseFormModal

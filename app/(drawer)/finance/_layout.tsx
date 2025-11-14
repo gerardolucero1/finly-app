@@ -17,19 +17,6 @@
 //             }}
 //         >
 //         <Tabs.Screen 
-//             name="accounts" 
-//             options={{ 
-//                 title: 'Cuentas',
-//                 tabBarIcon: ({ color, focused, size }) => (
-//                     <Ionicons 
-//                     name={focused ? 'wallet' : 'wallet-outline'} 
-//                     size={size} 
-//                     color={color} 
-//                     />
-//                 ),
-//             }} 
-//         />
-//         <Tabs.Screen 
 //             name="statements" 
 //             options={{ 
 //                 title: 'Movimientos',

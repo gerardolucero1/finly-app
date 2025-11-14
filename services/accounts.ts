@@ -9,12 +9,12 @@ export const AccountsService = {
         return data;
     },
 
-    async create(account: Partial<Account>) {
+    async create(account: Partial<any>) {
         const { data } = await api.post(API_ENDPOINTS.ACCOUNTS, account);
         return data;
     },
 
-    async update(id: number, account: Partial<Account>) {
+    async update(id: number, account: Partial<any>) {
         const { data } = await api.put(`${API_ENDPOINTS.ACCOUNTS}/${id}`, account);
         return data;
     },

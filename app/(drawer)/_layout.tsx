@@ -2,7 +2,9 @@ import Lucide from '@react-native-vector-icons/lucide';
 import { DrawerActions } from '@react-navigation/native';
 import { useNavigation } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
+import { CustomDrawerContent } from '../components/CustomDrawerContent';
+
 
 // --- Componente para el Botón de Menú a la Derecha ---
 // Es una buena práctica crear un pequeño componente para esto
@@ -34,55 +36,75 @@ function HeaderBackButton() {
 export default function DrawerLayout() {
     return (
         <Drawer
+            // Aquí está la magia: usamos nuestro componente personalizado
+            drawerContent={(props) => <CustomDrawerContent {...props} />}
+            
             screenOptions={({ navigation }) => ({
                 headerShown: true,
                 headerTransparent: true,
                 headerShadowVisible: false,
-                headerBlurEffect: 'light',
-                // headerBackground: () => (
-                //     <View style={{
-                //         flex: 1,
-                //         backgroundColor: 'rgba(248, 250, 252, 0.8)',
-                //     }} />
-                // ),
-                headerElevation: 1,
+                headerTitle: '', // Ocultamos el título por defecto para un look más limpio
                 headerTitleAlign: 'center',
-                headerTitleStyle: {
-                    fontWeight: 'bold',
-                    fontSize: 18,
-                    color: '#1E293B',
-                },
-
+                
+                // Efecto de blur sutil en el header
+                headerBackground: () => (
+                    <View style={{
+                        flex: 1,
+                        backgroundColor: 'rgba(248, 250, 252, 0.85)', // Un blanco translúcido
+                    }} />
+                ),
+                headerBlurEffect: 'light',
+                
                 headerRight: () => <HeaderMenuButton />,
                 headerLeft: () => navigation.canGoBack() ? <HeaderBackButton /> : null,
 
-                drawerActiveTintColor: '#4F46E5',
-                drawerInactiveTintColor: '#64748B',
-                drawerLabelStyle: { 
-                    fontSize: 16,
+                // --- ESTILOS DEL DRAWER ---
+                drawerStyle: {
+                    width: '80%', // Un ancho más generoso
+                },
+                drawerActiveTintColor: '#4F46E5', // Color para el ícono y texto activo (Indigo)
+                drawerInactiveTintColor: '#64748B', // Color para el ícono y texto inactivo (Slate)
+                drawerActiveBackgroundColor: '#EEF2FF', // Fondo para el ítem activo (Indigo-100)
+
+                drawerLabelStyle: {
+                    fontSize: 16, // Ajuste para alinear con el ícono
+                    fontWeight: '500',
+                },
+                drawerItemStyle: {
+                    borderRadius: 8,
+                    marginVertical: 4, // Espacio entre items
                 },
             })}
         >
-        <Drawer.Screen
-            name="dashboard" // Este es el nombre del archivo, ej: dashboard.tsx
-            options={{
-                title: '', // El título que se mostrará en el header
-                drawerLabel: 'Inicio',
-                drawerIcon: ({ color, size }) => (
-                    <Lucide name="house" size={size} color={color} />
-                ),
-            }}
-        />
-        <Drawer.Screen
-            name="finance/accounts"
-            options={{
-                title: '',
-                drawerLabel: 'Cuentas',
-                drawerIcon: ({ color, size }) => (
-                    <Lucide name="wallet" size={size} color={color} />
-                ),
-            }}
-        />
+            <Drawer.Screen
+                name="dashboard"
+                options={{
+                    drawerLabel: 'Inicio',
+                    drawerIcon: ({ color, size }) => <Lucide name="layout-dashboard" size={size} color={color} />,
+                }}
+            />
+            <Drawer.Screen
+                name="finance/accounts"
+                options={{
+                    drawerLabel: 'Cuentas',
+                    drawerIcon: ({ color, size }) => <Lucide name="wallet" size={size} color={color} />,
+                }}
+            />
+            <Drawer.Screen
+                name="debts/debts"
+                options={{
+                    drawerLabel: 'Deudas',
+                    drawerIcon: ({ color, size }) => <Lucide name="landmark" size={size} color={color} />,
+                }}
+            />
+            <Drawer.Screen
+                name="strategies/strategies"
+                options={{
+                    drawerLabel: 'Estrategias',
+                    drawerIcon: ({ color, size }) => <Lucide name="target" size={size} color={color} />,
+                }}
+            />
+            {/* Puedes añadir más pantallas aquí */}
         </Drawer>
     );
 }
