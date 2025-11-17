@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-export function useInput<T>(initialValue: T) {
-    const [value, setValue] = useState<T>(initialValue);
+export function useInput<T>(initialValue?: T) {
+    const [value, setValue] = useState<T | undefined>(initialValue);
 
     return {
         value,

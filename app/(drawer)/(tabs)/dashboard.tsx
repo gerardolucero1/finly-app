@@ -254,7 +254,7 @@ export default function DashboardScreen() {
 
     return (
         <ScrollView 
-            contentContainerStyle={{ paddingTop: headerHeight + 10, paddingBottom: 40, paddingHorizontal: 15 }}
+            contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 40, paddingHorizontal: 15 }}
             style={styles.container}
             showsVerticalScrollIndicator={false}
         >
@@ -335,8 +335,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     healthTitle: {
+        fontFamily: "Inter_400Regular" ,
         fontSize: 18,
-        fontWeight: 'bold',
         color: '#1E293B',
     },
     healthLabel: {

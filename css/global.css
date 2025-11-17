@@ -3,3 +3,19 @@
 @import "tailwindcss/utilities.css";
  
 @import "nativewind/theme";
+
+body, html, * {
+  font-family: Inter_400Regular;
+}
+
+.font-regular {
+  font-family: Inter_400Regular;
+}
+
+.font-medium {
+  font-family: Inter_500Medium;
+}
+
+.font-bold {
+  font-family: Inter_700Bold;
+}

@@ -77,34 +77,28 @@ export default function DrawerLayout() {
             })}
         >
             <Drawer.Screen
-                name="dashboard"
+                name="(tabs)"
+                options={{ 
+                    drawerItemStyle: { display: 'none' },
+                }}
+            />
+
+            <Drawer.Screen
+                name="edit_profile"
                 options={{
-                    drawerLabel: 'Inicio',
-                    drawerIcon: ({ color, size }) => <Lucide name="layout-dashboard" size={size} color={color} />,
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Editar Perfil',
+                    headerShown: true,
                 }}
             />
             <Drawer.Screen
-                name="finance/accounts"
+                name="edit_password"
                 options={{
-                    drawerLabel: 'Cuentas',
-                    drawerIcon: ({ color, size }) => <Lucide name="wallet" size={size} color={color} />,
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Editar Contraseña',
+                    headerShown: true,
                 }}
             />
-            <Drawer.Screen
-                name="debts/debts"
-                options={{
-                    drawerLabel: 'Deudas',
-                    drawerIcon: ({ color, size }) => <Lucide name="landmark" size={size} color={color} />,
-                }}
-            />
-            <Drawer.Screen
-                name="strategies/strategies"
-                options={{
-                    drawerLabel: 'Estrategias',
-                    drawerIcon: ({ color, size }) => <Lucide name="target" size={size} color={color} />,
-                }}
-            />
-            {/* Puedes añadir más pantallas aquí */}
         </Drawer>
     );
 }

@@ -22,6 +22,7 @@ import {
     FlatList,
     PanResponder,
     Pressable,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -353,34 +354,39 @@ export default function AccountsScreen() {
     }
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight - 20}]}>
-            <View> 
-                <Text className=' text-center text-2xl font-bold py-6'>Mis Cuentas</Text>
-            </View>
+        <View style={[styles.container, { paddingTop: headerHeight - 30 }]}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: COLLAPSED_HEIGHT - 10}}
+            >
+                <View> 
+                    <Text style={[{ fontFamily: 'Inter_700Bold', fontSize: 24, marginTop: 30, textAlign : 'center', marginBottom: 10 }]}>Mis Cuentas</Text>
+                </View>
 
-            {/* Carrusel de Tarjetas */}
-            <FlatList
-                horizontal
-                data={carouselData}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item, index }) => (
-                    <AccountCard item={item} isAddCard={item.id === 'add'} onPressAccount={openAccountModal} />
-                )}
-                showsHorizontalScrollIndicator={false}
-                style={styles.carousel}
-                contentContainerStyle={{ paddingHorizontal: SIDECARD_SPACING }}
-                snapToInterval={CARD_WIDTH + SPACING}
-                decelerationRate="fast"
-                onScroll={onScroll}
-                scrollEventThrottle={16}
-            />
+                {/* Carrusel de Tarjetas */}
+                <FlatList
+                    horizontal
+                    data={carouselData}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item, index }) => (
+                        <AccountCard item={item} isAddCard={item.id === 'add'} onPressAccount={openAccountModal} />
+                    )}
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.carousel}
+                    contentContainerStyle={{ paddingHorizontal: SIDECARD_SPACING }}
+                    snapToInterval={CARD_WIDTH + SPACING}
+                    decelerationRate="fast"
+                    onScroll={onScroll}
+                    scrollEventThrottle={16}
+                />
 
-            {/* Botones de Acción */}
-            <View style={styles.actionsContainer}>
-                <ActionButton icon="banknote-arrow-up" label="Ingreso" onPress={() => openIncomeModal()} />
-                <ActionButton icon="banknote-arrow-down" label="Gasto" onPress={openExpenseModal} />
-                <ActionButton icon="arrow-right-left" label="Transferir" onPress={openTransferModal} />
-            </View>
+                {/* Botones de Acción */}
+                <View style={styles.actionsContainer}>
+                    <ActionButton icon="banknote-arrow-up" label="Ingreso" onPress={() => openIncomeModal()} />
+                    <ActionButton icon="banknote-arrow-down" label="Gasto" onPress={openExpenseModal} />
+                    <ActionButton icon="arrow-right-left" label="Transferir" onPress={openTransferModal} />
+                </View>
+            </ScrollView>
 
             {/* Overlay oscuro */}
             <Animated.View 
@@ -469,6 +475,7 @@ export default function AccountsScreen() {
                 accounts={accounts.value}
                 selectedAccount={accounts.value[activeIndex] || null}
             />
+            
         </View>
     );
 }
@@ -492,7 +499,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         alignItems: 'center',
         fontSize: 28,
-        fontWeight: 'bold',
+        fontFamily: 'Inter_700Bold',
         color: '#1E293B',
     },
     carousel: {
@@ -542,17 +549,18 @@ const styles = StyleSheet.create({
     cardType: { 
         color: '#FFF', 
         fontSize: 16, 
-        fontWeight: '600' 
+        fontFamily: 'Inter_700Bold',
     },
     cardBody: {},
     cardBalanceLabel: { 
         color: 'rgba(255,255,255,0.7)', 
-        fontSize: 14 
+        fontSize: 14,
+        fontFamily: 'Inter_400Regular',
     },
     cardBalance: { 
         color: '#FFF', 
         fontSize: 32, 
-        fontWeight: 'bold' 
+        fontFamily: 'Inter_700Bold',
     },
     cardFooter: { 
         flexDirection: 'row', 
@@ -562,7 +570,8 @@ const styles = StyleSheet.create({
     cardNumber: { 
         color: '#FFF', 
         fontSize: 16, 
-        letterSpacing: 2 
+        letterSpacing: 2,
+        fontFamily: 'Inter_500Medium',
     },
     actionsContainer: {
         flexDirection: 'row',
@@ -591,6 +600,7 @@ const styles = StyleSheet.create({
         color: '#475569',
         fontSize: 12,
         fontWeight: '500',
+        fontFamily: 'Inter_400Regular',
     },
     overlay: {
         position: 'absolute',
@@ -635,7 +645,7 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontFamily: 'Inter_700Bold',
         color: '#1E293B',
     },
     expandButton: {
@@ -645,6 +655,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 30,
         color: '#64748B',
+        fontFamily: 'Inter_400Regular',
     },
     transactionItem: {
         flexDirection: 'row',
@@ -667,22 +678,24 @@ const styles = StyleSheet.create({
     },
     transactionName: {
         fontSize: 16,
-        fontWeight: '600',
+        fontFamily: 'Inter_500Medium',
         color: '#1E293B',
     },
     transactionCategory: {
         fontSize: 13,
         color: '#64748B',
         marginTop: 2,
+        fontFamily: 'Inter_400Regular',
     },
     transactionDate: {
         fontSize: 12,
         color: '#94A3B8',
         marginTop: 1,
+        fontFamily: 'Inter_400Regular',
     },
     transactionAmount: {
         fontSize: 15,
-        fontWeight: '700',
+        fontFamily: 'Inter_700Bold',
         minWidth: 80,
         textAlign: 'right',
     },

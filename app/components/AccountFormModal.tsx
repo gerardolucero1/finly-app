@@ -308,9 +308,9 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                 onChangeText={(value) => handleInputChange('current_balance', value)}
                             />
                             {(form.type === 'debit' || form.type === 'cash') ? (
-                                <Text className=' text-xs'>El saldo actual en tu cuenta</Text>
+                                <Text style={[{ fontFamily: 'Inter_400Regular', fontSize: 9 }]}>El saldo actual en tu cuenta</Text>
                             ) : (
-                                <Text className=' text-xs'>Deuda actual de tu TDC</Text>
+                                <Text style={[{ fontFamily: 'Inter_400Regular', fontSize: 9 }]}>Deuda actual de tu TDC</Text>
                             )}
                         </View>
                         {errors.current_balance && <Text style={styles.errorText}>{errors.current_balance}</Text>}
@@ -381,12 +381,12 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 20,
-        fontWeight: 'bold',
+        fontFamily: 'Inter_700Bold',
         color: '#1E293B',
     },
     label: {
         fontSize: 14,
-        fontWeight: '500',
+        fontFamily: 'Inter_400Regular',
         color: '#475569',
         marginTop: 16,
         marginBottom: 8,
@@ -400,7 +400,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         paddingVertical: 12,
         fontSize: 16,
-        color: '#1E293B'
+        color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
     },
     inputError: {
         borderColor: '#EF4444',
@@ -424,6 +425,7 @@ const styles = StyleSheet.create({
     typeButtonText: {
         fontSize: 14,
         color: '#475569',
+        fontFamily: 'Inter_700Bold',
     },
     row: {
         flexDirection: 'row',
@@ -441,8 +443,8 @@ const styles = StyleSheet.create({
     },
     currencySymbol: {
         fontSize: 18,
-        fontWeight: '600',
         color: '#64748B',
+        fontFamily: 'Inter_400Regular',
     },
     currencyInput: {
         flex: 1,
@@ -450,6 +452,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#1E293B',
         marginLeft: 8,
+        fontFamily: 'Inter_400Regular',
     },
     datePickerButton: {
         backgroundColor: '#F1F5F9',
@@ -463,6 +466,7 @@ const styles = StyleSheet.create({
     datePickerText: {
         fontSize: 16,
         color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
     },
     footer: {
         flexDirection: 'row',
@@ -485,7 +489,7 @@ const styles = StyleSheet.create({
     cancelButtonText: {
         color: '#475569',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontFamily: 'Inter_700Bold',
     },
     saveButton: {
         flex: 1,
@@ -500,12 +504,13 @@ const styles = StyleSheet.create({
     saveButtonText: {
         color: '#FFF',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontFamily: 'Inter_700Bold',
     },
     errorText: {
         color: '#EF4444',
         fontSize: 12,
         marginTop: 4,
+        fontFamily: 'Inter_400Regular',
     },
 });
 

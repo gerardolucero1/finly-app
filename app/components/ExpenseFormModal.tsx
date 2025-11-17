@@ -343,12 +343,12 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 20,
-        fontWeight: 'bold',
+        fontFamily: 'Inter_700Bold',
         color: '#1E293B',
     },
     label: {
         fontSize: 14,
-        fontWeight: '500',
+        fontFamily: 'Inter_400Regular',
         color: '#475569',
         marginTop: 16,
         marginBottom: 8,
@@ -359,7 +359,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         paddingVertical: 12,
         fontSize: 16,
-        color: '#1E293B'
+        color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
     },
     amountContainer: {
         backgroundColor: '#F1F5F9',
@@ -370,16 +371,16 @@ const styles = StyleSheet.create({
     },
     currencySymbol: {
         fontSize: 24,
-        fontWeight: 'bold',
+        fontFamily: 'Inter_700Bold',
         color: '#64748B',
     },
     amountInput: {
         flex: 1,
         paddingVertical: 12,
         fontSize: 24,
-        fontWeight: 'bold',
         color: '#1E293B',
         marginLeft: 10,
+        fontFamily: 'Inter_700Bold',
     },
     datePickerButton: {
         backgroundColor: '#F1F5F9',
@@ -393,6 +394,7 @@ const styles = StyleSheet.create({
     datePickerText: {
         fontSize: 16,
         color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
     },
     filePickerButton: {
         backgroundColor: '#EEF2FF',
@@ -410,6 +412,7 @@ const styles = StyleSheet.create({
         color: '#4F46E5',
         fontWeight: '500',
         marginLeft: 10,
+        fontFamily: 'Inter_400Regular',
     },
     saveButton: {
         backgroundColor: '#4F46E5',
@@ -421,12 +424,13 @@ const styles = StyleSheet.create({
     saveButtonText: {
         color: '#FFF',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontFamily: 'Inter_700Bold',
     },
     errorText: {
         color: 'red',
         fontSize: 11,
         marginTop: 2,
+        fontFamily: 'Inter_400Regular',
     },
 });
 
@@ -438,6 +442,7 @@ const pickerSelectStyles = StyleSheet.create({
         backgroundColor: '#F1F5F9',
         borderRadius: 8,
         color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
     },
     inputAndroid: {
         fontSize: 16,
@@ -446,6 +451,7 @@ const pickerSelectStyles = StyleSheet.create({
         backgroundColor: '#F1F5F9',
         borderRadius: 8,
         color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
     },
     iconContainer: {
         top: 15,

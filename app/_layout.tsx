@@ -1,8 +1,9 @@
+import { Inter_400Regular, Inter_500Medium, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, TextInput } from 'react-native';
 import { SheetProvider, registerSheet } from 'react-native-actions-sheet';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import '../css/global.css';
@@ -15,7 +16,30 @@ function RootLayoutNav() {
     const segments = useSegments();
     const router = useRouter();
 
+    const [loaded] = useFonts({
+        Inter_400Regular,
+        Inter_500Medium,
+        Inter_700Bold,
+    });
+
     useEffect(() => {
+        if (loaded) {
+            SplashScreen.hideAsync();
+        }
+    }, [loaded]);
+
+    useEffect(() => {
+        if (!loaded) return;
+        // @ts-ignore
+        Text.defaultProps = Text.defaultProps || {};
+        // @ts-ignore
+        Text.defaultProps.style = { fontFamily: 'Inter_400Regular' };
+
+        // @ts-ignore
+        TextInput.defaultProps = TextInput.defaultProps || {};
+        // @ts-ignore
+        TextInput.defaultProps.style = { fontFamily: 'Inter_400Regular' };
+        
         const checkAuth = async () => {
             try {
                 let token;
@@ -39,24 +63,25 @@ function RootLayoutNav() {
         };
 
         checkAuth();
-    }, [segments]);
+    }, [segments, loaded]);
+
+    if (!loaded) return null; // <-- el return va al FINAL de los hooks
 
     return (
         <Stack>
             <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
             <Stack.Screen
                 name="auth/login"
-                options={{
-                    headerShown: false,
-                    presentation: 'fullScreenModal',
-                }}
+                options={{ headerShown: false, presentation: 'fullScreenModal' }}
             />
         </Stack>
     );
 }
 
+
 function RootLayoutInner() {
     const insets = useSafeAreaInsets();
+    
 
     return (
         <SafeAreaView
