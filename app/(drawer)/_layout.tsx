@@ -99,6 +99,14 @@ export default function DrawerLayout() {
                     headerShown: true,
                 }}
             />
+            <Drawer.Screen
+                name="edit_suscription"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Editar Suscripcion',
+                    headerShown: true,
+                }}
+            />
         </Drawer>
     );
 }

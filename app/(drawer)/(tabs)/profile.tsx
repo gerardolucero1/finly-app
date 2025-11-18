@@ -40,6 +40,7 @@ export default function ProfileScreen() {
 
     const handleEditProfile = () => router.push({ pathname: '/edit_profile', params: { profile: JSON.stringify(profile.value) } })
     const handleChangePassword = () => router.push('/edit_password')
+    const handleEditSuscription = () => router.push({ pathname: '/edit_suscription', params: { profile: JSON.stringify(profile.value) } })
     const handleNotifications = () => Alert.alert("Navegar", "Ir a la pantalla de notificaciones.");
     const handleAppearance = () => Alert.alert("Navegar", "Ir a la pantalla de apariencia (tema oscuro/claro).");
 
@@ -132,7 +133,7 @@ export default function ProfileScreen() {
                         </View>
                         <Lucide name="gem" size={32} color="#4F46E5" />
                     </View>
-                    <ProfileOption icon="credit-card" label="Administrar Suscripción" onPress={handleManageSubscription} />
+                    <ProfileOption icon="credit-card" label="Administrar Suscripción" onPress={handleEditSuscription} />
                 </View>
             )}
 
