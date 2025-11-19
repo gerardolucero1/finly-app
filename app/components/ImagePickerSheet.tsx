@@ -36,13 +36,13 @@ export const ImagePickerSheet = (props: any) => {
                 <TouchableOpacity style={styles.button} onPress={pickFromCamera}>
                     <Text style={styles.buttonText}>Tomar foto</Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity style={styles.button} onPress={pickFromLibrary}>
                     <Text style={styles.buttonText}>Elegir de galería</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
-                    style={[styles.button, styles.cancelButton]} 
+
+                <TouchableOpacity
+                    style={[styles.button, styles.cancelButton]}
                     onPress={() => SheetManager.hide('image-picker')}
                 >
                     <Text style={[styles.buttonText, styles.cancelText]}>Cancelar</Text>
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#FFF',
         fontSize: 16,
-        fontWeight: '600',
+        fontFamily: 'Inter_700Bold',
     },
     cancelButton: {
         backgroundColor: '#F1F5F9',

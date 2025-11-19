@@ -30,7 +30,7 @@ export const ProfileService = {
         // La ruta RESTful para actualizar el perfil del usuario actual no necesita un ID.
         // El backend identifica al usuario a través del token de autenticación.
         // Usamos PUT o POST. PUT es común, pero POST es mejor si incluyes subida de archivos (foto).
-        const { data } = await api.put<Profile>(API_ENDPOINTS.PROFILE, profileData); 
+        const { data } = await api.put<Profile>(API_ENDPOINTS.PROFILE, profileData);
         // Nota: Laravel a menudo prefiere POST para actualizaciones para evitar problemas con `form-data`.
         return data;
     },
@@ -40,8 +40,8 @@ export const ProfileService = {
      * Se recomienda un método separado para la subida de archivos.
      * @param formData - Un objeto FormData que contiene el archivo de imagen.
      */
-    async updateProfilePicture(formData: FormData): Promise<Profile> {
-        const { data } = await api.post<Profile>(API_ENDPOINTS.UPDATE_PICTURE, formData, {
+    async updateProfilePicture(formData: FormData): Promise<string> {
+        const { data } = await api.post<string>(API_ENDPOINTS.UPDATE_PICTURE, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },

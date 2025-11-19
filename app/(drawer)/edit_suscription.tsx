@@ -1,25 +1,43 @@
-// app/screens/ManageSubscriptionScreen.tsx
-import { PricingCard } from '@/app/components/PricingCard';
-import { SubscriptionStatusCard } from '@/app/components/SubscriptionStatusCard';
 import { TrustBadges } from '@/app/components/TrustBadges';
-import { Profile } from '@/models/profile';
+import { ProfileService } from '@/services/profile';
+import { SubscriptionService } from '@/services/subscription';
+import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
+// 1. Importamos el hook de Stripe
+import { useStripe } from '@stripe/stripe-react-native';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Alert, Dimensions, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    FlatList,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { useCustomAlert } from '../components/CustomAlert';
+import { useProfileStore } from '../store';
 
-const { width } = Dimensions.get('window');
+// --- CONFIGURACIÓN DE DISEÑO ---
+const { width: screenWidth } = Dimensions.get('window');
+const CARD_WIDTH = screenWidth * 0.80;
+const SPACING = 15;
+const SIDECARD_SPACING = (screenWidth - CARD_WIDTH) / 2;
 
-// Mock de datos, deberías obtenerlos de tu API o tenerlos como constantes
+// Mock de datos
 const PLANS = [
     {
         name: 'Básico',
         price: '10',
         period: '/Mes',
-        description: 'Ideal para iniciar tu control financiero.',
-        features: [ 'Registro ilimitado de Gastos e Ingresos', 'Dashboard financiero básico', 'Gestión de Cuentas', 'Soporte estándar por email' ],
-        icon: '🚀',
-        accentColor: '#3B82F6',
+        description: 'Ideal para iniciar tu control.',
+        features: ['Gastos ilimitados', 'Dashboard básico', 'Soporte email'],
+        icon: 'rocket',
+        accentColor: '#4F46E5',
         recommended: false,
         price_id: 'price_1SLR9U6dZB8Inoh7jLDAgJIu',
     },
@@ -27,10 +45,10 @@ const PLANS = [
         name: 'Premium',
         price: '25',
         period: '/Mes',
-        description: 'El más popular para un control avanzado.',
-        features: [ 'Todo lo del plan Básico', 'Análisis y reportes detallados', 'Gestión completa de Deudas', 'IA para análisis de tickets', 'Soporte prioritario 24/7' ],
-        icon: '⭐',
-        accentColor: '#6366F1',
+        description: 'Control total y avanzado.',
+        features: ['Todo lo de Básico', 'Reportes PDF', 'IA Análisis', 'Soporte 24/7'],
+        icon: 'star',
+        accentColor: '#7C3AED',
         recommended: true,
         price_id: 'price_1SLREL6dZB8Inoh7YDQn09BA',
     },
@@ -38,123 +56,737 @@ const PLANS = [
         name: 'VIP',
         price: '60',
         period: '/Mes',
-        description: 'El mejor valor para una optimización total.',
-        features: [ 'Todo lo del plan Premium', 'Generación ilimitada de Estrategias IA', 'Chat con IA para consultas', 'Consultoría financiera mensual', 'Soporte VIP dedicado' ],
-        icon: '👑',
-        accentColor: '#8B5CF6',
+        description: 'Optimización financiera total.',
+        features: ['Todo lo de Premium', 'Asesor personal', 'Estrategias IA', 'Chat VIP'],
+        icon: 'crown',
+        accentColor: '#DB2777',
         recommended: false,
-        price_id: 'price_1SLRANUAL6dZB8Inoh7XXXXX',
+        price_id: 'price_1SVEmr6dZB8Inoh78F9Cojsm',
     },
 ];
 
-export default function ManageSubscriptionScreen() {
-
-    const params = useLocalSearchParams();
-    const profile = useMemo(() => {
-        if (!params.profile) return null;
-        return JSON.parse(params.profile as string) as Profile;
-    }, [params.profile]);
-
-    if (!profile) {
-        return <Text>Cargando...</Text>;
-    }
-
-    const [user, setUser] = useState<Profile>(profile);
-    const headerHeight = useHeaderHeight();
-
-    // Lógica para manejar la selección de planes
-    const handleSelectPlan = (plan) => {
-        Alert.alert(
-            `Confirmar cambio a ${plan.name}`,
-            `Serás redirigido a Stripe para completar tu suscripción.`,
-            [
-                { text: 'Cancelar' },
-                { text: 'Continuar', onPress: () => console.log('Redirigiendo a Stripe con price_id:', plan.price_id) },
-            ]
-        );
+interface StatusSectionProps {
+    subscription: {
+        planName: string;
+        isOnGracePeriod: boolean;
+        endsAt: string | null;
     };
+    onCancel: () => void;
+    onResume: () => void;
+    isLoading: boolean;
+}
 
-    const handleCancel = () => Alert.alert('Cancelar Suscripción', 'Serás redirigido para confirmar la cancelación.');
-    const handleResume = () => Alert.alert('Reanudar Suscripción', 'Serás redirigido para reanudar tu plan.');
-    const handleManageBilling = () => Alert.alert('Gestionar Facturación', 'Serás redirigido al portal de Stripe.');
+// --- COMPONENTES VISUALES LOCALES ---
 
-    const subscription = user.subscription;
-    const isSubscribed = subscription?.stripe_status === 'active';
-    const isOnGracePeriod = !!subscription?.ends_at;
-    const currentPlanPriceId = subscription?.stripe_price;
+// Agregamos prop 'isLoading' para feedback visual
+const PlanCard = ({ item, isCurrent, isLoading, onPress }: { item: any, isCurrent: boolean, isLoading: boolean, onPress: () => void }) => {
+    let iconName = 'box';
+    if (item.icon === 'rocket') iconName = 'rocket';
+    if (item.icon === 'star') iconName = 'star';
+    if (item.icon === 'crown') iconName = 'crown';
 
-    const currentPlan = PLANS.find(p => p.price_id === currentPlanPriceId);
+    // Determinamos el texto del botón
+    let buttonText = 'Seleccionar Plan';
+    if (isCurrent) buttonText = 'Plan Actual';
+    if (isLoading) buttonText = 'Procesando...';
 
     return (
-        <ScrollView 
-            style={styles.container} 
-            contentContainerStyle={[styles.contentContainer, { paddingTop: headerHeight }]}
-        >
-            <View style={styles.header}>
-                <Text style={styles.title}>Suscripción</Text>
-                <Text style={styles.subtitle}>Actualiza tu suscripcion desde aquí.</Text>
-            </View>
-            
-            <SubscriptionStatusCard
-                subscription={isSubscribed && currentPlan ? {
-                    planName: currentPlan.name,
-                    icon: currentPlan.icon,
-                    accentColor: currentPlan.accentColor,
-                    isOnGracePeriod: isOnGracePeriod,
-                    endsAt: isOnGracePeriod ? new Date(subscription.ends_at).toLocaleDateString('es-ES') : undefined,
-                } : undefined}
-                onManageBilling={handleManageBilling}
-                onCancel={handleCancel}
-                onResume={handleResume}
-            />
+        <Pressable onPress={isLoading || isCurrent ? undefined : onPress} style={[styles.cardShadow]}>
+            <View style={[styles.card, { backgroundColor: item.accentColor }]}>
+                <View style={styles.cardDecoration1} />
+                <View style={styles.cardDecoration2} />
 
-            <FlatList
-                horizontal
-                data={PLANS}
-                keyExtractor={(item) => item.price_id}
-                renderItem={({ item }) => (
-                    <PricingCard 
-                        plan={item} 
-                        isCurrentPlan={item.price_id === currentPlanPriceId}
-                        isSubscribed={isSubscribed}
-                        onSelectPlan={handleSelectPlan}
+                <View style={styles.cardHeader}>
+                    <View>
+                        <Text style={styles.cardType}>{item.name}</Text>
+                        {item.recommended && (
+                            <View style={styles.recommendedBadge}>
+                                <Text style={styles.recommendedText}>Recomendado</Text>
+                            </View>
+                        )}
+                    </View>
+                    <Lucide name={iconName} size={32} color="rgba(255,255,255,0.6)" />
+                </View>
+
+                <View style={styles.cardBody}>
+                    <Text style={styles.cardDescription}>{item.description}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 10 }}>
+                        <Text style={styles.cardBalance}>${item.price}</Text>
+                        <Text style={styles.cardPeriod}>{item.period}</Text>
+                    </View>
+                </View>
+
+                <View style={styles.cardFooter}>
+                    {item.features.map((feature: string, index: number) => (
+                        <View key={index} style={styles.featureRow}>
+                            <Lucide name="check" size={16} color="#A5B4FC" />
+                            <Text style={styles.featureText} numberOfLines={1}>{feature}</Text>
+                        </View>
+                    ))}
+                </View>
+
+                <TouchableOpacity
+                    style={[
+                        styles.selectButton,
+                        isCurrent && styles.currentButton,
+                        isLoading && { opacity: 0.8 }
+                    ]}
+                    onPress={onPress}
+                    disabled={isCurrent || isLoading}
+                >
+                    {isLoading ? (
+                        <ActivityIndicator color={item.accentColor} size="small" />
+                    ) : (
+                        <Text style={[styles.selectButtonText, isCurrent && styles.currentButtonText]}>
+                            {buttonText}
+                        </Text>
+                    )}
+                </TouchableOpacity>
+            </View>
+        </Pressable>
+    );
+};
+
+const StatusSection = ({ subscription, onCancel, onResume, isLoading }: StatusSectionProps) => {
+    if (!subscription) return null;
+
+    return (
+        <View style={styles.statusContainer}>
+            {/* Header de la tarjeta */}
+            <View style={styles.statusHeader}>
+                <View style={[styles.iconContainer, subscription.isOnGracePeriod && styles.iconContainerWarning]}>
+                    <Lucide
+                        name={subscription.isOnGracePeriod ? "badge-alert" : "badge-check"}
+                        size={24}
+                        color={subscription.isOnGracePeriod ? "#D97706" : "#4F46E5"}
                     />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={styles.statusTitle}>
+                        {subscription.isOnGracePeriod ? 'Cancelación Programada' : 'Suscripción Activa'}
+                    </Text>
+                    <Text style={styles.statusSubtitle}>
+                        Plan {subscription.planName}
+                    </Text>
+                </View>
+            </View>
+
+            {/* Información de fecha */}
+            {subscription.endsAt && (
+                <View style={[styles.infoBox, subscription.isOnGracePeriod && styles.infoBoxWarning]}>
+                    <Lucide name="calendar-clock" size={16} color={subscription.isOnGracePeriod ? "#B45309" : "#4F46E5"} />
+                    <Text style={[styles.infoText, subscription.isOnGracePeriod && styles.infoTextWarning]}>
+                        {subscription.isOnGracePeriod
+                            ? `Acceso disponible hasta el: ${subscription.endsAt}`
+                            : `Próxima renovación: ${subscription.endsAt}`
+                        }
+                    </Text>
+                </View>
+            )}
+
+            {/* Botones de Acción */}
+            <View style={styles.statusActions}>
+                {subscription.isOnGracePeriod ? (
+                    // Estado: Cancelado -> Mostrar REANUDAR
+                    <TouchableOpacity
+                        style={[styles.actionBtn, styles.resumeBtn]}
+                        onPress={onResume}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator size="small" color="#FFF" />
+                        ) : (
+                            <>
+                                <Lucide name="refresh-ccw" size={18} color="#FFF" />
+                                <Text style={styles.resumeBtnText}>Reanudar Suscripción</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                ) : (
+                    // Estado: Activo -> Mostrar CANCELAR
+                    <TouchableOpacity
+                        style={[styles.actionBtn, styles.cancelBtn]}
+                        onPress={onCancel}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator size="small" color="#EF4444" />
+                        ) : (
+                            <Text style={styles.cancelBtnText}>Cancelar Suscripción</Text>
+                        )}
+                    </TouchableOpacity>
                 )}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.carouselContainer}
-                snapToInterval={width * 0.90}
-                decelerationRate="fast"
-            />
-            
-            <TrustBadges />
-        </ScrollView>
+            </View>
+        </View>
+    );
+};
+
+
+// --- PANTALLA PRINCIPAL ---
+
+export default function ManageSubscriptionScreen() {
+    const params = useLocalSearchParams();
+    const headerHeight = useHeaderHeight();
+    const [statusLoading, setStatusLoading] = useState(false);
+    const { initPaymentSheet, presentPaymentSheet } = useStripe();
+    const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const profile = useProfileStore((state) => state.profile);
+    const setProfile = useProfileStore((state) => state.setProfile);
+    const { showAlert, AlertComponent } = useCustomAlert();
+
+    if (!profile) {
+        return (
+            <View style={[styles.centered, { paddingTop: headerHeight }]}>
+                <Text style={{ fontFamily: 'Inter_500Medium' }}>Cargando información...</Text>
+            </View>
+        );
+    }
+
+    const fetchUserProfile = async () => {
+        try {
+            const response = await ProfileService.get();
+            setProfile(response);
+
+        } catch (error) {
+            console.error('Error fetching user profile:', error);
+        }
+    };
+
+    // 3. Lógica de Pago Nativa (Payment Sheet)
+    const handleSelectPlan = async (plan: any) => {
+        setLoadingPlanId(plan.price_id);
+
+        try {
+            console.log('1. Solicitando PaymentIntent para:', plan.price_id);
+
+            // A. Obtener PaymentIntent del backend
+            const response = await SubscriptionService.subscribe(plan.price_id);
+
+            console.log('2. Respuesta recibida');
+
+            const { paymentIntent, ephemeralKey, customer, priceId } = response;
+
+            if (!paymentIntent || !ephemeralKey || !customer) {
+                console.error('3. Datos incompletos:', { paymentIntent, ephemeralKey, customer });
+                showAlert({
+                    icon: 'x',
+                    title: 'Error',
+                    type: 'danger',
+                    message: 'Faltan datos para procesar el pago.',
+                })
+                return;
+            }
+
+            console.log('3. Inicializando Payment Sheet');
+
+            // B. Inicializar Payment Sheet
+            const { error: initError } = await initPaymentSheet({
+                merchantDisplayName: "Tu App de Finanzas",
+                customerId: customer,
+                customerEphemeralKeySecret: ephemeralKey,
+                paymentIntentClientSecret: paymentIntent,
+                appearance: {
+                    colors: { primary: plan.accentColor || '#007AFF' }
+                },
+                defaultBillingDetails: {
+                    email: profile?.email
+                },
+                allowsDelayedPaymentMethods: true,
+            });
+
+            if (initError) {
+                console.error('4. Error al inicializar:', initError);
+                showAlert({
+                    icon: 'x',
+                    title: 'Error',
+                    type: 'danger',
+                    message: initError.message,
+                })
+                return;
+            }
+
+            console.log('4. Presentando Payment Sheet');
+
+            // C. Presentar Payment Sheet
+            const { error: paymentError } = await presentPaymentSheet();
+
+            if (paymentError) {
+                if (paymentError.code === 'Canceled') {
+                    console.log('5. Usuario canceló el pago');
+                } else {
+                    console.error('5. Error en el pago:', paymentError);
+                    showAlert({
+                        icon: 'x',
+                        title: 'Error',
+                        type: 'danger',
+                        message: paymentError.message,
+                    })
+                }
+                return;
+            }
+
+            console.log('5. Pago exitoso, confirmando suscripción...');
+
+            // D. Confirmar la suscripción en el backend
+            // Extraer el payment_intent_id del client_secret
+            const paymentIntentId = paymentIntent.split('_secret_')[0];
+
+            const confirmResponse = await SubscriptionService.confirmSubscription({
+                price_id: priceId,
+                payment_intent_id: paymentIntentId,
+            });
+
+            if (confirmResponse.success) {
+                console.log('6. Suscripción activada exitosamente');
+                showAlert({
+                    icon: 'check',
+                    title: 'Éxito',
+                    type: 'success',
+                    message: 'Tu suscripción se ha activado correctamente.',
+                })
+                // Recargar perfil del usuario
+                await fetchUserProfile();
+            } else {
+                showAlert({
+                    icon: 'x',
+                    title: 'Error',
+                    type: 'danger',
+                    message: 'No se pudo activar la suscripción.',
+                })
+            }
+
+        } catch (error: any) {
+            console.error('Error completo:', error);
+            console.error('Respuesta:', error.response?.data);
+            showAlert({
+                icon: 'x',
+                title: 'Error',
+                type: 'danger',
+                message: error.response?.data?.error || 'Error al procesar.',
+            })
+        } finally {
+            setLoadingPlanId(null);
+        }
+    };
+
+    const handleCancel = () => {
+        showAlert({
+            icon: 'x',
+            title: '¿Cancelar suscripción?',
+            type: 'danger',
+            message: 'Seguirás teniendo acceso a los beneficios hasta el final del periodo de facturación actual.',
+            buttons: [
+                {
+                    text: "Mantener",
+                    style: "default",
+                    onPress: () => {
+                        showAlert({
+                            icon: 'check',
+                            title: 'Suscripción mantenida',
+                            type: 'success',
+                            message: 'Tu suscripción se mantiene activa.',
+                        })
+                    }
+                },
+                {
+                    text: "Cancelar",
+                    style: "danger",
+                    onPress: async () => {
+                        setStatusLoading(true);
+                        try {
+                            await SubscriptionService.cancelSubscription(); // Tu llamada a API
+                            showAlert({
+                                icon: 'check',
+                                title: 'Suscripción cancelada',
+                                type: 'success',
+                                message: 'Tu plan no se renovará el próximo mes.',
+                            })
+                            await fetchUserProfile();
+                        } catch (error) {
+                            showAlert({
+                                icon: 'x',
+                                title: 'Error',
+                                type: 'danger',
+                                message: 'No pudimos cancelar la suscripción.',
+                            })
+                        } finally {
+                            setStatusLoading(false);
+                        }
+                    }
+                }
+            ]
+        });
+    };
+
+    // Lógica para REANUDAR
+    const handleResume = () => {
+        showAlert({
+            icon: 'circle-question-mark',
+            title: 'Reanudar suscripción',
+            type: 'success',
+            message: 'Tu plan volverá a renovarse automáticamente al finalizar el periodo actual.',
+            buttons: [
+                {
+                    text: "Cancelar",
+                    style: "default",
+                    onPress: () => {
+                        showAlert({
+                            icon: 'x',
+                            title: 'Suscripción cancelada',
+                            type: 'danger',
+                            message: 'Tu suscripción se mantiene cancelada.',
+                        })
+                    }
+                },
+                {
+                    text: "Confirmar",
+                    style: "success",
+                    onPress: async () => {
+                        setStatusLoading(true);
+                        try {
+                            await SubscriptionService.resumeSubscription(); // Tu llamada a API
+                            showAlert({
+                                icon: 'check',
+                                title: 'Suscripción reanudada',
+                                type: 'success',
+                                message: 'Tu suscripción ha sido reactivada.',
+                            })
+                            await fetchUserProfile();
+                        } catch (error) {
+                            showAlert({
+                                icon: 'x',
+                                title: 'Error',
+                                type: 'danger',
+                                message: 'No pudimos reanudar la suscripción.',
+                            })
+                        } finally {
+                            setStatusLoading(false);
+                        }
+                    }
+                }
+            ]
+        });
+    };
+
+    const handleManageBilling = async () => {
+        Alert.alert("Gestionar", "Aquí podrías abrir el Customer Portal de Stripe en un WebView o navegador.");
+    };
+
+    const subscription = profile.subscription;
+    const isSubscribed = subscription?.stripe_status === 'active' || subscription?.stripe_status === 'trialing';
+    const currentPlanPriceId = subscription?.stripe_price;
+    const currentPlanObj = PLANS.find(p => p.price_id === currentPlanPriceId);
+
+    const onScroll = (event: any) => {
+        const index = Math.round(event.nativeEvent.contentOffset.x / (CARD_WIDTH + SPACING));
+        if (index !== activeIndex) setActiveIndex(index);
+    };
+
+    return (
+        <View style={[styles.container, { paddingTop: headerHeight }]}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 40 }}
+            >
+                <View style={styles.headerContainer}>
+                    <Text style={styles.pageTitle}>Suscripción</Text>
+                    <Text style={styles.pageSubtitle}>Elige el plan perfecto para tus finanzas</Text>
+                </View>
+
+                {isSubscribed && currentPlanObj && (
+                    <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+                        <StatusSection
+                            subscription={{
+                                planName: currentPlanObj.name,
+                                isOnGracePeriod: !!subscription?.ends_at,
+                                endsAt: subscription?.ends_at ? new Date(subscription.ends_at).toLocaleDateString() : null
+                            }}
+                            // Pasamos las nuevas funciones y estado
+                            onCancel={handleCancel}
+                            onResume={handleResume}
+                            isLoading={statusLoading}
+                        />
+                    </View>
+                )}
+
+                <View>
+                    <FlatList
+                        horizontal
+                        data={PLANS}
+                        keyExtractor={(item) => item.price_id}
+                        renderItem={({ item }) => (
+                            <PlanCard
+                                item={item}
+                                isCurrent={item.price_id === currentPlanPriceId}
+                                isLoading={loadingPlanId === item.price_id} // Estado de carga individual
+                                onPress={() => handleSelectPlan(item)}
+                            />
+                        )}
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.carousel}
+                        contentContainerStyle={{ paddingHorizontal: SIDECARD_SPACING }}
+                        snapToInterval={CARD_WIDTH + SPACING}
+                        decelerationRate="fast"
+                        onScroll={onScroll}
+                        scrollEventThrottle={16}
+                    />
+                </View>
+
+                <View style={{ marginTop: 30, paddingHorizontal: 20 }}>
+                    <TrustBadges />
+                </View>
+
+            </ScrollView>
+            <AlertComponent />
+        </View>
     );
 }
 
+// --- ESTILOS (Sin cambios mayores, solo opacidad en loading) ---
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8FAFC',
     },
-    contentContainer: {
-        flexGrow: 1,
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+    },
+    headerContainer: {
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 20,
+        alignItems: 'center',
+    },
+    pageTitle: {
+        fontFamily: 'Inter_700Bold',
+        fontSize: 24,
+        color: '#1E293B',
+        marginBottom: 4,
+    },
+    pageSubtitle: {
+        fontFamily: 'Inter_400Regular',
+        fontSize: 14,
+        color: '#64748B',
+    },
+    carousel: {
+        paddingVertical: 10,
+    },
+    cardShadow: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 5,
+        marginBottom: 10,
+    },
+    card: {
+        width: CARD_WIDTH,
+        height: 420,
+        borderRadius: 24,
+        marginHorizontal: SPACING / 2,
+        padding: 24,
+        justifyContent: 'space-between',
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    cardDecoration1: {
+        position: 'absolute',
+        width: 250,
+        height: 250,
+        borderRadius: 125,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        top: -80,
+        right: -80,
+    },
+    cardDecoration2: {
+        position: 'absolute',
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        bottom: -40,
+        left: -40,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+    },
+    cardType: {
+        color: '#FFF',
+        fontSize: 22,
+        fontFamily: 'Inter_700Bold',
+    },
+    recommendedBadge: {
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+        marginTop: 4,
+        alignSelf: 'flex-start',
+    },
+    recommendedText: {
+        color: '#FFF',
+        fontSize: 10,
+        fontFamily: 'Inter_700Bold',
+        textTransform: 'uppercase',
+    },
+    cardBody: {
+        marginTop: 10,
+    },
+    cardDescription: {
+        color: 'rgba(255,255,255,0.9)',
+        fontSize: 14,
+        fontFamily: 'Inter_400Regular',
+        marginBottom: 4,
+    },
+    cardBalance: {
+        color: '#FFF',
+        fontSize: 42,
+        fontFamily: 'Inter_700Bold',
+    },
+    cardPeriod: {
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 16,
+        fontFamily: 'Inter_500Medium',
+        marginLeft: 4,
+        marginBottom: 6,
+    },
+    cardFooter: {
+        flex: 1,
+        justifyContent: 'center',
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    featureRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    featureText: {
+        color: '#FFF',
+        fontSize: 14,
+        marginLeft: 10,
+        fontFamily: 'Inter_500Medium',
+    },
+    selectButton: {
+        backgroundColor: '#FFF',
+        paddingVertical: 14,
+        borderRadius: 16,
+        alignItems: 'center',
+        marginTop: 10,
+        minHeight: 50, // Altura mínima para que no salte al poner el spinner
+        justifyContent: 'center'
+    },
+    currentButton: {
+        backgroundColor: 'rgba(255,255,255,0.3)',
+    },
+    selectButtonText: {
+        color: '#4F46E5',
+        fontFamily: 'Inter_700Bold',
+        fontSize: 14,
+    },
+    currentButtonText: {
+        color: '#FFF',
+    },
+    statusContainer: {
+        backgroundColor: '#FFF',
+        borderRadius: 24,
         padding: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
     },
-    header: {
-        marginBottom: 32,
+    statusHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
-    title: {
-        fontSize: 28,
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        backgroundColor: '#EEF2FF', // Indigo muy claro
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    iconContainerWarning: {
+        backgroundColor: '#FFFBEB', // Ambar muy claro
+    },
+    statusTitle: {
+        fontSize: 16,
         fontFamily: 'Inter_700Bold',
         color: '#1E293B',
     },
-    subtitle: {
-        fontSize: 16,
+    statusSubtitle: {
+        fontSize: 14,
         color: '#64748B',
-        marginTop: 8,
+        fontFamily: 'Inter_400Regular',
+        marginTop: 2,
+    },
+
+    // Caja de información de fecha
+    infoBox: {
+        marginTop: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F5F3FF', // Violeta muy claro
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 12,
+    },
+    infoBoxWarning: {
+        backgroundColor: '#FEF3C7', // Ambar claro
+    },
+    infoText: {
+        color: '#4F46E5',
+        marginLeft: 10,
+        fontSize: 13,
         fontFamily: 'Inter_500Medium',
     },
-    carouselContainer: {
-        paddingHorizontal: 0,
+    infoTextWarning: {
+        color: '#B45309',
     },
+
+    // Botones de Acción (Cancelar / Reanudar)
+    statusActions: {
+        marginTop: 20,
+        borderTopWidth: 1,
+        borderTopColor: '#F1F5F9',
+        paddingTop: 16,
+    },
+    actionBtn: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderRadius: 12,
+        gap: 8,
+    },
+    resumeBtn: {
+        backgroundColor: '#4F46E5', // Indigo primario
+    },
+    resumeBtnText: {
+        color: '#FFF',
+        fontFamily: 'Inter_700Bold',
+        fontSize: 14,
+    },
+    cancelBtn: {
+        backgroundColor: '#FFF',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    cancelBtnText: {
+        color: '#EF4444', // Rojo alerta
+        fontFamily: 'Inter_700Bold',
+        fontSize: 14,
+    },
+
 });

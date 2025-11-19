@@ -3,6 +3,7 @@ export const API_BASE_URL = 'http://192.168.1.134:8000/api';
 
 export const API_ENDPOINTS = {
     LOGIN: '/login',
+    LOGOUT: '/logout',
     REGISTER: '/register',
     ME: '/me',
     DASHBOARD: '/dashboard',
@@ -15,6 +16,14 @@ export const API_ENDPOINTS = {
     UPDATE_PICTURE: '/profile/update-picture',
     DELETE_ACCOUNT: '/profile/delete-account',
     UPDATE_PASSWORD: '/profile/update-password',
+    SUBSCRIPTION: '/subscription/subscribe',
+    SUBSCRIPTION_PORTAL: '/subscription/portal',
+    CANCEL_SUBSCRIPTION: '/subscription/cancel',
+    RESUME_SUBSCRIPTION: '/subscription/resume',
+    UPDATE_SUBSCRIPTION: '/subscription/update',
+    RESTART_TRIAL: '/subscription/restart-trial',
+    CONFIRM_SUBSCRIPTION: '/subscription/confirm',
+    GET_SUBSCRIPTION: '/subscription',
 };
 
 export const getAuthHeader = (token: string) => ({

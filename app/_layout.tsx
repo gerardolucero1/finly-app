@@ -1,5 +1,6 @@
 import { Inter_400Regular, Inter_500Medium, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect } from 'react';
@@ -39,7 +40,7 @@ function RootLayoutNav() {
         TextInput.defaultProps = TextInput.defaultProps || {};
         // @ts-ignore
         TextInput.defaultProps.style = { fontFamily: 'Inter_400Regular' };
-        
+
         const checkAuth = async () => {
             try {
                 let token;
@@ -81,7 +82,7 @@ function RootLayoutNav() {
 
 function RootLayoutInner() {
     const insets = useSafeAreaInsets();
-    
+
 
     return (
         <SafeAreaView
@@ -93,7 +94,9 @@ function RootLayoutInner() {
         >
             <SheetProvider>
                 <AuthProvider>
-                    <RootLayoutNav />
+                    <StripeProvider publishableKey="pk_test_51SLR5b6dZB8Inoh7iIyYyPFmtzg8yVMCPzyLH6iBfFETyyaae2uXosMLs6zd4xJOKJsrzUcfyp0Z574qJXa2LAVy00FTClFY6S">
+                        <RootLayoutNav />
+                    </StripeProvider>
                 </AuthProvider>
             </SheetProvider>
         </SafeAreaView>

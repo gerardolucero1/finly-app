@@ -5,6 +5,7 @@ import { createContext, ReactNode, useContext, useEffect, useState } from 'react
 import { Platform } from 'react-native';
 import { API_ENDPOINTS } from '../../constants/api';
 import api from '../../services/apiClient';
+import { useProfileStore } from '../store';
 
 interface AuthContextType {
     isAuthenticated: boolean;
@@ -18,6 +19,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [token, setToken] = useState<string | null>(null);
+    const setProfile = useProfileStore((state) => state.setProfile);
+    const clearProfile = useProfileStore((state) => state.logout);
 
     useEffect(() => {
         loadToken();
@@ -36,6 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (storedToken) {
                 setToken(storedToken);
                 setIsAuthenticated(true);
+
+                const response = await api.get(API_ENDPOINTS.PROFILE);
+                const data = await response.data;
+
+                setProfile(data);
+                router.replace('/dashboard');
             }
         } catch (error) {
             console.error('Error loading token:', error);
@@ -49,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const data = await response.data;
             const userToken = data.access_token;
 
+
             if (Platform.OS === 'web') {
                 await AsyncStorage.setItem('userToken', userToken);
             } else {
@@ -57,6 +67,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             setToken(userToken);
             setIsAuthenticated(true);
+
+            if (data.user) {
+                console.log(data.user);
+
+                setProfile(data.user);
+            }
+
             router.replace('/dashboard');
         } catch (error) {
             console.error('Login error:', error);
@@ -66,14 +83,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = async () => {
         try {
+            await api.post(API_ENDPOINTS.LOGOUT);
             if (Platform.OS === 'web') {
                 await AsyncStorage.removeItem('userToken')
             } else {
                 await SecureStore.deleteItemAsync('userToken');
             }
-            
+
             setToken(null);
             setIsAuthenticated(false);
+            clearProfile();
             router.replace('/auth/login');
         } catch (error) {
             console.error('Logout error:', error);

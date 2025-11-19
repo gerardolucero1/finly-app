@@ -26,9 +26,9 @@ function HeaderMenuButton() {
 function HeaderBackButton() {
     const navigation = useNavigation();
     return (
-      <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginLeft: 15 }}>
-        <Lucide name="chevron-left" size={28} color="#1E293B" />
-      </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginLeft: 15 }}>
+            <Lucide name="chevron-left" size={28} color="#1E293B" />
+        </TouchableOpacity>
     );
 }
 
@@ -38,14 +38,14 @@ export default function DrawerLayout() {
         <Drawer
             // Aquí está la magia: usamos nuestro componente personalizado
             drawerContent={(props) => <CustomDrawerContent {...props} />}
-            
+
             screenOptions={({ navigation }) => ({
                 headerShown: true,
                 headerTransparent: true,
                 headerShadowVisible: false,
                 headerTitle: '', // Ocultamos el título por defecto para un look más limpio
                 headerTitleAlign: 'center',
-                
+
                 // Efecto de blur sutil en el header
                 headerBackground: () => (
                     <View style={{
@@ -54,7 +54,7 @@ export default function DrawerLayout() {
                     }} />
                 ),
                 headerBlurEffect: 'light',
-                
+
                 headerRight: () => <HeaderMenuButton />,
                 headerLeft: () => navigation.canGoBack() ? <HeaderBackButton /> : null,
 
@@ -78,7 +78,7 @@ export default function DrawerLayout() {
         >
             <Drawer.Screen
                 name="(tabs)"
-                options={{ 
+                options={{
                     drawerItemStyle: { display: 'none' },
                 }}
             />
