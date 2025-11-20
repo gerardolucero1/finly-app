@@ -52,7 +52,7 @@ const AccountCard = ({ item, isAddCard, onPressAccount }: { item: Account | { id
         );
     }
     const account = item as Account;
-    
+
     let icon: any = 'card-sim';
     if (account.type == 'cash') {
         icon = 'wallet'
@@ -64,11 +64,11 @@ const AccountCard = ({ item, isAddCard, onPressAccount }: { item: Account | { id
                 {/* Elementos decorativos */}
                 <View style={styles.cardDecoration1} />
                 <View style={styles.cardDecoration2} />
-                
+
                 <View style={styles.cardHeader}>
                     <Text style={styles.cardType}>{account.name}</Text>
                     <Lucide name={icon} size={36} color="rgba(255,255,255,0.5)" />
-                    
+
                 </View>
                 <View style={styles.cardBody}>
                     <Text style={styles.cardBalanceLabel}>Balance</Text>
@@ -80,7 +80,7 @@ const AccountCard = ({ item, isAddCard, onPressAccount }: { item: Account | { id
                         <Lucide name="nfc" size={30} color="#FFF" />
                     </View>
                 )}
-                
+
             </View>
         </Pressable>
     );
@@ -167,7 +167,7 @@ export default function AccountsScreen() {
     const isAccountModalVisible = useInput(false);
     const headerHeight = useHeaderHeight();
     const [activeIndex, setActiveIndex] = useState(0);
-    
+
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [transactionsLoading, setTransactionsLoading] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -187,10 +187,10 @@ export default function AccountsScreen() {
             },
             onPanResponderMove: (_, gestureState) => {
                 // Limitar el movimiento
-                const newHeight = isExpanded 
-                    ? EXPANDED_HEIGHT - gestureState.dy 
+                const newHeight = isExpanded
+                    ? EXPANDED_HEIGHT - gestureState.dy
                     : COLLAPSED_HEIGHT - gestureState.dy;
-                
+
                 if (newHeight >= COLLAPSED_HEIGHT && newHeight <= EXPANDED_HEIGHT) {
                     bottomSheetHeight.setValue(newHeight);
                 }
@@ -314,7 +314,7 @@ export default function AccountsScreen() {
                 merged.sort((a, b) => b.date.getTime() - a.date.getTime());
 
                 setTransactions(merged);
-                
+
             } catch (error: any) {
                 console.error("Failed to fetch movements", error.response);
             } finally {
@@ -348,7 +348,7 @@ export default function AccountsScreen() {
             setActiveIndex(index);
         }
     };
-    
+
     if (loading.value) {
         return <View style={styles.centered}><ActivityIndicator size="large" color="#4F46E5" /></View>;
     }
@@ -357,10 +357,10 @@ export default function AccountsScreen() {
         <View style={[styles.container, { paddingTop: headerHeight - 30 }]}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: COLLAPSED_HEIGHT - 10}}
+                contentContainerStyle={{ paddingBottom: COLLAPSED_HEIGHT - 10 }}
             >
-                <View> 
-                    <Text style={[{ fontFamily: 'Inter_700Bold', fontSize: 24, marginTop: 30, textAlign : 'center', marginBottom: 10 }]}>Mis Cuentas</Text>
+                <View>
+                    <Text style={[{ fontFamily: 'Inter_700Bold', fontSize: 24, marginTop: 30, textAlign: 'center', marginBottom: 10 }]}>Mis Cuentas</Text>
                 </View>
 
                 {/* Carrusel de Tarjetas */}
@@ -389,7 +389,7 @@ export default function AccountsScreen() {
             </ScrollView>
 
             {/* Overlay oscuro */}
-            <Animated.View 
+            <Animated.View
                 style={[
                     styles.overlay,
                     {
@@ -401,7 +401,7 @@ export default function AccountsScreen() {
             />
 
             {/* Bottom Sheet Expandible de Transacciones */}
-            <Animated.View 
+            <Animated.View
                 style={[
                     styles.transactionsSection,
                     { height: bottomSheetHeight }
@@ -415,14 +415,14 @@ export default function AccountsScreen() {
                 {/* Header con título y botón de expansión */}
                 <View style={styles.transactionHeader}>
                     <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={isExpanded ? collapseBottomSheet : expandBottomSheet}
                         style={styles.expandButton}
                     >
-                        <Lucide 
-                            name={isExpanded ? "chevron-down" : "chevron-up"} 
-                            size={24} 
-                            color="#64748B" 
+                        <Lucide
+                            name={isExpanded ? "chevron-down" : "chevron-up"}
+                            size={24}
+                            color="#64748B"
                         />
                     </TouchableOpacity>
                 </View>
@@ -475,7 +475,7 @@ export default function AccountsScreen() {
                 accounts={accounts.value}
                 selectedAccount={accounts.value[activeIndex] || null}
             />
-            
+
         </View>
     );
 }
@@ -541,35 +541,35 @@ const styles = StyleSheet.create({
         bottom: -60,
         left: -40,
     },
-    cardHeader: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center' 
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
     },
-    cardType: { 
-        color: '#FFF', 
-        fontSize: 16, 
+    cardType: {
+        color: '#FFF',
+        fontSize: 16,
         fontFamily: 'Inter_700Bold',
     },
     cardBody: {},
-    cardBalanceLabel: { 
-        color: 'rgba(255,255,255,0.7)', 
+    cardBalanceLabel: {
+        color: 'rgba(255,255,255,0.7)',
         fontSize: 14,
         fontFamily: 'Inter_400Regular',
     },
-    cardBalance: { 
-        color: '#FFF', 
-        fontSize: 32, 
+    cardBalance: {
+        color: '#FFF',
+        fontSize: 32,
         fontFamily: 'Inter_700Bold',
     },
-    cardFooter: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center' 
+    cardFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
     },
-    cardNumber: { 
-        color: '#FFF', 
-        fontSize: 16, 
+    cardNumber: {
+        color: '#FFF',
+        fontSize: 16,
         letterSpacing: 2,
         fontFamily: 'Inter_500Medium',
     },

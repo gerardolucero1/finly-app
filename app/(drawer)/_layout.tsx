@@ -115,6 +115,22 @@ export default function DrawerLayout() {
                     headerShown: true,
                 }}
             />
+            <Drawer.Screen
+                name="strategies"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Estrategias',
+                    headerShown: true,
+                }}
+            />
+            <Drawer.Screen
+                name="debts"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Deudas',
+                    headerShown: true,
+                }}
+            />
         </Drawer>
     );
 }

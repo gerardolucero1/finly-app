@@ -97,10 +97,10 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
         try {
             if (editingAccount) {
                 await AccountsService.update(editingAccount.id, form);
-            }else{
+            } else {
                 await AccountsService.create(form);
             }
-            
+
             onSave();
             onClose();
         } catch (error: any) {
@@ -218,7 +218,7 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                         />
                                         {errors.bank && <Text style={styles.errorText}>{errors.bank}</Text>}
                                     </View>
-                                     {/* Últimos 4 dígitos */}
+                                    {/* Últimos 4 dígitos */}
                                     <View style={styles.col}>
                                         <Text style={styles.label}>4 dígitos <Text style={styles.required}>*</Text></Text>
                                         <TextInput
@@ -233,7 +233,7 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                     </View>
                                 </View>
 
-                                 {/* Fecha de vencimiento */}
+                                {/* Fecha de vencimiento */}
                                 <Text style={styles.label}>Fecha de Vencimiento</Text>
                                 <TouchableOpacity onPress={() => setShowDatePicker('expiry_date')} style={styles.datePickerButton}>
                                     <Text style={styles.datePickerText}>{form.expiry_date.toLocaleDateString()}</Text>
@@ -244,58 +244,58 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
 
                         {/* Campos solo para crédito */}
                         {form.type === 'credit' && (
-                           <>
-                             <Text style={styles.label}>Límite de crédito <Text style={styles.required}>*</Text></Text>
-                             <View style={styles.currencyInputContainer}>
-                               <Text style={styles.currencySymbol}>$</Text>
-                               <TextInput
-                                 style={styles.currencyInput}
-                                 placeholder="0.00"
-                                 keyboardType="decimal-pad"
-                                 value={form.credit_limit}
-                                 onChangeText={(value) => handleInputChange('credit_limit', value)}
-                               />
-                             </View>
-                             {errors.credit_limit && <Text style={styles.errorText}>{errors.credit_limit}</Text>}
-                             <View style={styles.row}>
-                                <View style={styles.col}>
-                                    <Text style={styles.label}>Tasa Anual (%)</Text>
+                            <>
+                                <Text style={styles.label}>Límite de crédito <Text style={styles.required}>*</Text></Text>
+                                <View style={styles.currencyInputContainer}>
+                                    <Text style={styles.currencySymbol}>$</Text>
                                     <TextInput
-                                        style={styles.input}
-                                        placeholder="18.50"
+                                        style={styles.currencyInput}
+                                        placeholder="0.00"
                                         keyboardType="decimal-pad"
-                                        value={String(form.interest_rate ?? '')}
-                                        onChangeText={(value) => handleInputChange('interest_rate', value)}
+                                        value={form.credit_limit}
+                                        onChangeText={(value) => handleInputChange('credit_limit', value)}
                                     />
                                 </View>
-                                <View style={styles.col}>
-                                    <Text style={styles.label}>Pago Mínimo (%)</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="5.00"
-                                        keyboardType="decimal-pad"
-                                        value={String(form.min_payment_rate ?? '')}
-                                        onChangeText={(value) => handleInputChange('min_payment_rate', value)}
-                                    />
+                                {errors.credit_limit && <Text style={styles.errorText}>{errors.credit_limit}</Text>}
+                                <View style={styles.row}>
+                                    <View style={styles.col}>
+                                        <Text style={styles.label}>Tasa Anual (%)</Text>
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="18.50"
+                                            keyboardType="decimal-pad"
+                                            value={String(form.interest_rate ?? '')}
+                                            onChangeText={(value) => handleInputChange('interest_rate', value)}
+                                        />
+                                    </View>
+                                    <View style={styles.col}>
+                                        <Text style={styles.label}>Pago Mínimo (%)</Text>
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="5.00"
+                                            keyboardType="decimal-pad"
+                                            value={String(form.min_payment_rate ?? '')}
+                                            onChangeText={(value) => handleInputChange('min_payment_rate', value)}
+                                        />
+                                    </View>
                                 </View>
-                             </View>
-                             <View style={styles.row}>
-                                <View style={styles.col}>
-                                    <Text style={styles.label}>Fecha de Corte</Text>
-                                     <TouchableOpacity onPress={() => setShowDatePicker('cut_off_date')} style={styles.datePickerButton}>
-                                         <Text style={styles.datePickerText}>{form.cut_off_date.toLocaleDateString()}</Text>
-                                     </TouchableOpacity>
+                                <View style={styles.row}>
+                                    <View style={styles.col}>
+                                        <Text style={styles.label}>Fecha de Corte</Text>
+                                        <TouchableOpacity onPress={() => setShowDatePicker('cut_off_date')} style={styles.datePickerButton}>
+                                            <Text style={styles.datePickerText}>{form.cut_off_date.toLocaleDateString()}</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                    <View style={styles.col}>
+                                        <Text style={styles.label}>Fecha de Pago</Text>
+                                        <TouchableOpacity onPress={() => setShowDatePicker('payment_due_date')} style={styles.datePickerButton}>
+                                            <Text style={styles.datePickerText}>{form.payment_due_date.toLocaleDateString()}</Text>
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
-                                <View style={styles.col}>
-                                    <Text style={styles.label}>Fecha de Pago</Text>
-                                     <TouchableOpacity onPress={() => setShowDatePicker('payment_due_date')} style={styles.datePickerButton}>
-                                         <Text style={styles.datePickerText}>{form.payment_due_date.toLocaleDateString()}</Text>
-                                     </TouchableOpacity>
-                                </View>
-                             </View>
-                           </>
+                            </>
                         )}
-                        
+
                         {/* Saldo Actual */}
                         <Text style={styles.label}>Saldo Actual <Text style={styles.required}>*</Text></Text>
                         <View style={styles.currencyInputContainer}>

@@ -1,5 +1,5 @@
 // export const API_BASE_URL = 'http://finance.test/api';
-export const API_BASE_URL = 'http://192.168.1.92:80/api';
+export const API_BASE_URL = 'http://192.168.1.134:8000/api';
 
 export const API_ENDPOINTS = {
     LOGIN: '/login',
@@ -11,6 +11,8 @@ export const API_ENDPOINTS = {
     CATEGORIES: '/expenses/categories',
     EXPENSES: '/expenses',
     INCOMES: '/incomes',
+    DEBTS: '/debts',
+    DEBT_PAYMENTS: '/debt-payment',
     TRANSACTIONS: '/transactions',
     PROFILE: '/profile',
     UPDATE_PICTURE: '/profile/update-picture',

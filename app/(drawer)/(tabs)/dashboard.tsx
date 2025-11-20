@@ -2,6 +2,7 @@ import { DashboardService } from '@/services/dashboard';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
@@ -164,6 +165,7 @@ export default function DashboardScreen() {
     const [data, setData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const router = useRouter();
 
     const handleNavigate = (section: string) => Alert.alert("Próximamente", `Módulo: ${section}`);
     const handleQuickAction = (action: string) => Alert.alert("Nuevo", `Crear ${action}`);
@@ -257,7 +259,7 @@ export default function DashboardScreen() {
                         icon="credit-card"
                         color="#EF4444"
                         buttonText="Gestionar"
-                        onPress={() => handleNavigate('Deudas')}
+                        onPress={() => router.push({ pathname: '/debts' })}
                     />
                     <SectionCard
                         title="Ahorros"
@@ -423,7 +425,7 @@ const styles = StyleSheet.create({
     progressBarBg: { height: 4, backgroundColor: '#F1F5F9', borderRadius: 2, marginTop: 8, width: '100%', overflow: 'hidden' },
     progressBarFill: { height: '100%', borderRadius: 2 },
     cardButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    cardButtonText: { fontSize: 12, fontFamily: 'Inter_600SemiBold' },
+    cardButtonText: { fontSize: 12, fontFamily: 'Inter_400Regular' },
 
     // DEBTS
     debtsSection: { marginBottom: 20 },
