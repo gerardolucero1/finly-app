@@ -79,7 +79,7 @@ export default function LoginPage() {
 
                             {error.value ? (
                                 <View style={styles.errorBadge}>
-                                    <Lucide name="alert-circle" size={16} color="#EF4444" />
+                                    <Lucide name="octagon-x" size={16} color="#EF4444" />
                                     <Text style={styles.errorText}>{error.value}</Text>
                                 </View>
                             ) : null}

@@ -58,7 +58,6 @@ function RootLayoutNav() {
                     router.replace('/dashboard');
                 }
             } catch (e) {
-                console.error("Error al verificar la autenticación:", e);
                 router.replace('/auth/login');
             }
         };

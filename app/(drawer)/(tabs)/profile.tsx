@@ -70,7 +70,7 @@ export default function ProfileScreen() {
     const handleEditProfile = () => router.push({ pathname: '/edit_profile', params: { profile: JSON.stringify(profile) } })
     const handleChangePassword = () => router.push('/edit_password')
     const handleEditSuscription = () => router.push({ pathname: '/edit_suscription', params: { profile: JSON.stringify(profile) } })
-    const handleNotifications = () => Alert.alert("Navegar", "Ir a la pantalla de notificaciones.");
+    const handleNotifications = () => router.push('/edit_notifications')
     const handleAppearance = () => Alert.alert("Navegar", "Ir a la pantalla de apariencia (tema oscuro/claro).");
 
     useEffect(() => {
@@ -173,13 +173,13 @@ export default function ProfileScreen() {
             </View>
 
             {/* --- Sección de Suscripción --- */}
-            {profile && currentPlan && (
+            {profile && (
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Suscripción</Text>
                     <View style={styles.subscriptionCard}>
                         <View>
-                            <Text style={styles.subscriptionPlan}>Plan {currentPlan.name}</Text>
-                            <Text style={styles.subscriptionStatus}>{profile.subscription.stripe_status === 'active' ? 'Activa' : 'Inactiva'}</Text>
+                            <Text style={styles.subscriptionPlan}>{currentPlan ? `Plan ${currentPlan.name}` : 'Sin plan activo'}</Text>
+                            <Text style={styles.subscriptionStatus}>{profile.subscription?.stripe_status === 'active' ? 'Activa' : 'Inactiva'}</Text>
                         </View>
                         <Lucide name="gem" size={32} color="#4F46E5" />
                     </View>

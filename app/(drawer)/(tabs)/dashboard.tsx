@@ -173,7 +173,7 @@ export default function DashboardScreen() {
             const response = await DashboardService.getAll();
             setData(response);
         } catch (e) {
-            console.error(e);
+            console.log(e);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -244,7 +244,7 @@ export default function DashboardScreen() {
                         title="Presupuesto"
                         value={formatCurrency(totalSpent)}
                         subtitle={`de ${formatCurrency(budgetLimit)}`}
-                        icon="pie-chart"
+                        icon="chart-pie"
                         color="#F59E0B"
                         buttonText="Ver todo"
                         progress={budgetProgress}
@@ -272,7 +272,7 @@ export default function DashboardScreen() {
                         title="Inversiones"
                         value="$0.00"
                         subtitle="Portafolio"
-                        icon="bar-chart-3"
+                        icon="chart-area"
                         color="#8B5CF6"
                         buttonText="Ver panel"
                         onPress={() => handleNavigate('Inversiones')}

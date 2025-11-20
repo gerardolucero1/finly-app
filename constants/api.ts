@@ -1,5 +1,5 @@
 // export const API_BASE_URL = 'http://finance.test/api';
-export const API_BASE_URL = 'http://192.168.1.134:8000/api';
+export const API_BASE_URL = 'http://192.168.1.92:80/api';
 
 export const API_ENDPOINTS = {
     LOGIN: '/login',
@@ -24,6 +24,8 @@ export const API_ENDPOINTS = {
     RESTART_TRIAL: '/subscription/restart-trial',
     CONFIRM_SUBSCRIPTION: '/subscription/confirm',
     GET_SUBSCRIPTION: '/subscription',
+    GET_NOTIFICATIONS: '/notifications',
+
 };
 
 export const getAuthHeader = (token: string) => ({

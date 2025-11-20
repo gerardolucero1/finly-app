@@ -100,6 +100,14 @@ export default function DrawerLayout() {
                 }}
             />
             <Drawer.Screen
+                name="edit_notifications"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Editar Notificaciones',
+                    headerShown: true,
+                }}
+            />
+            <Drawer.Screen
                 name="edit_suscription"
                 options={{
                     drawerItemStyle: { display: 'none' },
