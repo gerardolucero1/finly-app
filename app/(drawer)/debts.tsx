@@ -437,8 +437,8 @@ const styles = StyleSheet.create({
     },
     payBtnText: {
         color: '#FFF',
-        fontFamily: 'Inter_600SemiBold',
-        fontSize: 14,
+        fontFamily: 'Inter_500Medium',
+        fontSize: 12,
     },
 
     // --- FAB ---

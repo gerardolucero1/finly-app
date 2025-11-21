@@ -9,8 +9,8 @@ export const DebtPaymentsService = {
         return data;
     },
 
-    async create(debtPayment: Partial<any>) {
-        const { data } = await api.post(API_ENDPOINTS.DEBT_PAYMENTS, debtPayment);
+    async create(debtPayment: Partial<any>, debtId?: number) {
+        const { data } = await api.post(`${API_ENDPOINTS.DEBT_PAYMENTS}/${debtId}`, debtPayment);
         return data;
     },
 

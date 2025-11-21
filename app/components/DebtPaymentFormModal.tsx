@@ -47,6 +47,7 @@ interface DebtPaymentFormModalProps {
 
 export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editingPayment }: DebtPaymentFormModalProps) => {
     const [form, setForm] = useState<PaymentFormState>(initialFormState);
+    const [errors, setErrors] = useState<Partial<Record<keyof PaymentFormState, string>>>({});
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -79,11 +80,6 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
     };
 
     const handleSave = async () => {
-        if (!form.amount || !form.account_id) {
-            Alert.alert("Error", "Monto y Cuenta son obligatorios");
-            return;
-        }
-
         setLoading(true);
         try {
             const payload = {
@@ -95,13 +91,19 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
             if (editingPayment) {
                 await DebtPaymentsService.update(editingPayment.id, payload);
             } else {
-                await DebtPaymentsService.create(payload);
+                await DebtPaymentsService.create(payload, debtId);
             }
             onSave();
             onClose();
-        } catch (error) {
-            console.error(error);
-            Alert.alert("Error", "No se pudo registrar el pago.");
+        } catch (error: any) {
+            console.log(error);
+            if (error.response?.status === 422) {
+                console.log(error.response.data.errors);
+                setErrors(error.response.data.errors);
+            } else {
+                console.log('Error:', error.response.data);
+                Alert.alert("Error", "Ocurrió un error al guardar la deuda.");
+            }
         } finally {
             setLoading(false);
         }
@@ -144,6 +146,7 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
                                 onChangeText={(t) => setForm({ ...form, amount: t })}
                             />
                         </View>
+                        {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
 
                         {/* Cuenta */}
                         <Text style={styles.label}>Pagar desde <Text style={styles.req}>*</Text></Text>
@@ -153,10 +156,12 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
                                 items={accountItems}
                                 value={form.account_id}
                                 placeholder={{ label: "Selecciona una cuenta...", value: null }}
-                                style={pickerStyles}
-                                Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" style={{ top: 15, right: 15 }} />}
+                                style={pickerSelectStyles}
+                                useNativeAndroidPickerStyle={false}
+                                Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
                             />
                         </View>
+                        {errors.account_id && <Text style={styles.errorText}>{errors.account_id}</Text>}
 
                         {/* Fecha */}
                         <Text style={styles.label}>Fecha de Pago</Text>
@@ -164,6 +169,7 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
                             <Text style={styles.dateText}>{form.paid_at.toLocaleDateString()}</Text>
                             <Lucide name="calendar" size={20} color="#64748B" />
                         </TouchableOpacity>
+                        {errors.paid_at && <Text style={styles.errorText}>{errors.paid_at}</Text>}
 
                         {/* Switch Extra */}
                         <TouchableOpacity
@@ -175,7 +181,7 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
                                 <Text style={styles.switchSub}>Se aplicará directo al capital reduciendo intereses futuros.</Text>
                             </View>
                             <Lucide
-                                name={form.is_extra_payment ? "check-circle-2" : "circle"}
+                                name={form.is_extra_payment ? "check" : "circle"}
                                 size={24}
                                 color={form.is_extra_payment ? "#4F46E5" : "#CBD5E1"}
                             />
@@ -232,16 +238,37 @@ const styles = StyleSheet.create({
     input: { backgroundColor: '#F1F5F9', borderRadius: 10, padding: 12, fontSize: 15, color: '#1E293B' },
     switchRow: { flexDirection: 'row', marginTop: 20, alignItems: 'center', padding: 12, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12 },
     switchActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
-    switchTitle: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: '#1E293B' },
-    switchSub: { fontSize: 12, color: '#64748B', marginTop: 2, paddingRight: 10 },
+    switchTitle: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#1E293B' },
+    switchSub: { fontSize: 12, color: '#64748B', marginTop: 2, paddingRight: 10, fontFamily: 'Inter_400Regular' },
     footer: { flexDirection: 'row', marginTop: 20, gap: 10 },
     btnCancel: { flex: 1, padding: 15, alignItems: 'center', borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 12 },
-    txtCancel: { color: '#475569', fontFamily: 'Inter_600SemiBold' },
+    txtCancel: { color: '#475569', fontFamily: 'Inter_500Medium' },
     btnSave: { flex: 1, padding: 15, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12 },
-    txtSave: { color: '#FFF', fontFamily: 'Inter_600SemiBold' },
+    txtSave: { color: '#FFF', fontFamily: 'Inter_500Medium' },
+    errorText: { color: '#EF4444', fontSize: 12, marginTop: 4, fontFamily: 'Inter_400Regular' },
 });
 
-const pickerStyles = StyleSheet.create({
-    inputIOS: { fontSize: 16, padding: 15, color: '#1E293B' },
-    inputAndroid: { fontSize: 16, padding: 15, color: '#1E293B' },
+const pickerSelectStyles = StyleSheet.create({
+    inputIOS: {
+        fontSize: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 15,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 8,
+        color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
+    },
+    inputAndroid: {
+        fontSize: 16,
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 8,
+        color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
+    },
+    iconContainer: {
+        top: 15,
+        right: 15,
+    },
 });

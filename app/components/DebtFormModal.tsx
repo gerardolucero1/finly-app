@@ -17,27 +17,34 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native';
+import RNPickerSelect from 'react-native-picker-select';
 
 interface DebtFormState {
     name: string;
     total_amount: string;
+    remaining_amount: string;
     interest_rate: string;
     debt_payment: string; // Pago fijo periódico
     frequency: 'monthly' | 'biweekly' | 'weekly';
     start_date: Date;
     next_payment_date: Date;
     notes: string;
+    due_day: string;
+    type: 'loan' | 'mortgage' | 'financing' | 'other';
 }
 
 const initialFormState: DebtFormState = {
     name: '',
     total_amount: '',
+    remaining_amount: '',
     interest_rate: '',
     debt_payment: '',
     frequency: 'monthly',
     start_date: new Date(),
     next_payment_date: new Date(),
-    notes: ''
+    notes: '',
+    due_day: '1',
+    type: 'loan',
 };
 
 interface DebtFormModalProps {
@@ -51,12 +58,15 @@ interface DebtFormModalProps {
 const mapDebtToFormState = (debt: Debt): DebtFormState => ({
     name: debt.name,
     total_amount: debt.total_amount.toString(),
+    remaining_amount: debt.remaining_amount.toString(),
     interest_rate: debt.interest_rate.toString(),
     debt_payment: debt.debt_payment.toString(),
     frequency: (debt.frequency as 'monthly' | 'biweekly' | 'weekly') || 'monthly',
     start_date: debt.start_date ? new Date(debt.start_date) : new Date(),
     next_payment_date: debt.next_payment_date ? new Date(debt.next_payment_date) : new Date(),
     notes: debt.notes || '',
+    due_day: debt.due_day.toString() || '1',
+    type: (debt.type as 'loan' | 'mortgage' | 'financing' | 'other') || 'loan',
 });
 
 export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFormModalProps) => {
@@ -93,6 +103,8 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
         setLoading(true);
         try {
             if (editingDebt) {
+                console.log(1111);
+
                 await DebtsService.update(editingDebt.id, form);
             } else {
                 await DebtsService.create(form);
@@ -100,7 +112,9 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
             onSave(); // Recargar lista
             onClose(); // Cerrar modal
         } catch (error: any) {
+            console.log(error);
             if (error.response?.status === 422) {
+                console.log(error.response.data.errors);
                 setErrors(error.response.data.errors);
             } else {
                 console.log('Error:', error);
@@ -167,6 +181,27 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                         />
                         {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
+                        {/* Tipo de deuda */}
+                        <Text style={styles.label}>Tipo de deuda <Text style={styles.required}>*</Text></Text>
+                        <View style={styles.col}>
+                            <RNPickerSelect
+                                value={form.type}
+                                onValueChange={(value) => handleInputChange('type', value)}
+                                items={[
+                                    { label: "Prestamo", value: "loan" },
+                                    { label: "Hipoteca", value: "mortgage" },
+                                    { label: "Financiamiento", value: "financing" },
+                                    { label: "Otro", value: "other" },
+                                ]}
+                                placeholder={{ label: "Seleccionar...", value: null }}
+                                style={pickerSelectStyles}
+                                useNativeAndroidPickerStyle={false}
+                                Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                            />
+                            {errors.type && <Text style={styles.errorText}>{errors.type}</Text>}
+                        </View>
+
+
                         {/* Monto Total */}
                         <Text style={styles.label}>Monto Total Original <Text style={styles.required}>*</Text></Text>
                         <View style={styles.currencyInputContainer}>
@@ -181,6 +216,36 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                         </View>
                         {errors.total_amount && <Text style={styles.errorText}>{errors.total_amount}</Text>}
 
+                        {/* Fila: Monto pendiente y Pago Fijo */}
+                        <View style={styles.row}>
+                            <View style={styles.col}>
+                                <Text style={styles.label}>Monto Pendiente <Text style={styles.required}>*</Text></Text>
+                                <View style={styles.currencyInputContainer}>
+                                    <Text style={styles.currencySymbol}>$</Text>
+                                    <TextInput
+                                        style={[styles.input, errors.remaining_amount && styles.inputError]}
+                                        placeholder="0.00"
+                                        keyboardType="decimal-pad"
+                                        value={form.remaining_amount}
+                                        onChangeText={(value) => handleInputChange('remaining_amount', value)}
+                                    />
+                                </View>
+                            </View>
+                            <View style={styles.col}>
+                                <Text style={styles.label}>Pago Fijo <Text style={styles.required}>*</Text></Text>
+                                <View style={styles.currencyInputContainer}>
+                                    <Text style={styles.currencySymbol}>$</Text>
+                                    <TextInput
+                                        style={[styles.input, errors.debt_payment && styles.inputError]}
+                                        placeholder="0.00"
+                                        keyboardType="decimal-pad"
+                                        value={form.debt_payment}
+                                        onChangeText={(value) => handleInputChange('debt_payment', value)}
+                                    />
+                                </View>
+                            </View>
+                        </View>
+
                         {/* Fila: Tasa Interés y Pago Fijo */}
                         <View style={styles.row}>
                             <View style={styles.col}>
@@ -193,17 +258,20 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                                     onChangeText={(value) => handleInputChange('interest_rate', value)}
                                 />
                             </View>
+
                             <View style={styles.col}>
-                                <Text style={styles.label}>Pago Fijo <Text style={styles.required}>*</Text></Text>
+                                <Text style={styles.label}>Dia de pago*</Text>
                                 <TextInput
-                                    style={[styles.input, errors.debt_payment && styles.inputError]}
-                                    placeholder="0.00"
+                                    style={styles.input}
+                                    placeholder="Ej: 1"
                                     keyboardType="decimal-pad"
-                                    value={form.debt_payment}
-                                    onChangeText={(value) => handleInputChange('debt_payment', value)}
+                                    value={form.due_day}
+                                    onChangeText={(value) => handleInputChange('due_day', value)}
                                 />
                             </View>
                         </View>
+
+
 
                         {/* Frecuencia */}
                         <Text style={styles.label}>Frecuencia de Pagos</Text>
@@ -325,4 +393,29 @@ const styles = StyleSheet.create({
     saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },
     saveButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'Inter_700Bold' },
     errorText: { color: '#EF4444', fontSize: 12, marginTop: 4, fontFamily: 'Inter_400Regular' },
+});
+
+const pickerSelectStyles = StyleSheet.create({
+    inputIOS: {
+        fontSize: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 15,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 8,
+        color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
+    },
+    inputAndroid: {
+        fontSize: 16,
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 8,
+        color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
+    },
+    iconContainer: {
+        top: 15,
+        right: 15,
+    },
 });

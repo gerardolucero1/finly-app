@@ -28,18 +28,18 @@ import { useCustomAlert } from '../components/CustomAlert';
 const getNotificationConfig = (type: string) => {
     const lowerType = type.toLowerCase();
     if (lowerType.includes('payment') || lowerType.includes('invoice')) {
-        return { icon: 'receipt', color: '#10B981', bg: '#ECFDF5' };
+        return { icon: 'receipt' as const, color: '#10B981', bg: '#ECFDF5' };
     }
     if (lowerType.includes('alert') || lowerType.includes('warning')) {
-        return { icon: 'alert-triangle', color: '#F59E0B', bg: '#FFFBEB' };
+        return { icon: 'triangle-alert' as const, color: '#F59E0B', bg: '#FFFBEB' };
     }
     if (lowerType.includes('welcome') || lowerType.includes('success')) {
-        return { icon: 'party-popper', color: '#4F46E5', bg: '#EEF2FF' };
+        return { icon: 'party-popper' as const, color: '#4F46E5', bg: '#EEF2FF' };
     }
     if (lowerType.includes('debt') || lowerType.includes('due')) {
-        return { icon: 'clock', color: '#EF4444', bg: '#FEF2F2' };
+        return { icon: 'clock' as const, color: '#EF4444', bg: '#FEF2F2' };
     }
-    return { icon: 'bell', color: '#64748B', bg: '#F1F5F9' };
+    return { icon: 'bell' as const, color: '#64748B', bg: '#F1F5F9' };
 };
 
 // --- COMPONENTE ITEM (Actualizado con onPress) ---
@@ -165,7 +165,7 @@ export default function NotificationsScreen() {
         setNotifications(prevNotifications =>
             prevNotifications.map(n =>
                 n.id === item.id
-                    ? { ...n, read_at: new Date().toISOString() } // Simulamos fecha actual
+                    ? { ...n, read_at: new Date() } // Simulamos fecha actual
                     : n
             )
         );
@@ -203,7 +203,7 @@ export default function NotificationsScreen() {
                     onPress: async () => {
                         // Optimistic Update masivo
                         setNotifications(prev =>
-                            prev.map(n => ({ ...n, read_at: new Date().toISOString() }))
+                            prev.map(n => ({ ...n, read_at: new Date() }))
                         );
 
                         try {
@@ -243,8 +243,8 @@ export default function NotificationsScreen() {
                     text: "Eliminar",
                     style: "danger",
                     onPress: async () => {
+                        const previous = [...notifications];
                         try {
-                            const previous = [...notifications];
                             setNotifications(prev => prev.filter(n => n.id !== id));
                             await NotificationsService.delete(id);
                         } catch (error) {
