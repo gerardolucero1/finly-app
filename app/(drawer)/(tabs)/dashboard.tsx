@@ -27,7 +27,7 @@ interface SpendingChartData { labels: string[]; datasets: { data: number[]; back
 interface DashboardData {
     totalBalance: TrendData;
     totalSavings: TrendData;
-    totalInvestments: TrendData;
+    // totalInvestments: TrendData;
     totalDebts: TrendData;
     totalBudgets: TrendData;
     totalBudgetsSpent: number;
@@ -259,7 +259,7 @@ export default function DashboardScreen() {
                         color="#F59E0B"
                         buttonText="Ver todo"
                         progress={budgetProgress}
-                        onPress={() => handleNavigate('Presupuesto')}
+                        onPress={() => router.push({ pathname: '/budgets' })}
                     />
                     <SectionCard
                         title="Deudas"
@@ -271,7 +271,7 @@ export default function DashboardScreen() {
                         onPress={() => router.push({ pathname: '/debts' })}
                     />
                     <SectionCard
-                        title="Ahorros"
+                        title="Ahorros e Inversiones"
                         value={formatCurrency(data.totalSavings.value)}
                         subtitle="Fondo activo"
                         icon="piggy-bank"
@@ -279,7 +279,7 @@ export default function DashboardScreen() {
                         buttonText="Entrar"
                         onPress={() => handleNavigate('Ahorros')}
                     />
-                    <SectionCard
+                    {/* <SectionCard
                         title="Inversiones"
                         value={formatCurrency(data.totalInvestments.value)}
                         subtitle="Portafolio"
@@ -287,7 +287,7 @@ export default function DashboardScreen() {
                         color="#8B5CF6"
                         buttonText="Ver panel"
                         onPress={() => handleNavigate('Inversiones')}
-                    />
+                    /> */}
                 </View>
 
                 {/* 5. DEUDAS ACTIVAS */}

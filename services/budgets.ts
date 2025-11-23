@@ -2,7 +2,7 @@ import { Budget } from '@/models/budget';
 import { API_ENDPOINTS } from '../constants/api';
 import api from './apiClient';
 
-export const DebtsService = {
+export const BudgetsService = {
     async getAll(): Promise<Budget[]> {
         const { data } = await api.get(API_ENDPOINTS.BUDGETS);
         return data;
