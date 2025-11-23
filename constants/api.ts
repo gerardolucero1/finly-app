@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
     CONFIRM_SUBSCRIPTION: '/subscription/confirm',
     GET_SUBSCRIPTION: '/subscription',
     GET_NOTIFICATIONS: '/notifications',
+    BUDGETS: '/budgets',
 
 };
 
