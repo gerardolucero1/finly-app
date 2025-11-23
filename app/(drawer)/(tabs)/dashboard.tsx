@@ -1,3 +1,4 @@
+import { Strategy, StrategyInfoCard } from '@/app/components/StrategyInfoCard';
 import { DashboardService } from '@/services/dashboard';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
@@ -19,19 +20,23 @@ import {
 const { width } = Dimensions.get("window");
 
 // ... (MISMAS INTERFACES DE TIPOS QUE ANTES) ...
+
 interface TrendData { value: number; trend: 'up' | 'down' | 'neutral'; percentage: number; }
 interface UpcomingPayment { id: number; type: 'expense' | 'debt'; name: string; amount: number; next_payment_date: string; }
 interface SpendingChartData { labels: string[]; datasets: { data: number[]; backgroundColor: string[]; }[]; }
 interface DashboardData {
     totalBalance: TrendData;
     totalSavings: TrendData;
+    totalInvestments: TrendData;
     totalDebts: TrendData;
+    totalBudgets: TrendData;
+    totalBudgetsSpent: number;
     spendingChartData: SpendingChartData;
     financialHealthScore: number;
     financialHealthLabel: string;
     financialHealthVariation: number;
     upcomingPayments: UpcomingPayment[];
-    activeStrategy: { name: string } | null;
+    activeStrategy: Strategy | null;
 }
 
 const formatCurrency = (value: any = 0) => {
@@ -232,11 +237,15 @@ export default function DashboardScreen() {
                 />
 
                 {/* 3. ATAJOS RÁPIDOS */}
-                <View style={styles.quickActionsRow}>
+                {/* <View style={styles.quickActionsRow}>
                     <QuickAction icon="banknote-arrow-up" label="Ingreso" color="#10B981" onPress={() => handleQuickAction('Ingreso')} />
                     <QuickAction icon="banknote-arrow-down" label="Gasto" color="#EF4444" onPress={() => handleQuickAction('Gasto')} />
                     <QuickAction icon="arrow-right-left" label="Transferir" color="#3B82F6" onPress={() => handleQuickAction('Transferencia')} />
-                </View>
+                </View> */}
+
+                {/* 3. ESTRATEGIA */}
+
+                <StrategyInfoCard strategy={data.activeStrategy ?? undefined} />
 
                 <Text style={styles.sectionHeaderTitle}>Gestión</Text>
 
@@ -244,8 +253,8 @@ export default function DashboardScreen() {
                 <View style={styles.gridContainer}>
                     <SectionCard
                         title="Presupuesto"
-                        value={formatCurrency(totalSpent)}
-                        subtitle={`de ${formatCurrency(budgetLimit)}`}
+                        value={formatCurrency(data.totalBudgetsSpent)}
+                        subtitle={`de ${formatCurrency(data.totalBudgets.value)}`}
                         icon="chart-pie"
                         color="#F59E0B"
                         buttonText="Ver todo"
@@ -272,7 +281,7 @@ export default function DashboardScreen() {
                     />
                     <SectionCard
                         title="Inversiones"
-                        value="$0.00"
+                        value={formatCurrency(data.totalInvestments.value)}
                         subtitle="Portafolio"
                         icon="chart-area"
                         color="#8B5CF6"
@@ -285,7 +294,7 @@ export default function DashboardScreen() {
                 {activeDebts.length > 0 && (
                     <View style={styles.debtsSection}>
                         <View style={styles.sectionTitleRow}>
-                            <Text style={styles.sectionHeaderTitle}>Deudas Activas</Text>
+                            <Text style={styles.sectionHeaderTitle}>Proximos Pagos</Text>
                             <TouchableOpacity onPress={() => handleNavigate('Deudas')}>
                                 <Text style={styles.linkText}>Ver todas</Text>
                             </TouchableOpacity>
@@ -390,7 +399,7 @@ const styles = StyleSheet.create({
     },
     healthLabel: {
         fontSize: 13,
-        fontFamily: 'Inter_600SemiBold',
+        fontFamily: 'Inter_500Medium',
     },
     trendBadge: {
         flexDirection: 'row',
@@ -430,11 +439,11 @@ const styles = StyleSheet.create({
     // DEBTS
     debtsSection: { marginBottom: 20 },
     sectionTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    linkText: { color: '#4F46E5', fontSize: 14, fontFamily: 'Inter_600SemiBold' },
+    linkText: { color: '#4F46E5', fontSize: 14, fontFamily: 'Inter_500Medium' },
     debtList: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 8 },
     debtItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
     debtIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#FEF2F2', justifyContent: 'center', alignItems: 'center' },
-    debtName: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: '#1E293B' },
+    debtName: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#1E293B' },
     debtDate: { fontSize: 12, color: '#64748B', marginTop: 2, fontFamily: 'Inter_400Regular' },
     debtAmount: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#1E293B' },
 });

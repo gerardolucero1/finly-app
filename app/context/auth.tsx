@@ -11,6 +11,7 @@ interface AuthContextType {
     isAuthenticated: boolean;
     token: string | null;
     login: (email: string, password: string) => Promise<void>;
+    register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -81,6 +82,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const register = async (name: string, email: string, password: string, password_confirmation: string) => {
+        try {
+            const response = await api.post(API_ENDPOINTS.REGISTER, { name, email, password, password_confirmation });
+
+            const data = await response.data;
+            const userToken = data.access_token;
+
+
+            if (Platform.OS === 'web') {
+                await AsyncStorage.setItem('userToken', userToken);
+            } else {
+                await SecureStore.setItemAsync('userToken', userToken);
+            }
+
+            setToken(userToken);
+            setIsAuthenticated(true);
+
+            if (data.user) {
+                console.log(data.user);
+
+                setProfile(data.user);
+            }
+
+            router.replace('/dashboard');
+        } catch (error) {
+            console.error('Register error:', error);
+            throw error;
+        }
+    };
+
     const logout = async () => {
         try {
             await api.post(API_ENDPOINTS.LOGOUT);
@@ -100,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, token, login, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, token, login, logout, register }}>
             {children}
         </AuthContext.Provider>
     );

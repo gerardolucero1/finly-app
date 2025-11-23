@@ -74,6 +74,10 @@ function RootLayoutNav() {
                 name="auth/login"
                 options={{ headerShown: false, presentation: 'fullScreenModal' }}
             />
+            <Stack.Screen
+                name="auth/register"
+                options={{ headerShown: false, presentation: 'fullScreenModal' }}
+            />
         </Stack>
     );
 }

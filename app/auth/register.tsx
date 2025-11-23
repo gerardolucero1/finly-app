@@ -22,16 +22,19 @@ import { useAuth } from '../context/auth';
 const { width, height } = Dimensions.get('window');
 
 export default function LoginPage() {
-    const email = useInput('gera_conecta@hotmail.com');
-    const password = useInput('Margarit@1');
+    const name = useInput('');
+    const email = useInput('');
+    const password = useInput('');
+    const password_confirmation = useInput('');
     const error = useInput('');
-    const { login } = useAuth();
+    const { register } = useAuth();
 
     const [isLoading, setIsLoading] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [isPasswordConfirmationVisible, setIsPasswordConfirmationVisible] = useState(false);
 
     const handleLogin = async () => {
-        if (!email.value || !password.value) {
+        if (!name.value || !email.value || !password.value || !password_confirmation.value) {
             error.onChangeText('Please fill in all fields');
             return;
         }
@@ -41,7 +44,7 @@ export default function LoginPage() {
         error.onChangeText('');
 
         try {
-            await login(email.value, password.value);
+            await register(name.value, email.value, password.value, password_confirmation.value);
         } catch (err) {
             error.onChangeText('Invalid credentials, please try again.');
         } finally {
@@ -70,8 +73,8 @@ export default function LoginPage() {
 
                         {/* 2. ENCABEZADO */}
                         <View style={styles.headerContainer}>
-                            <Text style={styles.title}>Iniciar Sesión</Text>
-                            <Text style={styles.subtitle}>Ingresa tus datos para iniciar sesión.</Text>
+                            <Text style={styles.title}>Regístrate</Text>
+                            <Text style={styles.subtitle}>Ingresa tus datos para registrarte.</Text>
                         </View>
 
                         {/* 3. FORMULARIO (Espacio Fijo) */}
@@ -84,9 +87,23 @@ export default function LoginPage() {
                                 </View>
                             ) : null}
 
-                            {/* Input Email */}
+                            {/* Input Name */}
                             <View style={styles.inputWrapper}>
                                 <Lucide name="user" size={20} color="#94A3B8" style={styles.inputIcon} />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Nombre"
+                                    placeholderTextColor="#94A3B8"
+                                    value={name.value}
+                                    onChangeText={name.onChangeText}
+                                    autoCapitalize="none"
+                                    keyboardType="email-address"
+                                />
+                            </View>
+
+                            {/* Input Email */}
+                            <View style={styles.inputWrapper}>
+                                <Lucide name="mail" size={20} color="#94A3B8" style={styles.inputIcon} />
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Correo Electrónico"
@@ -121,6 +138,29 @@ export default function LoginPage() {
                                 </TouchableOpacity>
                             </View>
 
+                            {/* Input Password */}
+                            <View style={styles.inputWrapper}>
+                                <Lucide name="lock" size={20} color="#94A3B8" style={styles.inputIcon} />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Confirmar Contraseña"
+                                    placeholderTextColor="#94A3B8"
+                                    value={password_confirmation.value}
+                                    onChangeText={password_confirmation.onChangeText}
+                                    secureTextEntry={!isPasswordConfirmationVisible}
+                                />
+                                <TouchableOpacity
+                                    onPress={() => setIsPasswordConfirmationVisible(!isPasswordConfirmationVisible)}
+                                    style={styles.eyeIcon}
+                                >
+                                    <Lucide
+                                        name={isPasswordConfirmationVisible ? "eye-off" : "eye"}
+                                        size={20}
+                                        color="#94A3B8"
+                                    />
+                                </TouchableOpacity>
+                            </View>
+
                             <View style={styles.optionsRow}>
                                 <View style={{ flex: 1 }} />
                                 <TouchableOpacity>
@@ -137,16 +177,16 @@ export default function LoginPage() {
                                 {isLoading ? (
                                     <ActivityIndicator color="#FFF" />
                                 ) : (
-                                    <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+                                    <Text style={styles.loginButtonText}>Registrarse</Text>
                                 )}
                             </TouchableOpacity>
                         </View>
 
                         {/* 4. FOOTER */}
                         <View style={styles.footer}>
-                            <Text style={styles.footerText}>¿No tienes cuenta? </Text>
-                            <TouchableOpacity onPress={() => router.push('/auth/register')}>
-                                <Text style={styles.signUpText}>Regístrate</Text>
+                            <Text style={styles.footerText}>¿Ya tienes cuenta? </Text>
+                            <TouchableOpacity onPress={() => router.push('/auth/login')}>
+                                <Text style={styles.signUpText}>Iniciar Sesión</Text>
                             </TouchableOpacity>
                         </View>
 
