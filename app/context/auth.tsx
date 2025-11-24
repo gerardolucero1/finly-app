@@ -125,8 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsAuthenticated(false);
             clearProfile();
             router.replace('/auth/login');
-        } catch (error) {
-            console.error('Logout error:', error);
+        } catch (error: any) {
+            console.log('Logout error:', error.response.data);
         }
     };
 

@@ -24,6 +24,17 @@ const { width } = Dimensions.get("window");
 interface TrendData { value: number; trend: 'up' | 'down' | 'neutral'; percentage: number; }
 interface UpcomingPayment { id: number; type: 'expense' | 'debt'; name: string; amount: number; next_payment_date: string; }
 interface SpendingChartData { labels: string[]; datasets: { data: number[]; backgroundColor: string[]; }[]; }
+interface ExpensesByScope {
+    scope: string;
+    total: number;
+    label: string;
+    color: string;
+}
+interface RealHealth {
+    totalIncome: string;
+    businessExpenses: number;
+    realProfit: number;
+}
 interface DashboardData {
     totalBalance: TrendData;
     totalSavings: TrendData;
@@ -37,6 +48,8 @@ interface DashboardData {
     financialHealthVariation: number;
     upcomingPayments: UpcomingPayment[];
     activeStrategy: Strategy | null;
+    expensesByScope: ExpensesByScope[];
+    realHealth: RealHealth;
 }
 
 const formatCurrency = (value: any = 0) => {
@@ -102,6 +115,100 @@ const FinancialHealthCard = ({ score, label, variation }: { score: number, label
                         </Text>
                     </View>
                 )}
+            </View>
+        </View>
+    );
+};
+
+// --- NUEVO COMPONENTE: PASTEL DE LA REALIDAD (Personal vs Negocio) ---
+const ExpensesByScopeChart = ({ data }: { data: ExpensesByScope[] }) => {
+    if (!data || data.length === 0) return null;
+
+    const total = data.reduce((sum, item) => sum + item.total, 0);
+
+    return (
+        <View style={styles.scopeChartCard}>
+            <View style={styles.scopeChartHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Lucide name="message-circle-question-mark" size={16} color="#3b82f6" />
+                    <Text style={styles.compactTitle}>Pastel de la Realidad</Text>
+                </View>
+                <Text style={styles.compactTotal}>{formatCurrency(total)}</Text>
+            </View>
+
+            {/* Compact Chart */}
+            <View style={styles.donutContainer}>
+                {data.map((item) => {
+                    const percentage = total > 0 ? (item.total / total) * 100 : 0;
+                    return (
+                        <View key={item.scope} style={styles.scopeBarContainer}>
+                            <View style={styles.scopeBarHeader}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                    <View style={[styles.scopeColorDot, { backgroundColor: item.color }]} />
+                                    <Text style={styles.scopeLabel}>{item.label}</Text>
+                                    <Text style={styles.scopeAmount}>{formatCurrency(item.total)}</Text>
+                                </View>
+                                <Text style={[styles.scopePercentage, { color: item.color }]}>
+                                    {percentage.toFixed(0)}%
+                                </Text>
+                            </View>
+                            <View style={styles.scopeBarBg}>
+                                <View
+                                    style={[
+                                        styles.scopeBarFill,
+                                        { width: `${percentage}%`, backgroundColor: item.color }
+                                    ]}
+                                />
+                            </View>
+                        </View>
+                    );
+                })}
+            </View>
+        </View>
+    );
+};
+
+// --- NUEVO COMPONENTE: INDICADOR DE SALUD REAL ---
+const RealHealthCard = ({ data }: { data: RealHealth }) => {
+    const totalIncome = parseFloat(data.totalIncome);
+    const businessExpenses = data.businessExpenses;
+    const realProfit = data.realProfit;
+    const profitPercentage = totalIncome > 0 ? (realProfit / totalIncome) * 100 : 0;
+
+    return (
+        <View style={styles.realHealthCard}>
+            <View style={styles.scopeChartHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Lucide name="trending-up" size={16} color="#10b981" />
+                    <Text style={styles.compactTitle}>Salud Real</Text>
+                </View>
+                <Text style={[styles.compactTotal, { color: '#10b981' }]}>{formatCurrency(realProfit)}</Text>
+            </View>
+
+            {/* Compact Breakdown */}
+            <View style={styles.realHealthBreakdown}>
+                <View style={styles.realHealthRow}>
+                    <Text style={styles.realHealthLabel}>Ingresos</Text>
+                    <Text style={[styles.realHealthValue, { color: '#10b981' }]}>
+                        {formatCurrency(totalIncome)}
+                    </Text>
+                </View>
+
+                <View style={styles.realHealthRow}>
+                    <Text style={styles.realHealthLabel}>Gastos Negocio</Text>
+                    <Text style={[styles.realHealthValue, { color: '#f97316' }]}>
+                        -{formatCurrency(businessExpenses)}
+                    </Text>
+                </View>
+
+                <View style={styles.realHealthProgressBg}>
+                    <View
+                        style={[
+                            styles.realHealthProgressFill,
+                            { width: `${Math.min(profitPercentage, 100)}%` }
+                        ]}
+                    />
+                </View>
             </View>
         </View>
     );
@@ -246,6 +353,15 @@ export default function DashboardScreen() {
                 {/* 3. ESTRATEGIA */}
 
                 <StrategyInfoCard strategy={data.activeStrategy ?? undefined} />
+
+                {/* NUEVOS WIDGETS: Pastel de la Realidad y Salud Real */}
+                {data.expensesByScope && data.expensesByScope.length > 0 && (
+                    <ExpensesByScopeChart data={data.expensesByScope} />
+                )}
+
+                {data.realHealth && (
+                    <RealHealthCard data={data.realHealth} />
+                )}
 
                 <Text style={styles.sectionHeaderTitle}>Gestión</Text>
 
@@ -446,4 +562,120 @@ const styles = StyleSheet.create({
     debtName: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#1E293B' },
     debtDate: { fontSize: 12, color: '#64748B', marginTop: 2, fontFamily: 'Inter_400Regular' },
     debtAmount: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#1E293B' },
+
+    // EXPENSES BY SCOPE CHART (Pastel de la Realidad)
+    scopeChartCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 12,
+        marginBottom: 16,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.03,
+        shadowRadius: 8,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+    },
+    scopeChartHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    compactTitle: {
+        fontSize: 13,
+        fontFamily: 'Inter_500Medium',
+        color: '#1E293B',
+    },
+    compactTotal: {
+        fontSize: 14,
+        fontFamily: 'Inter_700Bold',
+        color: '#1E293B',
+    },
+    donutContainer: {
+        gap: 8,
+    },
+    scopeBarContainer: {
+        gap: 4,
+    },
+    scopeBarHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 2,
+    },
+    scopeColorDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+    },
+    scopeLabel: {
+        fontSize: 12,
+        fontFamily: 'Inter_500Medium',
+        color: '#1E293B',
+    },
+    scopePercentage: {
+        fontSize: 13,
+        fontFamily: 'Inter_700Bold',
+    },
+    scopeBarBg: {
+        height: 6,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    scopeBarFill: {
+        height: '100%',
+        borderRadius: 3,
+    },
+    scopeAmount: {
+        fontSize: 11,
+        color: '#64748B',
+        fontFamily: 'Inter_400Regular',
+    },
+
+    // REAL HEALTH CARD (Salud Real)
+    realHealthCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 12,
+        marginBottom: 16,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.03,
+        shadowRadius: 8,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+    },
+    realHealthBreakdown: {
+        gap: 6,
+    },
+    realHealthRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    realHealthLabel: {
+        fontSize: 12,
+        fontFamily: 'Inter_500Medium',
+        color: '#64748B',
+    },
+    realHealthValue: {
+        fontSize: 13,
+        fontFamily: 'Inter_500Medium',
+    },
+    realHealthProgressBg: {
+        height: 4,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 2,
+        overflow: 'hidden',
+        marginTop: 6,
+    },
+    realHealthProgressFill: {
+        height: '100%',
+        backgroundColor: '#10b981',
+        borderRadius: 2,
+    },
 });

@@ -10,7 +10,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 
 // Constante para la altura fija de la fila (Crucial para getItemLayout)
-const ITEM_HEIGHT = 76;
+const ITEM_HEIGHT = 86;
 
 const formatCurrency = (value?: string | number): string => {
     if (value === undefined || value === null || value === '') return '';
