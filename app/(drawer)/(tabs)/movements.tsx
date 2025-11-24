@@ -6,8 +6,11 @@ import { TransactionFilters, TransactionsService } from '@/services/transactions
 import Lucide from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { DateTime } from 'luxon';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+
+// Constante para la altura fija de la fila (Crucial para getItemLayout)
+const ITEM_HEIGHT = 76;
 
 const formatCurrency = (value?: string | number): string => {
     if (value === undefined || value === null || value === '') return '';
@@ -20,22 +23,27 @@ interface TransactionItemProps {
     item: Transaction;
 }
 
-const TransactionItem: React.FC<TransactionItemProps> = ({ item }) => {
+// 1. OPTIMIZACIÓN: Usar React.memo para evitar re-renders innecesarios
+// El componente solo se actualizará si 'item' cambia.
+const TransactionItem = React.memo(({ item }: TransactionItemProps) => {
     const amount = item.amount;
     const isPositive = item.type == 'income';
 
-    // Formatear fecha
-    const formattedDate = item.date
-        ? DateTime.fromISO(item.date)
-            .setLocale('es')
-            .toFormat("d 'de' LLLL yyyy")
-        : '';
+    // Memoizar la fecha para no recalcularla si no cambia
+    const formattedDate = useMemo(() => {
+        return item.date
+            ? DateTime.fromISO(item.date)
+                .setLocale('es')
+                .toFormat("d 'de' LLLL yyyy")
+            : '';
+    }, [item.date]);
 
-    // Icono según categoría (opcional)
     const getIconName = () => {
-        if (item.sub_category?.toLowerCase().includes('comida rápida')) return 'hamburger';
-        if (item.sub_category?.toLowerCase().includes('snacks')) return 'donut';
-        if (item.sub_category?.toLowerCase().includes('despensa')) return 'store';
+        // Nota: Para mejor performance, idealmente esto debería venir del backend o ser un mapa simple
+        const sub = item.sub_category?.toLowerCase() || '';
+        if (sub.includes('comida rápida')) return 'hamburger';
+        if (sub.includes('snacks')) return 'donut';
+        if (sub.includes('despensa')) return 'store';
         return 'circle-dollar-sign';
     };
 
@@ -49,9 +57,9 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item }) => {
             </View>
 
             <View style={styles.transactionDetails}>
-                <Text style={styles.transactionName}>{item.name}</Text>
+                <Text style={styles.transactionName} numberOfLines={1}>{item.name}</Text>
 
-                <Text style={styles.transactionCategory}>
+                <Text style={styles.transactionCategory} numberOfLines={1}>
                     {item.category || 'Sin categoría'}
                     {item.sub_category ? ` · ${item.sub_category}` : ''}
                 </Text>
@@ -67,7 +75,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ item }) => {
             </Text>
         </View>
     );
-};
+});
 
 export default function MovementsScreen() {
     const headerHeight = useHeaderHeight();
@@ -75,17 +83,16 @@ export default function MovementsScreen() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
-    
-    // Estado para los filtros
     const [filters, setFilters] = useState<TransactionFilters>({});
     const [searchQuery, setSearchQuery] = useState('');
-
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
 
     const debouncedSearchTerm = useDebounce(searchQuery, 500);
 
     const fetchTransactions = async (isNewSearch = false) => {
-        if (loading && !isNewSearch) return; // Evita llamadas duplicadas
+        // Validación extra: Si está cargando y no es búsqueda nueva, no hacer nada
+        if (loading && !isNewSearch) return;
+        // Si no hay más datos y no es búsqueda nueva, no hacer nada
         if (!hasMore && !isNewSearch) return;
 
         setLoading(true);
@@ -93,12 +100,23 @@ export default function MovementsScreen() {
         try {
             const currentPage = isNewSearch ? 1 : page;
             const response = await TransactionsService.getAll(currentPage, filters);
-            
-            if (response.data && response.data.length > 0) {                
-                setTransactions(prev => isNewSearch ? response.data : [...prev, ...response.data]);
+
+            if (response.data && response.data.length > 0) {
+                setTransactions(prev => {
+                    // 1. Combinamos los datos anteriores con los nuevos
+                    const rawList = isNewSearch ? response.data : [...prev, ...response.data];
+
+                    // 2. ELIMINAMOS DUPLICADOS POR ID
+                    // Creamos un Map donde la clave es el ID. Si el ID se repite, el Map lo sobrescribe (dejando solo uno).
+                    const uniqueList = Array.from(new Map(rawList.map(item => [item.id, item])).values());
+
+                    return uniqueList;
+                });
+
+                // Solo aumentamos página si obtuvimos datos
                 setPage(currentPage + 1);
             }
-            // Si la página actual es la última, hasMore será false
+
             setHasMore(response.current_page < response.last_page);
 
         } catch (error: any) {
@@ -110,7 +128,6 @@ export default function MovementsScreen() {
 
     useEffect(() => {
         const allFilters = { ...filters, search: debouncedSearchTerm };
-
         setTransactions([]);
         setPage(1);
         setHasMore(true);
@@ -121,7 +138,7 @@ export default function MovementsScreen() {
                 const response = await TransactionsService.getAll(1, allFilters);
                 if (response.data && response.data.length > 0) {
                     setTransactions(response.data);
-                    setPage(2); // Preparamos para la siguiente página
+                    setPage(2);
                     setHasMore(response.current_page < response.last_page);
                 } else {
                     setHasMore(false);
@@ -132,11 +149,8 @@ export default function MovementsScreen() {
                 setLoading(false);
             }
         };
-
         fetchData();
-
     }, [filters, debouncedSearchTerm]);
-
 
     const handleLoadMore = () => {
         if (!loading && hasMore) {
@@ -150,10 +164,26 @@ export default function MovementsScreen() {
         setFilterModalVisible(false);
     };
 
+    // 2. OPTIMIZACIÓN: renderItem memoizado
+    const renderItem = useCallback(({ item }: { item: Transaction }) => (
+        <TransactionItem item={item} />
+    ), []);
+
+    // 3. OPTIMIZACIÓN: keyExtractor estable
+    const keyExtractor = useCallback((item: Transaction) => item.id.toString(), []);
+
     const renderFooter = () => {
         if (!loading || transactions.length === 0) return null;
         return <ActivityIndicator style={{ marginVertical: 20 }} color="#4F46E5" />;
     };
+
+    // 4. OPTIMIZACIÓN: getItemLayout
+    // Esto permite saltar cálculos de layout costosos
+    const getItemLayout = useCallback((data: any, index: number) => ({
+        length: ITEM_HEIGHT,
+        offset: ITEM_HEIGHT * index,
+        index,
+    }), []);
 
     return (
         <View style={[styles.container, { paddingTop: headerHeight }]}>
@@ -162,13 +192,11 @@ export default function MovementsScreen() {
                 onChangeText={setSearchQuery}
                 onFilterPress={() => setFilterModalVisible(true)}
             />
-            
-            {/* Aquí podrías mostrar los filtros activos "chips" */}
 
             <FlatList
                 data={transactions}
-                keyExtractor={(item, index) => `${item.id}-${index}`}
-                renderItem={({ item }) => <TransactionItem item={item} />}
+                keyExtractor={keyExtractor}
+                renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
                 onEndReached={handleLoadMore}
                 onEndReachedThreshold={0.5}
@@ -181,16 +209,21 @@ export default function MovementsScreen() {
                         </View>
                     ) : null
                 }
+
+                // --- PROPIEDADES DE RENDIMIENTO CRÍTICAS ---
+                getItemLayout={getItemLayout}
+                initialNumToRender={10} // Renderiza pocos al inicio (lo que quepa en pantalla)
+                maxToRenderPerBatch={10} // No intentes renderizar 50 a la vez al scrollear
+                windowSize={11} // Reduce el área de renderizado fuera de pantalla (default es 21)
+                removeClippedSubviews={true} // Desmonta vistas fuera de pantalla (Vital en Android)
             />
 
-            
             <FilterModal
                 visible={isFilterModalVisible}
                 onClose={() => setFilterModalVisible(false)}
                 onApply={applyFilters}
                 currentFilters={filters}
             />
-            
         </View>
     );
 }
@@ -223,10 +256,12 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter_400Regular',
     },
     transactionItem: {
+        // 5. OPTIMIZACIÓN: Altura fija
+        height: ITEM_HEIGHT, // Forzamos la altura
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 12,
+        paddingVertical: 12, // Ajusta esto si el contenido se corta
         borderBottomWidth: 1,
         borderBottomColor: '#E2E8F0',
     },
@@ -240,6 +275,7 @@ const styles = StyleSheet.create({
     transactionDetails: {
         flex: 1,
         marginLeft: 10,
+        justifyContent: 'center', // Centrar verticalmente el texto
     },
     transactionName: {
         fontSize: 16,

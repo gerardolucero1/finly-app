@@ -131,6 +131,70 @@ export default function DrawerLayout() {
                     headerShown: true,
                 }}
             />
+            <Drawer.Screen
+                name="subaccounts"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Apartados',
+                    headerShown: true,
+                }}
+            />
+            <Drawer.Screen
+                name="budgets"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Presupuestos',
+                    headerShown: true,
+                }}
+            />
+            <Drawer.Screen
+                name="savings"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Ahorros',
+                    headerShown: true,
+                }}
+            />
+            <Drawer.Screen
+                name="settings"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Configuración',
+                    headerShown: true,
+                }}
+            />
+            <Drawer.Screen
+                name="theme"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Apariencia',
+                    headerShown: true,
+                }}
+            />
+            <Drawer.Screen
+                name="tutorials"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Tutoriales',
+                    headerShown: true,
+                }}
+            />
+            <Drawer.Screen
+                name="support"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Soporte',
+                    headerShown: true,
+                }}
+            />
+            <Drawer.Screen
+                name="legal"
+                options={{
+                    drawerItemStyle: { display: 'none' },
+                    title: 'Legal',
+                    headerShown: true,
+                }}
+            />
         </Drawer>
     );
 }

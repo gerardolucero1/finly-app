@@ -27,10 +27,10 @@ interface SpendingChartData { labels: string[]; datasets: { data: number[]; back
 interface DashboardData {
     totalBalance: TrendData;
     totalSavings: TrendData;
-    // totalInvestments: TrendData;
     totalDebts: TrendData;
     totalBudgets: TrendData;
     totalBudgetsSpent: number;
+    totalSubAccounts: number;
     spendingChartData: SpendingChartData;
     financialHealthScore: number;
     financialHealthLabel: string;
@@ -271,23 +271,23 @@ export default function DashboardScreen() {
                         onPress={() => router.push({ pathname: '/debts' })}
                     />
                     <SectionCard
-                        title="Ahorros e Inversiones"
+                        title="Inversiones"
                         value={formatCurrency(data.totalSavings.value)}
-                        subtitle="Fondo activo"
+                        subtitle="Portafolio"
                         icon="piggy-bank"
                         color="#10B981"
                         buttonText="Entrar"
-                        onPress={() => handleNavigate('Ahorros')}
+                        onPress={() => router.push({ pathname: '/savings' })}
                     />
-                    {/* <SectionCard
-                        title="Inversiones"
-                        value={formatCurrency(data.totalInvestments.value)}
-                        subtitle="Portafolio"
-                        icon="chart-area"
+                    <SectionCard
+                        title="Apartados"
+                        value={formatCurrency(data.totalSubAccounts)}
+                        subtitle="Subcuentas"
+                        icon="wallet-cards"
                         color="#8B5CF6"
                         buttonText="Ver panel"
-                        onPress={() => handleNavigate('Inversiones')}
-                    /> */}
+                        onPress={() => router.push({ pathname: '/subaccounts' })}
+                    />
                 </View>
 
                 {/* 5. DEUDAS ACTIVAS */}

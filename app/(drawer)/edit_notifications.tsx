@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 18,
-        fontFamily: 'Inter_600SemiBold',
+        fontFamily: 'Inter_500Medium',
         color: '#334155',
         marginBottom: 8,
     },

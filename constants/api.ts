@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
     DASHBOARD: '/dashboard',
     ACCOUNTS: '/accounts',
     SAVINGS: '/savings',
+    SUBACCOUNTS: '/sub-accounts',
     CATEGORIES: '/expenses/categories',
     EXPENSES: '/expenses',
     INCOMES: '/incomes',

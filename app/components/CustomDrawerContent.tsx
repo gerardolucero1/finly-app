@@ -3,6 +3,7 @@ import {
     DrawerContentScrollView,
     DrawerItemList,
 } from '@react-navigation/drawer';
+import { router } from 'expo-router';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -105,17 +106,17 @@ export function CustomDrawerContent(props: any) {
                     <MenuItem
                         icon="settings"
                         label="Configuración avanzada"
-                        onPress={() => handleAction('Settings')}
+                        onPress={() => router.push('/(drawer)/settings')}
                     />
                     <MenuItem
                         icon="bell"
                         label="Notificaciones"
-                        onPress={() => handleAction('Notifications')}
+                        onPress={() => router.push('/(drawer)/edit_notifications')}
                     />
                     <MenuItem
                         icon="moon"
                         label="Cambiar tema"
-                        onPress={() => handleAction('Theme')}
+                        onPress={() => router.push('/(drawer)/theme')}
                     />
                 </View>
 
@@ -126,17 +127,17 @@ export function CustomDrawerContent(props: any) {
                     <MenuItem
                         icon="book-open"
                         label="Tutoriales y Ayuda"
-                        onPress={() => handleAction('Tutorials')}
+                        onPress={() => router.push('/(drawer)/tutorials')}
                     />
                     <MenuItem
                         icon="life-buoy"
                         label="Contacto y Soporte"
-                        onPress={() => handleAction('Support')}
+                        onPress={() => router.push('/(drawer)/support')}
                     />
                     <MenuItem
                         icon="file-text"
                         label="Términos y Privacidad"
-                        onPress={() => handleAction('Legal')}
+                        onPress={() => router.push('/(drawer)/legal')}
                     />
                 </View>
 

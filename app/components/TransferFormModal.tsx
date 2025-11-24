@@ -39,9 +39,10 @@ interface TransferFormModalProps {
     onClose: () => void;
     accounts: Account[];
     selectedAccount: Account;
+    mode?: 'transfer' | 'deposit';
 }
 
-export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount }: TransferFormModalProps) => {
+export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount, mode = 'transfer' }: TransferFormModalProps) => {
     const [form, setForm] = useState<FormState>(initialFormState);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
@@ -51,7 +52,8 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount 
         if (visible) {
             setForm({
                 ...initialFormState,
-                from_account_id: selectedAccount?.id || null,
+                from_account_id: mode === 'transfer' ? (selectedAccount?.id || null) : '',
+                to_account_id: mode === 'deposit' ? (selectedAccount?.id || null) : '',
             });
         }
     }, [visible, selectedAccount]);
@@ -109,11 +111,74 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount 
         }
     };
 
-    // Filtra las cuentas para que no aparezca la cuenta origen en el destino y viceversa
-    const fromAccountItems = accounts.map(acc => ({ label: acc.name, value: acc.id }));
-    const toAccountItems = accounts
-        .filter(acc => acc.id !== form.from_account_id)
-        .map(acc => ({ label: acc.name, value: acc.id }));
+    // Helper to get group
+    const getAccountGroup = (acc: Account) => {
+        if (['cash', 'debit', 'credit'].includes(acc.type)) return 'Cuentas';
+        if (['savings', 'investment'].includes(acc.type)) return 'Ahorro e Inversión';
+        return 'Apartados'; // Asumimos que el resto son subcuentas o apartados
+    };
+
+    // Prepare items with grouping
+    const safeAccounts = Array.isArray(accounts) ? accounts : [];
+
+    // 1. Filter valid accounts based on mode
+    const validFromAccounts = safeAccounts.filter(acc => mode === 'deposit' ? acc.id !== form.to_account_id : true);
+    const validToAccounts = safeAccounts.filter(acc => mode === 'transfer' ? acc.id !== form.from_account_id : true);
+
+    // 2. Function to build grouped items
+    const buildGroupedItems = (filteredAccounts: Account[]) => {
+        const grouped: { [key: string]: Account[] } = {
+            'Cuentas': [],
+            'Ahorro e Inversión': [],
+            'Apartados': []
+        };
+
+        filteredAccounts.forEach(acc => {
+            const group = getAccountGroup(acc);
+            if (grouped[group]) {
+                grouped[group].push(acc);
+            } else {
+                // Fallback for unknown types
+                if (!grouped['Otros']) grouped['Otros'] = [];
+                grouped['Otros'].push(acc);
+            }
+        });
+
+        const items: any[] = [];
+        Object.keys(grouped).forEach(group => {
+            if (grouped[group].length > 0) {
+                // Add Header
+                items.push({
+                    label: `--- ${group.toUpperCase()} ---`,
+                    value: `HEADER_${group}`,
+                    color: '#64748B',
+                    inputLabel: `--- ${group} ---`,
+                    key: `header_${group}`
+                });
+                // Add Items
+                grouped[group].forEach(acc => {
+                    items.push({ label: acc.name, value: acc.id, key: acc.id.toString(), color: '#1E293B' });
+                });
+            }
+        });
+        return items;
+    };
+
+    const fromAccountItems = buildGroupedItems(validFromAccounts);
+    const toAccountItems = buildGroupedItems(validToAccounts);
+
+    // Ensure selected account is present if not already (for edge cases)
+    if (mode === 'deposit' && selectedAccount) {
+        if (!toAccountItems.find(item => item.value === selectedAccount.id)) {
+            toAccountItems.unshift({ label: selectedAccount.name, value: selectedAccount.id, color: '#1E293B' });
+        }
+    }
+
+    if (mode === 'transfer' && selectedAccount) {
+        if (!fromAccountItems.find(item => item.value === selectedAccount.id)) {
+            fromAccountItems.unshift({ label: selectedAccount.name, value: selectedAccount.id, color: '#1E293B' });
+        }
+    }
 
     return (
         <Modal
@@ -162,12 +227,14 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount 
                         <RNPickerSelect
                             value={form.from_account_id}
                             onValueChange={(value) => {
+                                if (value && typeof value === 'string' && value.startsWith('HEADER_')) return;
                                 handleInputChange('from_account_id', value);
                                 // Si la cuenta destino es la misma, limpiala
                                 if (value === form.to_account_id) {
                                     handleInputChange('to_account_id', null);
                                 }
                             }}
+
                             items={fromAccountItems}
                             placeholder={{ label: "Seleccionar cuenta origen", value: null, color: '#94A3B8' }}
                             style={pickerSelectStyles}
@@ -175,6 +242,7 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount 
                             Icon={() => {
                                 return <Lucide name="chevron-down" size={20} color="#64748B" />;
                             }}
+                            disabled={mode === 'transfer'}
                         />
                         {errors.from_account_id && (
                             <Text style={styles.errorText}>{errors.from_account_id[0]}</Text>
@@ -189,7 +257,10 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount 
                         <Text style={styles.label}>Hacia la cuenta *</Text>
                         <RNPickerSelect
                             value={form.to_account_id}
-                            onValueChange={(value) => handleInputChange('to_account_id', value)}
+                            onValueChange={(value) => {
+                                if (value && typeof value === 'string' && value.startsWith('HEADER_')) return;
+                                handleInputChange('to_account_id', value);
+                            }}
                             items={toAccountItems}
                             placeholder={{ label: "Seleccionar cuenta destino", value: null, color: '#94A3B8' }}
                             style={pickerSelectStyles}
@@ -197,7 +268,7 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount 
                             Icon={() => {
                                 return <Lucide name="chevron-down" size={20} color="#64748B" />;
                             }}
-                            disabled={!form.from_account_id}
+                            disabled={mode === 'deposit' || !form.from_account_id}
                         />
                         {errors.to_account_id && (
                             <Text style={styles.errorText}>{errors.to_account_id[0]}</Text>

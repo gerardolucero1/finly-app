@@ -10,6 +10,8 @@ import { Transaction } from '@/models/transaction';
 import { AccountsService } from '@/services/accounts';
 import { ExpensesService } from '@/services/expenses';
 import { IncomesService } from '@/services/incomes';
+import { SavingsService } from '@/services/savings';
+import { SubaccountsService } from '@/services/subaccounts';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { DateTime } from 'luxon';
@@ -168,6 +170,7 @@ export default function AccountsScreen() {
     const headerHeight = useHeaderHeight();
     const [activeIndex, setActiveIndex] = useState(0);
 
+    const [transferAccounts, setTransferAccounts] = useState<Account[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [transactionsLoading, setTransactionsLoading] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -256,8 +259,22 @@ export default function AccountsScreen() {
 
     const fetchAccounts = async () => {
         try {
-            const response = await AccountsService.getAll(1);
-            accounts.setValue(response.data);
+            const [accountsRes, savingsRes, subaccountsRes] = await Promise.all([
+                AccountsService.getAll(1),
+                SavingsService.getAll(),
+                SubaccountsService.getAll()
+            ]);
+
+            accounts.setValue(accountsRes.data);
+
+            // Combine for transfer modal
+            // @ts-ignore
+            const savings = Array.isArray(savingsRes) ? savingsRes : (savingsRes.data || []);
+            // @ts-ignore
+            const subs = Array.isArray(subaccountsRes) ? subaccountsRes : (subaccountsRes.data || []);
+
+            setTransferAccounts([...accountsRes.data, ...savings, ...subs]);
+
         } catch (error) {
             console.log(error);
         } finally {
@@ -472,7 +489,7 @@ export default function AccountsScreen() {
             <TransferFormModal
                 visible={isTransferModalVisible.value}
                 onClose={closeTransferModal}
-                accounts={accounts.value}
+                accounts={transferAccounts}
                 selectedAccount={accounts.value[activeIndex] || null}
             />
 

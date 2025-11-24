@@ -1,9 +1,8 @@
 import { DebtPayment } from '@/models/debt_payment';
 import { DebtPaymentsService } from '@/services/payments';
-import { Ionicons } from '@expo/vector-icons';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { DateTime } from 'luxon';
 import React, { useEffect, useState } from 'react';
 import {
@@ -177,8 +176,16 @@ export default function DebtPaymentsScreen() {
     return (
         // 3. WRAP EVERYTHING IN GESTUREHANDLERROOTVIEW
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <View style={[styles.container, { paddingTop: headerHeight }]}>
-                <Stack.Screen
+            <View style={[styles.container]}>
+                <Stack.Screen options={{
+                    headerShown: true,
+                    headerTitle: debtName ? `Pagos: ${debtName}` : 'Historial',
+                    headerTitleStyle: { fontFamily: 'Inter_700Bold', color: '#1E293B' },
+                    headerTintColor: '#4F46E5',
+                    headerShadowVisible: false,
+                    headerStyle: { backgroundColor: '#F8FAFC' }
+                }} />
+                {/* <Stack.Screen
                     options={{
                         headerShown: true,
                         headerTitle: debtName ? `Pagos: ${debtName}` : 'Historial',
@@ -202,7 +209,7 @@ export default function DebtPaymentsScreen() {
                             </TouchableOpacity>
                         ),
                     }}
-                />
+                /> */}
                 {loading ? (
                     <ActivityIndicator size="large" color="#4F46E5" style={{ marginTop: 50 }} />
                 ) : (
