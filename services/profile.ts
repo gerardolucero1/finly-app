@@ -5,7 +5,7 @@ import api from './apiClient';
 // Define un tipo para los datos que se pueden actualizar en el perfil.
 // Usamos `Partial<Profile>` para indicar que no todos los campos son necesarios en una actualización.
 // Puedes ser más específico si quieres (ej. solo `name` y `email`).
-type UpdateProfileData = Partial<Pick<Profile, 'name' | 'email'>>;
+type UpdateProfileData = Partial<Pick<Profile, 'name' | 'email' | 'timezone' | 'whatsapp_notifications_enabled' | 'daily_tips_enabled'>>;
 
 interface UpdatePasswordData {
     current_password: string;
