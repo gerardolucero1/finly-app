@@ -31,7 +31,7 @@ interface FilterModalProps {
 
 export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onApply, currentFilters }) => {
     const [localFilters, setLocalFilters] = useState<TransactionFilters>({});
-    
+
     // Estado para los datos de los selectores
     const [accounts, setAccounts] = useState<{ label: string; value: number }[]>([]);
     const all_categories = useInput<Category[]>([]);
@@ -65,7 +65,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                 const { categories, subcategories } = await CategoriesService.getAll();
                 all_categories.setValue(categories);
                 all_subcategories.setValue(subcategories);
-                
+
             } catch (error) {
                 console.error("Failed to fetch filter data:", error);
             }
@@ -90,11 +90,11 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
     const handleDateChange = (event: DateTimePickerEvent, selectedDate: Date | undefined, type: 'start' | 'end') => {
         if (type === 'start') setShowStartDatePicker(false);
         if (type === 'end') setShowEndDatePicker(false);
-        
+
         if (event.type === 'set' && selectedDate) {
             const formattedDate = selectedDate.toISOString().split('T')[0];
             updateFilter(type === 'start' ? 'start_date' : 'end_date', formattedDate);
-            
+
             // Si estamos en modo single y se selecciona una fecha de inicio,
             // también establecer la fecha final igual para búsqueda de un solo día
             if (dateMode === 'single' && type === 'start') {
@@ -102,7 +102,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
             }
         }
     };
-    
+
     const formatDateForDisplay = (dateString?: string) => {
         if (!dateString) return "Seleccionar";
         const date = new Date(dateString + 'T00:00:00');
@@ -117,7 +117,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
         onApply(localFilters);
         onClose();
     };
-    
+
     const handleClear = () => {
         setLocalFilters({});
         onApply({});
@@ -212,10 +212,10 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                                         />
                                     </>
                                 )}
-                                
+
                                 {/* Selector de Fecha con Toggle */}
                                 <Text style={styles.label}>Filtro de Fechas</Text>
-                                
+
                                 {/* Toggle para modo de fecha */}
                                 <View style={styles.modeSelector}>
                                     <TouchableOpacity
@@ -299,15 +299,26 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                                 )}
                             </ScrollView>
 
+                            {/* Footer */}
+                            <View style={styles.footer}>
+                                <TouchableOpacity style={styles.cancelButton} onPress={handleClear}>
+                                    <Text style={styles.cancelButtonText}>Limpiar</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.saveButton} onPress={handleApply}>
+                                    <Lucide name="save" size={18} color="#FFF" />
+                                    <Text style={styles.saveButtonText}>Aplicar</Text>
+                                </TouchableOpacity>
+                            </View>
+
                             {/* Botones de Acción */}
-                            <View style={styles.buttonRow}>
+                            {/* <View style={styles.buttonRow}>
                                 <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
                                     <Text style={styles.clearButtonText}>Limpiar</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
                                     <Text style={styles.applyButtonText}>Aplicar Filtros</Text>
                                 </TouchableOpacity>
-                            </View>
+                            </View> */}
 
                             {/* Modales de DatePicker */}
                             {showStartDatePicker && (
@@ -467,6 +478,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
+        paddingBottom: 20,
     },
     dateCard: {
         flex: 1,
@@ -560,4 +572,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: 'Inter_700Bold',
     },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 50 : 50 },
+    cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
+    cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
+    saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },
+    saveButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'Inter_700Bold' },
 });

@@ -22,8 +22,8 @@ import { useAuth } from '../context/auth';
 const { width, height } = Dimensions.get('window');
 
 export default function LoginPage() {
-    const email = useInput('gera_conecta@hotmail.com');
-    const password = useInput('Margarit@1');
+    const email = useInput('');
+    const password = useInput('');
     const error = useInput('');
     const { login } = useAuth();
 

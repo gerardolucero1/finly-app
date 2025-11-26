@@ -129,9 +129,17 @@ const ExpensesByScopeChart = ({ data }: { data: ExpensesByScope[] }) => {
     return (
         <View style={styles.scopeChartCard}>
             <View style={styles.scopeChartHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                {/* <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Lucide name="message-circle-question-mark" size={16} color="#3b82f6" />
                     <Text style={styles.compactTitle}>Pastel de la Realidad</Text>
+                </View> */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={[styles.healthIconBg, { backgroundColor: `#3b82f615` }]}>
+                        <Lucide name="chart-pie" size={20} color="#3b82f6" />
+                    </View>
+                    <View>
+                        <Text style={styles.healthTitle}>Pastel de la Realidad</Text>
+                    </View>
                 </View>
                 <Text style={styles.compactTotal}>{formatCurrency(total)}</Text>
             </View>
@@ -152,14 +160,17 @@ const ExpensesByScopeChart = ({ data }: { data: ExpensesByScope[] }) => {
                                     {percentage.toFixed(0)}%
                                 </Text>
                             </View>
-                            <View style={styles.scopeBarBg}>
+                            <View style={styles.progressContainer}>
+                                <View style={[styles.progressBar, { width: `${percentage}%`, backgroundColor: item.color }]} />
+                            </View>
+                            {/* <View style={styles.scopeBarBg}>
                                 <View
                                     style={[
                                         styles.scopeBarFill,
                                         { width: `${percentage}%`, backgroundColor: item.color }
                                     ]}
                                 />
-                            </View>
+                            </View> */}
                         </View>
                     );
                 })}
@@ -178,9 +189,17 @@ const RealHealthCard = ({ data }: { data: RealHealth }) => {
     return (
         <View style={styles.realHealthCard}>
             <View style={styles.scopeChartHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                {/* <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Lucide name="trending-up" size={16} color="#10b981" />
                     <Text style={styles.compactTitle}>Salud Real</Text>
+                </View> */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={[styles.healthIconBg, { backgroundColor: `#10b98115` }]}>
+                        <Lucide name="trending-up" size={20} color="#10b981" />
+                    </View>
+                    <View>
+                        <Text style={styles.healthTitle}>Salud Real</Text>
+                    </View>
                 </View>
                 <Text style={[styles.compactTotal, { color: '#10b981' }]}>{formatCurrency(realProfit)}</Text>
             </View>
@@ -201,14 +220,18 @@ const RealHealthCard = ({ data }: { data: RealHealth }) => {
                     </Text>
                 </View>
 
-                <View style={styles.realHealthProgressBg}>
+                <View style={styles.progressContainer}>
+                    <View style={[styles.progressBar, { width: `${Math.min(profitPercentage, 100)}%`, backgroundColor: '#10b981' }]} />
+                </View>
+
+                {/* <View style={styles.realHealthProgressBg}>
                     <View
                         style={[
                             styles.realHealthProgressFill,
                             { width: `${Math.min(profitPercentage, 100)}%` }
                         ]}
                     />
-                </View>
+                </View> */}
             </View>
         </View>
     );
@@ -335,6 +358,9 @@ export default function DashboardScreen() {
                     </View>
                 </View>
 
+                {/* 3. ESTRATEGIA */}
+                <StrategyInfoCard strategy={data.activeStrategy ?? undefined} />
+
                 {/* 2. NUEVA SALUD FINANCIERA */}
                 {/* Se inserta aquí para dar contexto antes de las acciones */}
                 <FinancialHealthCard
@@ -349,10 +375,6 @@ export default function DashboardScreen() {
                     <QuickAction icon="banknote-arrow-down" label="Gasto" color="#EF4444" onPress={() => handleQuickAction('Gasto')} />
                     <QuickAction icon="arrow-right-left" label="Transferir" color="#3B82F6" onPress={() => handleQuickAction('Transferencia')} />
                 </View> */}
-
-                {/* 3. ESTRATEGIA */}
-
-                <StrategyInfoCard strategy={data.activeStrategy ?? undefined} />
 
                 {/* NUEVOS WIDGETS: Pastel de la Realidad y Salud Real */}
                 {data.expensesByScope && data.expensesByScope.length > 0 && (
@@ -584,8 +606,8 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     compactTitle: {
-        fontSize: 13,
-        fontFamily: 'Inter_500Medium',
+        fontSize: 14,
+        fontFamily: 'Inter_700Bold',
         color: '#1E293B',
     },
     compactTotal: {

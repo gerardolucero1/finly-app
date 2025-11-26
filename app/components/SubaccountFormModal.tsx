@@ -183,7 +183,24 @@ export const SubaccountFormModal = ({ visible, onClose, onSave, accountToEdit }:
 
                     </ScrollView>
 
-                    <TouchableOpacity
+                    {/* Footer */}
+                    <View style={styles.footer}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
+                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            {loading ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <>
+                                    <Lucide name="save" size={18} color="#FFF" />
+                                    <Text style={styles.saveButtonText}>Guardar</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* <TouchableOpacity
                         style={[styles.saveButton, loading && styles.saveButtonDisabled]}
                         onPress={handleSave}
                         disabled={loading}
@@ -193,7 +210,7 @@ export const SubaccountFormModal = ({ visible, onClose, onSave, accountToEdit }:
                         ) : (
                             <Text style={styles.saveButtonText}>Guardar</Text>
                         )}
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 </View>
             </KeyboardAvoidingView>
         </Modal>
@@ -271,19 +288,9 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
     },
-    saveButton: {
-        backgroundColor: '#4F46E5',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    saveButtonDisabled: {
-        backgroundColor: '#94A3B8',
-    },
-    saveButtonText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontFamily: 'Inter_700Bold',
-    },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 50 : 50 },
+    cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
+    cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
+    saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },
+    saveButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'Inter_700Bold' },
 });

@@ -4,7 +4,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
+    ActivityIndicator,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -17,6 +17,7 @@ import {
     View
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
+import { useCustomAlert } from './CustomAlert';
 
 interface FormState {
     from_account_id: number | string | null;
@@ -44,8 +45,10 @@ interface TransferFormModalProps {
 
 export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount, mode = 'transfer' }: TransferFormModalProps) => {
     const [form, setForm] = useState<FormState>(initialFormState);
+    const [loading, setLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
+    const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
 
     // Cuando el modal se abre, resetea el formulario y establece la cuenta origen seleccionada
     useEffect(() => {
@@ -69,20 +72,36 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount,
     };
 
     const handleSave = async () => {
+        setLoading(true);
         try {
             // Validación básica
             if (!form.from_account_id || !form.to_account_id) {
-                Alert.alert("Error", "Selecciona ambas cuentas.");
+                showAlert({
+                    icon: 'circle-alert',
+                    title: "Error",
+                    message: "Selecciona ambas cuentas.",
+                    type: "danger",
+                })
                 return;
             }
 
             if (form.from_account_id === form.to_account_id) {
-                Alert.alert("Error", "No puedes transferir a la misma cuenta.");
+                showAlert({
+                    icon: 'circle-alert',
+                    title: "Error",
+                    message: "No puedes transferir a la misma cuenta.",
+                    type: "danger",
+                })
                 return;
             }
 
             if (!form.amount || parseFloat(form.amount) <= 0) {
-                Alert.alert("Error", "Ingresa un monto válido.");
+                showAlert({
+                    icon: 'circle-alert',
+                    title: "Error",
+                    message: "Ingresa un monto válido.",
+                    type: "danger",
+                })
                 return;
             }
 
@@ -96,7 +115,12 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount,
             };
 
             await AccountsService.transfer(selectedAccount.id, transferData);
-            Alert.alert("Éxito", "Transferencia realizada correctamente.");
+            showAlert({
+                icon: 'circle-check',
+                title: "Éxito",
+                message: "Transferencia realizada correctamente.",
+                type: "success",
+            })
             onClose();
         } catch (error: any) {
             if (error.response?.status === 422) {
@@ -106,8 +130,16 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount,
                 setErrors(error.response.data.errors);
             } else {
                 console.log('Error sin respuesta:', error.message);
-                Alert.alert("Error", "Ocurrió un error inesperado.");
+                showAlert({
+                    icon: 'circle-alert',
+                    title: "Error",
+                    message: "Ocurrió un error inesperado.",
+                    type: "danger",
+                })
             }
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -309,10 +341,28 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount,
                         )}
                     </ScrollView>
 
-                    <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                    {/* Footer */}
+                    <View style={styles.footer}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
+                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            {loading ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <>
+                                    <Lucide name="save" size={18} color="#FFF" />
+                                    <Text style={styles.saveButtonText}>Transferir</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                         <Text style={styles.saveButtonText}>Realizar Transferencia</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 </View>
+                <AlertComponent />
             </KeyboardAvoidingView>
         </Modal>
     );
@@ -406,18 +456,11 @@ const styles = StyleSheet.create({
         color: '#1E293B',
         fontFamily: 'Inter_400Regular',
     },
-    saveButton: {
-        backgroundColor: '#4F46E5',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    saveButtonText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontFamily: 'Inter_700Bold',
-    },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 50 : 50 },
+    cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
+    cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
+    saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },
+    saveButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'Inter_700Bold' },
     errorText: {
         color: 'red',
         fontSize: 11,

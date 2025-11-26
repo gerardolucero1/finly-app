@@ -9,6 +9,7 @@ import { Lucide } from '@react-native-vector-icons/lucide';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Modal,
@@ -80,6 +81,7 @@ interface ExpenseFormModalProps {
 export const ExpenseFormModal = ({ visible, onClose, accounts, selectedAccount }: ExpenseFormModalProps) => {
     const [form, setForm] = useState<FormState>(initialFormState);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
     const all_categories = useInput<Category[]>([]);
     const all_subcategories = useInput<SubCategory[]>([]);
@@ -127,6 +129,7 @@ export const ExpenseFormModal = ({ visible, onClose, accounts, selectedAccount }
     };
 
     const handleSave = async () => {
+        setLoading(true);
         try {
             let response = await ExpensesService.create(form);
             onClose();
@@ -140,6 +143,8 @@ export const ExpenseFormModal = ({ visible, onClose, accounts, selectedAccount }
                 console.log('Error sin respuesta:', error.message);
                 Alert.alert("Error", "Ocurrió un error inesperado.");
             }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -307,9 +312,26 @@ export const ExpenseFormModal = ({ visible, onClose, accounts, selectedAccount }
                         </TouchableOpacity>
                     </ScrollView>
 
-                    <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                    {/* Footer */}
+                    <View style={styles.footer}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
+                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            {loading ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <>
+                                    <Lucide name="save" size={18} color="#FFF" />
+                                    <Text style={styles.saveButtonText}>Guardar</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                         <Text style={styles.saveButtonText}>Guardar Gasto</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 </View>
             </KeyboardAvoidingView>
         </Modal>
@@ -414,18 +436,11 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         fontFamily: 'Inter_400Regular',
     },
-    saveButton: {
-        backgroundColor: '#4F46E5',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    saveButtonText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontFamily: 'Inter_700Bold',
-    },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 50 : 50 },
+    cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
+    cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
+    saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },
+    saveButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'Inter_700Bold' },
     errorText: {
         color: 'red',
         fontSize: 11,

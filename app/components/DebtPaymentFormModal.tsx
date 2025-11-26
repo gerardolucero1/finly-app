@@ -199,18 +199,34 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
                     </ScrollView>
 
                     <View style={styles.footer}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
+                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            {loading ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <>
+                                    <Lucide name="save" size={18} color="#FFF" />
+                                    <Text style={styles.saveButtonText}>Guardar</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* <View style={styles.footer}>
                         <TouchableOpacity style={styles.btnCancel} onPress={onClose}>
                             <Text style={styles.txtCancel}>Cancelar</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.btnSave} onPress={handleSave} disabled={loading}>
                             {loading ? <ActivityIndicator color="#FFF" /> : (
                                 <>
-                                    <Lucide name="check" size={18} color="#FFF" />
-                                    <Text style={styles.txtSave}>Guardar Pago</Text>
+                                    <Lucide name="save" size={18} color="#FFF" />
+                                    <Text style={styles.txtSave}>Guardar</Text>
                                 </>
                             )}
                         </TouchableOpacity>
-                    </View>
+                    </View> */}
 
                     {showDatePicker && (
                         <DateTimePicker value={form.paid_at} mode="date" onChange={onDateChange} />
@@ -240,11 +256,11 @@ const styles = StyleSheet.create({
     switchActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
     switchTitle: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#1E293B' },
     switchSub: { fontSize: 12, color: '#64748B', marginTop: 2, paddingRight: 10, fontFamily: 'Inter_400Regular' },
-    footer: { flexDirection: 'row', marginTop: 20, gap: 10 },
-    btnCancel: { flex: 1, padding: 15, alignItems: 'center', borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 12 },
-    txtCancel: { color: '#475569', fontFamily: 'Inter_500Medium' },
-    btnSave: { flex: 1, padding: 15, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12 },
-    txtSave: { color: '#FFF', fontFamily: 'Inter_500Medium' },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 50 : 50 },
+    cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
+    cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
+    saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },
+    saveButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'Inter_700Bold' },
     errorText: { color: '#EF4444', fontSize: 12, marginTop: 4, fontFamily: 'Inter_400Regular' },
 });
 

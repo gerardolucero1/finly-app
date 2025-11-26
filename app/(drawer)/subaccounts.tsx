@@ -281,7 +281,6 @@ const styles = StyleSheet.create({
     emptyContainer: { alignItems: 'center', marginTop: 60 },
     emptyText: { fontSize: 16, fontFamily: 'Inter_500Medium', color: '#1E293B', marginTop: 16 },
     emptySubText: { fontSize: 14, color: '#64748B', marginTop: 4 },
-
     fab: {
         position: 'absolute',
         bottom: 24,
@@ -289,13 +288,13 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#8B5CF6',
+        backgroundColor: '#4F46E5',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: "#8B5CF6",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
+        shadowColor: "#4F46E5",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+        elevation: 8,
     },
 });

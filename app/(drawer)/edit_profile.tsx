@@ -14,10 +14,21 @@ import {
     StyleSheet,
     Switch,
     Text,
+    TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
+
+const COUNTRY_CODES = [
+    { label: "MX (+52)", value: "52" },
+    { label: "USA (+1)", value: "1" },
+    { label: "CO (+57)", value: "57" },
+    { label: "ES (+34)", value: "34" },
+    { label: "AR (+54)", value: "54" },
+    { label: "CL (+56)", value: "56" },
+    { label: "PE (+51)", value: "51" },
+];
 
 export default function EditProfileScreen() {
     const params = useLocalSearchParams();
@@ -30,24 +41,60 @@ export default function EditProfileScreen() {
         return <Text>Cargando...</Text>;
     }
 
+    // Parse existing phone number
+    const parsePhoneNumber = (fullNumber: string | null) => {
+        if (!fullNumber) return { code: '52', number: '' };
+
+        // Try to find a matching country code
+        // We look for [CountryCode]1[Number]
+        // So we iterate codes, check if starts with code, then check if next char is '1'
+
+        for (const country of COUNTRY_CODES) {
+            const prefix = country.value + '1';
+            if (fullNumber.startsWith(prefix)) {
+                return {
+                    code: country.value,
+                    number: fullNumber.slice(prefix.length)
+                };
+            }
+        }
+
+        // Fallback if format doesn't match expected pattern
+        return { code: '52', number: fullNumber };
+    };
+
+    const initialPhoneData = parsePhoneNumber(profile.whatsapp_phone);
+
     const [name, setName] = useState(profile.name);
     const [email, setEmail] = useState(profile.email);
     const [timezone, setTimezone] = useState(profile.timezone || 'America/Mexico_City');
     const [whatsappNotifications, setWhatsappNotifications] = useState(profile.whatsapp_notifications_enabled);
     const [dailyTips, setDailyTips] = useState(profile.daily_tips_enabled);
-    const [errors, setErrors] = useState<{ name?: string; email?: string; timezone?: string }>({});
+
+    const [countryCode, setCountryCode] = useState(initialPhoneData.code);
+    const [phoneNumber, setPhoneNumber] = useState(initialPhoneData.number);
+
+    const [errors, setErrors] = useState<{ name?: string; email?: string; timezone?: string; whatsapp_phone?: string }>({});
     const [loading, setLoading] = useState(false);
     const headerHeight = useHeaderHeight();
     const { showAlert, AlertComponent } = useCustomAlert();
 
     const handleSave = async () => {
         try {
+            setLoading(true);
+            setErrors({});
+
+            // Construct full phone number
+            // Format: [CountryCode]1[PhoneNumber]
+            const fullWhatsappPhone = phoneNumber ? `${countryCode}1${phoneNumber}` : '';
+
             let response = await ProfileService.update({
                 name,
                 email,
                 timezone,
                 whatsapp_notifications_enabled: whatsappNotifications,
-                daily_tips_enabled: dailyTips
+                daily_tips_enabled: dailyTips,
+                whatsapp_phone: fullWhatsappPhone
             })
 
             showAlert({
@@ -71,6 +118,8 @@ export default function EditProfileScreen() {
                     message: 'Ha ocurrido un error inesperado.',
                 });
             }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -112,6 +161,38 @@ export default function EditProfileScreen() {
                         autoCapitalize="none"
                         returnKeyType="done"
                     />
+
+                    {/* WhatsApp Phone Field */}
+                    <View style={styles.fieldContainer}>
+                        <Text style={styles.label}>WhatsApp</Text>
+                        <View style={styles.phoneContainer}>
+                            <View style={styles.countryPickerContainer}>
+                                <RNPickerSelect
+                                    value={countryCode}
+                                    onValueChange={setCountryCode}
+                                    items={COUNTRY_CODES}
+                                    placeholder={{}}
+                                    style={pickerSelectStyles}
+                                    useNativeAndroidPickerStyle={false}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                />
+                            </View>
+                            <View style={styles.phoneNumberContainer}>
+                                <TextInput
+                                    style={styles.phoneInput}
+                                    value={phoneNumber}
+                                    onChangeText={setPhoneNumber}
+                                    placeholder="Número"
+                                    keyboardType="phone-pad"
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </View>
+                        </View>
+                        {errors.whatsapp_phone && <Text style={styles.errorText}>{errors.whatsapp_phone}</Text>}
+                        <Text style={styles.helperText}>
+                            Ingresa tu número sin el código de país.
+                        </Text>
+                    </View>
 
                     {/* Timezone Picker */}
                     <View style={styles.fieldContainer}>
@@ -317,6 +398,39 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
         fontFamily: 'Inter_700Bold',
+    },
+    phoneContainer: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    countryPickerContainer: {
+        flex: 0.4,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 8,
+        justifyContent: 'center',
+    },
+    phoneNumberContainer: {
+        flex: 0.6,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 8,
+        justifyContent: 'center',
+    },
+    phoneInput: {
+        fontSize: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 15,
+        color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
+    },
+    pickerIcon: {
+        top: 15,
+        right: 10,
+    },
+    helperText: {
+        fontSize: 12,
+        color: '#94A3B8',
+        marginTop: 6,
+        fontFamily: 'Inter_400Regular',
     },
 });
 
