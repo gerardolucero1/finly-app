@@ -74,11 +74,12 @@ const initialFormState: FormState = {
 interface ExpenseFormModalProps {
     visible: boolean;
     onClose: () => void;
+    onSave: () => void;
     accounts: Account[];
     selectedAccount: Account | null;
 }
 
-export const ExpenseFormModal = ({ visible, onClose, accounts, selectedAccount }: ExpenseFormModalProps) => {
+export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedAccount }: ExpenseFormModalProps) => {
     const [form, setForm] = useState<FormState>(initialFormState);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -132,6 +133,7 @@ export const ExpenseFormModal = ({ visible, onClose, accounts, selectedAccount }
         setLoading(true);
         try {
             let response = await ExpensesService.create(form);
+            onSave();
             onClose();
         } catch (error: any) {
             if (error.response?.status === 422) {

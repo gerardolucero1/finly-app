@@ -46,11 +46,12 @@ const initialFormState: FormState = {
 interface IncomeFormModalProps {
     visible: boolean;
     onClose: () => void;
+    onSave: () => void;
     accounts: Account[];
     selectedAccount: Account | null;
 }
 
-export const IncomeFormModal = ({ visible, onClose, accounts, selectedAccount }: IncomeFormModalProps) => {
+export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAccount }: IncomeFormModalProps) => {
     const [form, setForm] = useState<FormState>(initialFormState);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -79,6 +80,7 @@ export const IncomeFormModal = ({ visible, onClose, accounts, selectedAccount }:
         setLoading(true);
         try {
             let response = await IncomesService.create(form);
+            onSave();
             onClose();
         } catch (error: any) {
             if (error.response?.status === 422) {
@@ -122,7 +124,7 @@ export const IncomeFormModal = ({ visible, onClose, accounts, selectedAccount }:
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView showsVerticalScrollIndicator={false}>
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
                         {/* Monto */}
                         <Text style={styles.label}>Monto *</Text>
                         <View style={styles.amountContainer}>
@@ -139,17 +141,15 @@ export const IncomeFormModal = ({ visible, onClose, accounts, selectedAccount }:
                             <Text style={styles.errorText}>{errors.amount[0]}</Text>
                         )}
 
-                        {/* Nombre del Gasto */}
-                        <Text style={styles.label}>Fuente *</Text>
+                        {/* Fuente */}
+                        <Text style={styles.label}>Fuente de Ingreso <Text style={styles.required}>*</Text></Text>
                         <TextInput
-                            style={styles.input}
-                            placeholder="Ej: Sueldo, Pago..."
+                            style={[styles.input, errors.source && styles.inputError]}
+                            placeholder="Ej: Nómina, Venta de Garage..."
                             value={form.source}
                             onChangeText={(value) => handleInputChange('source', value)}
                         />
-                        {errors.source && (
-                            <Text style={styles.errorText}>{errors.source[0]}</Text>
-                        )}
+                        {errors.source && <Text style={styles.errorText}>{errors.source[0]}</Text>}
 
                         {/* Cuenta de Origen */}
                         <Text style={styles.label}>Cuenta *</Text>
@@ -165,39 +165,39 @@ export const IncomeFormModal = ({ visible, onClose, accounts, selectedAccount }:
                             }}
                         />
 
-                        {/* Tipo */}
-                        <Text style={styles.label}>Tipo *</Text>
-                        <RNPickerSelect
-                            value={form.type}
-                            onValueChange={(value) => handleInputChange('type', value)}
-                            items={[{ label: 'Fijo', value: 'fixed' }, { label: 'Variable', value: 'variable' }]}
-                            placeholder={{ label: "Seleccionar tipo", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
-                            useNativeAndroidPickerStyle={false}
-                            Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
-                            }}
-                        />
-
-                        {/* Frecuencia */}
-                        <Text style={styles.label}>Frecuencia *</Text>
-                        <RNPickerSelect
-                            value={form.frequency}
-                            onValueChange={(value) => handleInputChange('frequency', value)}
-                            items={[
-                                { label: 'Una vez', value: 'one-time' },
-                                { label: 'Semanal', value: 'weekly' },
-                                { label: 'Quincenal', value: 'biweekly' },
-                                { label: 'Mensual', value: 'monthly' },
-                                { label: 'Anual', value: 'yearly' },
-                            ]}
-                            placeholder={{ label: "Seleccionar frecuencia", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
-                            useNativeAndroidPickerStyle={false}
-                            Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
-                            }}
-                        />
+                        {/* Tipo y Frecuencia */}
+                        <View style={styles.row}>
+                            <View style={styles.col}>
+                                <Text style={styles.label}>Tipo</Text>
+                                <RNPickerSelect
+                                    value={form.type}
+                                    onValueChange={(value) => handleInputChange('type', value)}
+                                    items={[
+                                        { label: "Fijo", value: "fixed" },
+                                        { label: "Variable", value: "variable" },
+                                    ]}
+                                    style={pickerSelectStyles}
+                                    useNativeAndroidPickerStyle={false}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                />
+                            </View>
+                            <View style={styles.col}>
+                                <Text style={styles.label}>Frecuencia</Text>
+                                <RNPickerSelect
+                                    value={form.frequency}
+                                    onValueChange={(value) => handleInputChange('frequency', value)}
+                                    items={[
+                                        { label: "Una vez", value: "one-time" },
+                                        { label: "Semanal", value: "weekly" },
+                                        { label: "Quincenal", value: "biweekly" },
+                                        { label: "Mensual", value: "monthly" },
+                                    ]}
+                                    style={pickerSelectStyles}
+                                    useNativeAndroidPickerStyle={false}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                />
+                            </View>
+                        </View>
 
                         {/* Fecha */}
                         <Text style={styles.label}>Fecha</Text>

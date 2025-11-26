@@ -31,10 +31,6 @@ import {
     View
 } from 'react-native';
 
-interface TransactionItemProps {
-    item: Transaction;
-}
-
 // --- COMPONENTES VISUALES ---
 
 const formatCurrency = (value?: string | number): string => {
@@ -42,6 +38,50 @@ const formatCurrency = (value?: string | number): string => {
     const numberValue = typeof value === 'string' ? parseFloat(value) : value;
     if (Number.isNaN(numberValue)) return '';
     return numberValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+};
+
+// Componente de Item de Transacción
+const TransactionItem: React.FC<{ item: Transaction }> = ({ item }) => {
+    const amount = item.amount;
+    const isPositive = item.type == 'income';
+
+    const formattedDate = item.date
+        ? DateTime.fromJSDate(item.date).setLocale('es').toFormat("d 'de' LLLL yyyy")
+        : '';
+
+    const getIconName = () => {
+        if (item.sub_category?.toLowerCase().includes('comida rápida')) return 'hamburger';
+        if (item.sub_category?.toLowerCase().includes('snacks')) return 'donut';
+        if (item.sub_category?.toLowerCase().includes('despensa')) return 'store';
+        return 'circle-dollar-sign';
+    };
+
+    return (
+        <View style={styles.transactionItem}>
+            <View style={[
+                styles.transactionIconContainer,
+                { backgroundColor: isPositive ? '#E0F2F1' : '#F1F5F9' }
+            ]}>
+                <Lucide name={getIconName()} size={22} color={isPositive ? '#00796B' : '#475569'} />
+            </View>
+
+            <View style={styles.transactionDetails}>
+                <Text style={styles.transactionName}>{item.name}</Text>
+                <Text style={styles.transactionCategory}>
+                    {item.category || 'Sin categoría'}
+                    {item.sub_category ? ` · ${item.sub_category} ` : ''}
+                </Text>
+                <Text style={styles.transactionDate}>{formattedDate}</Text>
+            </View>
+
+            <Text style={[
+                styles.transactionAmount,
+                { color: isPositive ? '#2E7D32' : '#DC2626' }
+            ]}>
+                {isPositive ? `+ ${formatCurrency(amount)} ` : ` - ${formatCurrency(amount)} `}
+            </Text>
+        </View>
+    );
 };
 
 // Componente de Tarjeta del Carrusel
@@ -62,7 +102,7 @@ const AccountCard = ({ item, isAddCard, onPressAccount }: { item: Account | { id
 
     return (
         <Pressable onPress={() => onPressAccount()}>
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: account.color || '#4F46E5' }]}>
                 {/* Elementos decorativos */}
                 <View style={styles.cardDecoration1} />
                 <View style={styles.cardDecoration2} />
@@ -98,55 +138,6 @@ const ActionButton = ({ icon, label, onPress }: { icon: any, label: string, onPr
     </TouchableOpacity>
 );
 
-// Componente de Item de Transacción
-const TransactionItem: React.FC<TransactionItemProps> = ({ item }) => {
-    const amount = item.amount;
-    const isPositive = item.type == 'income';
-
-    // Formatear fecha
-    const formattedDate = item.date
-        ? DateTime.fromJSDate(item.date)
-            .setLocale('es')
-            .toFormat("d 'de' LLLL yyyy")
-        : '';
-
-    // Icono según categoría (opcional)
-    const getIconName = () => {
-        if (item.sub_category?.toLowerCase().includes('comida rápida')) return 'hamburger';
-        if (item.sub_category?.toLowerCase().includes('snacks')) return 'donut';
-        if (item.sub_category?.toLowerCase().includes('despensa')) return 'store';
-        return 'circle-dollar-sign';
-    };
-
-    return (
-        <View style={styles.transactionItem}>
-            <View style={[
-                styles.transactionIconContainer,
-                { backgroundColor: isPositive ? '#E0F2F1' : '#F1F5F9' }
-            ]}>
-                <Lucide name={getIconName()} size={22} color={isPositive ? '#00796B' : '#475569'} />
-            </View>
-
-            <View style={styles.transactionDetails}>
-                <Text style={styles.transactionName}>{item.name}</Text>
-
-                <Text style={styles.transactionCategory}>
-                    {item.category || 'Sin categoría'}
-                    {item.sub_category ? ` · ${item.sub_category}` : ''}
-                </Text>
-
-                <Text style={styles.transactionDate}>{formattedDate}</Text>
-            </View>
-
-            <Text style={[
-                styles.transactionAmount,
-                { color: isPositive ? '#2E7D32' : '#DC2626' }
-            ]}>
-                {isPositive ? `+${formatCurrency(amount)}` : `-${formatCurrency(amount)}`}
-            </Text>
-        </View>
-    );
-};
 
 
 // --- PANTALLA PRINCIPAL ---
@@ -155,10 +146,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth * 0.8;
 const SPACING = 10;
 const SIDECARD_SPACING = (screenWidth - CARD_WIDTH) / 2;
-
-// Posiciones del Bottom Sheet
-const COLLAPSED_HEIGHT = 300; // Altura cuando está colapsado
-const EXPANDED_HEIGHT = screenHeight * 0.85; // 85% de la pantalla cuando está expandido
+const BOTTOM_SHEET_HEIGHT = 280; // Altura del bottom sheet colapsado
 
 export default function AccountsScreen() {
     const accounts = useInput<Account[]>([]);
@@ -174,45 +162,48 @@ export default function AccountsScreen() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [transactionsLoading, setTransactionsLoading] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [transferMode, setTransferMode] = useState<'transfer' | 'payment'>('transfer');
 
-    // Animación del Bottom Sheet
-    const bottomSheetHeight = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
+    // Refs para animación del Bottom Sheet
+    const bottomSheetHeight = useRef(new Animated.Value(BOTTOM_SHEET_HEIGHT)).current;
     const overlayOpacity = useRef(new Animated.Value(0)).current;
     const flatListRef = useRef<FlatList>(null);
 
-    // PanResponder para manejar gestos
+    // PanResponder para gestos de deslizamiento
     const panResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponder: (_, gestureState) => {
-                // Solo activar si el movimiento es vertical
+                // Solo activar si el movimiento es mayormente vertical
                 return Math.abs(gestureState.dy) > 5;
             },
             onPanResponderMove: (_, gestureState) => {
-                // Limitar el movimiento
                 const newHeight = isExpanded
-                    ? EXPANDED_HEIGHT - gestureState.dy
-                    : COLLAPSED_HEIGHT - gestureState.dy;
+                    ? screenHeight * 0.85 - gestureState.dy
+                    : BOTTOM_SHEET_HEIGHT - gestureState.dy;
 
-                if (newHeight >= COLLAPSED_HEIGHT && newHeight <= EXPANDED_HEIGHT) {
+                // Limitar el movimiento entre altura mínima y máxima
+                if (newHeight >= BOTTOM_SHEET_HEIGHT && newHeight <= screenHeight * 0.85) {
                     bottomSheetHeight.setValue(newHeight);
                 }
             },
             onPanResponderRelease: (_, gestureState) => {
                 // Determinar si expandir o colapsar basado en la velocidad y dirección
                 if (gestureState.dy < -50 || gestureState.vy < -0.5) {
-                    // Arrastrar hacia arriba
+                    // Deslizar hacia arriba -> Expandir
                     expandBottomSheet();
                 } else if (gestureState.dy > 50 || gestureState.vy > 0.5) {
-                    // Arrastrar hacia abajo
+                    // Deslizar hacia abajo -> Colapsar
                     collapseBottomSheet();
                 } else {
-                    // Volver al estado actual
-                    if (isExpanded) {
-                        expandBottomSheet();
-                    } else {
-                        collapseBottomSheet();
-                    }
+                    // Volver al estado actual basado en qué está más cerca
+                    const currentValue = isExpanded ? screenHeight * 0.85 : BOTTOM_SHEET_HEIGHT;
+                    Animated.spring(bottomSheetHeight, {
+                        toValue: currentValue,
+                        useNativeDriver: false,
+                        tension: 50,
+                        friction: 8,
+                    }).start();
                 }
             },
         })
@@ -222,14 +213,14 @@ export default function AccountsScreen() {
         setIsExpanded(true);
         Animated.parallel([
             Animated.spring(bottomSheetHeight, {
-                toValue: EXPANDED_HEIGHT,
+                toValue: screenHeight * 0.85,
                 useNativeDriver: false,
                 tension: 50,
                 friction: 8,
             }),
             Animated.timing(overlayOpacity, {
                 toValue: 1,
-                duration: 300,
+                duration: 250,
                 useNativeDriver: true,
             })
         ]).start();
@@ -239,22 +230,25 @@ export default function AccountsScreen() {
         setIsExpanded(false);
         Animated.parallel([
             Animated.spring(bottomSheetHeight, {
-                toValue: COLLAPSED_HEIGHT,
+                toValue: BOTTOM_SHEET_HEIGHT,
                 useNativeDriver: false,
                 tension: 50,
                 friction: 8,
             }),
             Animated.timing(overlayOpacity, {
                 toValue: 0,
-                duration: 300,
+                duration: 250,
                 useNativeDriver: true,
             })
-        ]).start(() => {
-            // Scroll al inicio cuando colapse
-            if (flatListRef.current) {
-                flatListRef.current.scrollToOffset({ offset: 0, animated: true });
-            }
-        });
+        ]).start();
+    };
+
+    const toggleBottomSheet = () => {
+        if (isExpanded) {
+            collapseBottomSheet();
+        } else {
+            expandBottomSheet();
+        }
     };
 
     const fetchAccounts = async () => {
@@ -374,7 +368,7 @@ export default function AccountsScreen() {
         <View style={[styles.container, { paddingTop: headerHeight - 30 }]}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: COLLAPSED_HEIGHT - 10 }}
+                contentContainerStyle={{ paddingBottom: BOTTOM_SHEET_HEIGHT }}
             >
                 <View>
                     <Text style={[{ fontFamily: 'Inter_700Bold', fontSize: 24, marginTop: 30, textAlign: 'center', marginBottom: 10 }]}>Mis Cuentas</Text>
@@ -399,13 +393,27 @@ export default function AccountsScreen() {
 
                 {/* Botones de Acción */}
                 <View style={styles.actionsContainer}>
-                    <ActionButton icon="banknote-arrow-up" label="Ingreso" onPress={() => openIncomeModal()} />
+                    <ActionButton
+                        icon="banknote-arrow-up"
+                        label={accounts.value[activeIndex]?.type === 'credit' ? "Pagar" : "Ingreso"}
+                        onPress={() => {
+                            if (accounts.value[activeIndex]?.type === 'credit') {
+                                setTransferMode('payment');
+                                isTransferModalVisible.setValue(true);
+                            } else {
+                                openIncomeModal();
+                            }
+                        }}
+                    />
                     <ActionButton icon="banknote-arrow-down" label="Gasto" onPress={openExpenseModal} />
-                    <ActionButton icon="arrow-right-left" label="Transferir" onPress={openTransferModal} />
+                    <ActionButton icon="arrow-right-left" label="Transferir" onPress={() => {
+                        setTransferMode('transfer');
+                        openTransferModal();
+                    }} />
                 </View>
             </ScrollView>
 
-            {/* Overlay oscuro */}
+            {/* Overlay oscuro - AHORA CUBRE TODO */}
             <Animated.View
                 style={[
                     styles.overlay,
@@ -414,33 +422,32 @@ export default function AccountsScreen() {
                         pointerEvents: isExpanded ? 'auto' : 'none',
                     }
                 ]}
-                onTouchEnd={collapseBottomSheet}
+                onTouchEnd={toggleBottomSheet}
             />
 
-            {/* Bottom Sheet Expandible de Transacciones */}
+            {/* Bottom Sheet de Transacciones */}
             <Animated.View
                 style={[
                     styles.transactionsSection,
                     { height: bottomSheetHeight }
                 ]}
             >
-                {/* Handle del Bottom Sheet */}
-                <View {...panResponder.panHandlers} style={styles.handleContainer}>
-                    <View style={styles.handle} />
-                </View>
-
-                {/* Header con título y botón de expansión */}
-                <View style={styles.transactionHeader}>
-                    <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
+                {/* Header con barra de arrastre y botón */}
+                <View {...panResponder.panHandlers}>
                     <TouchableOpacity
-                        onPress={isExpanded ? collapseBottomSheet : expandBottomSheet}
-                        style={styles.expandButton}
+                        style={styles.transactionHeader}
+                        onPress={toggleBottomSheet}
+                        activeOpacity={0.7}
                     >
-                        <Lucide
-                            name={isExpanded ? "chevron-down" : "chevron-up"}
-                            size={24}
-                            color="#64748B"
-                        />
+                        <View style={styles.handleBar} />
+                        <View style={styles.headerContent}>
+                            <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
+                            <Lucide
+                                name={isExpanded ? "chevron-down" : "chevron-up"}
+                                size={24}
+                                color="#64748B"
+                            />
+                        </View>
                     </TouchableOpacity>
                 </View>
 
@@ -451,11 +458,11 @@ export default function AccountsScreen() {
                     <FlatList
                         ref={flatListRef}
                         data={transactions}
-                        keyExtractor={item => item.id}
+                        keyExtractor={item => item.id.toString()}
                         renderItem={({ item }) => <TransactionItem item={item} />}
                         ListEmptyComponent={<Text style={styles.emptyText}>No hay transacciones recientes.</Text>}
                         showsVerticalScrollIndicator={true}
-                        scrollEnabled={isExpanded} // Solo scroll cuando está expandido
+                        scrollEnabled={isExpanded}
                         contentContainerStyle={{ paddingBottom: 20 }}
                     />
                 )}
@@ -473,6 +480,7 @@ export default function AccountsScreen() {
             <IncomeFormModal
                 visible={isIncomeModalVisible.value}
                 onClose={closeIncomeModal}
+                onSave={fetchAccounts}
                 accounts={accounts.value}
                 selectedAccount={accounts.value[activeIndex] || null}
             />
@@ -481,6 +489,7 @@ export default function AccountsScreen() {
             <ExpenseFormModal
                 visible={isExpenseModalVisible.value}
                 onClose={closeExpenseModal}
+                onSave={fetchAccounts}
                 accounts={accounts.value}
                 selectedAccount={accounts.value[activeIndex] || null}
             />
@@ -489,8 +498,10 @@ export default function AccountsScreen() {
             <TransferFormModal
                 visible={isTransferModalVisible.value}
                 onClose={closeTransferModal}
+                onSave={fetchAccounts}
                 accounts={transferAccounts}
                 selectedAccount={accounts.value[activeIndex] || null}
+                mode={transferMode}
             />
 
         </View>
@@ -619,9 +630,10 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         fontFamily: 'Inter_400Regular',
     },
+    // Estilos del Bottom Sheet optimizados
     overlay: {
         position: 'absolute',
-        top: 0,
+        top: 0, // Ahora cubre TODO incluyendo el header
         left: 0,
         right: 0,
         bottom: 0,
@@ -634,39 +646,37 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         backgroundColor: '#FFF',
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         paddingHorizontal: 20,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 8,
         zIndex: 2,
     },
-    handleContainer: {
-        alignItems: 'center',
-        paddingVertical: 12,
-    },
-    handle: {
+    handleBar: {
         width: 40,
         height: 4,
         backgroundColor: '#CBD5E1',
         borderRadius: 2,
+        alignSelf: 'center',
+        marginTop: 12,
+        marginBottom: 8,
     },
     transactionHeader: {
+        paddingVertical: 8,
+    },
+    headerContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 15,
     },
     sectionTitle: {
         fontSize: 18,
         fontFamily: 'Inter_700Bold',
         color: '#1E293B',
-    },
-    expandButton: {
-        padding: 4,
     },
     emptyText: {
         textAlign: 'center',

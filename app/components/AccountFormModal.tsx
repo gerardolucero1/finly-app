@@ -4,6 +4,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { Lucide } from '@react-native-vector-icons/lucide';
 import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Modal,
@@ -31,6 +32,7 @@ interface FormState {
     available_balance: string;
     cut_off_date: Date;
     payment_due_date: Date;
+    color: string;
 }
 
 const initialFormState: FormState = {
@@ -46,6 +48,7 @@ const initialFormState: FormState = {
     available_balance: '',
     cut_off_date: new Date(),
     payment_due_date: new Date(),
+    color: '#4F46E5',
 };
 
 interface AccountFormModalProps {
@@ -68,6 +71,7 @@ const mapAccountToFormState = (acc: Account): FormState => ({
     available_balance: acc.available_balance?.toString() ?? '',
     cut_off_date: acc.cut_off_date ? new Date(acc.cut_off_date) : new Date(),
     payment_due_date: acc.payment_due_date ? new Date(acc.payment_due_date) : new Date(),
+    color: acc.color || '#4F46E5',
 });
 
 export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: AccountFormModalProps) => {
@@ -76,6 +80,7 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
     );
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
     const [showDatePicker, setShowDatePicker] = useState<keyof FormState | null>(null);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         setForm(editingAccount ? mapAccountToFormState(editingAccount) : initialFormState);
@@ -94,6 +99,7 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
     };
 
     const handleSave = async () => {
+        setLoading(true);
         try {
             if (editingAccount) {
                 await AccountsService.update(editingAccount.id, form);
@@ -113,6 +119,8 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                 console.log('Error sin respuesta:', error.message);
                 Alert.alert("Error", "Ocurrió un error inesperado.");
             }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -133,6 +141,20 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
         { value: 'debit', label: 'Débito', icon: 'credit-card', color: '#3B82F6', selectedColor: '#60A5FA' },
         { value: 'cash', label: 'Efectivo', icon: 'wallet', color: '#16A34A', selectedColor: '#4ADE80' },
     ] as const;
+
+    const colorOptions = [
+        '#4F46E5', // Indigo (Default)
+        '#EF4444', // Red
+        '#F97316', // Orange
+        '#F59E0B', // Amber
+        '#10B981', // Emerald
+        '#06B6D4', // Cyan
+        '#3B82F6', // Blue
+        '#8B5CF6', // Violet
+        '#EC4899', // Pink
+        '#64748B', // Slate
+        '#1E293B', // Slate Dark
+    ];
 
     return (
         <Modal
@@ -192,6 +214,24 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                             onChangeText={(value) => handleInputChange('name', value)}
                         />
                         {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+
+                        {/* Color Picker */}
+                        <Text style={styles.label}>Color de la tarjeta</Text>
+                        <View style={styles.colorPickerContainer}>
+                            {colorOptions.map((color) => (
+                                <TouchableOpacity
+                                    key={color}
+                                    style={[
+                                        styles.colorOption,
+                                        { backgroundColor: color },
+                                        form.color === color && styles.selectedColorOption
+                                    ]}
+                                    onPress={() => handleInputChange('color', color)}
+                                >
+                                    {form.color === color && <Lucide name="check" size={16} color="#FFF" />}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
 
                         {/* Campos que no son para efectivo */}
                         {form.type !== 'cash' && (
@@ -338,8 +378,25 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
 
                     </ScrollView>
 
-                    {/* Botones de Acción */}
+                    {/* Footer */}
                     <View style={styles.footer}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
+                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            {loading ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <>
+                                    <Lucide name="save" size={18} color="#FFF" />
+                                    <Text style={styles.saveButtonText}>{editingAccount ? 'Actualizar' : 'Guardar'}</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Botones de Acción */}
+                    {/* <View style={styles.footer}>
                         <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
                             <Text style={styles.cancelButtonText}>Cancelar</Text>
                         </TouchableOpacity>
@@ -347,7 +404,7 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                             <Lucide name="save" size={18} color="#FFF" />
                             <Text style={styles.saveButtonText}>{editingAccount ? 'Actualizar' : 'Guardar'}</Text>
                         </TouchableOpacity>
-                    </View>
+                    </View> */}
 
                     {renderDatePicker()}
                 </View>
@@ -468,49 +525,33 @@ const styles = StyleSheet.create({
         color: '#1E293B',
         fontFamily: 'Inter_400Regular',
     },
-    footer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingTop: 15,
-        borderTopWidth: 1,
-        borderTopColor: '#E2E8F0',
-        paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-    },
-    cancelButton: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: '#CBD5E1',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-        marginRight: 10,
-    },
-    cancelButtonText: {
-        color: '#475569',
-        fontSize: 16,
-        fontFamily: 'Inter_700Bold',
-    },
-    saveButton: {
-        flex: 1,
-        flexDirection: 'row',
-        gap: 8,
-        backgroundColor: '#4F46E5', // Indigo-600
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    saveButtonText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontFamily: 'Inter_700Bold',
-    },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 50 : 50 },
+    cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
+    cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
+    saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },
+    saveButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'Inter_700Bold' },
     errorText: {
         color: '#EF4444',
         fontSize: 12,
         marginTop: 4,
         fontFamily: 'Inter_400Regular',
+    },
+    colorPickerContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        marginTop: 8,
+    },
+    colorOption: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    selectedColorOption: {
+        borderWidth: 2,
+        borderColor: '#1E293B',
     },
 });
 

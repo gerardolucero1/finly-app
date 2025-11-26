@@ -204,7 +204,8 @@ export default function MovementsScreen() {
                 ListEmptyComponent={
                     !loading ? (
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>No se encontraron movimientos.</Text>
+                            <Lucide name="banknote-x" size={50} color="#4F46E5" />
+                            <Text style={[styles.emptyText, { marginTop: 10 }]}>No se encontraron movimientos.</Text>
                             <Text style={styles.emptySubText}>Intenta ajustar tu búsqueda o filtros.</Text>
                         </View>
                     ) : null

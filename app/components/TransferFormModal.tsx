@@ -38,12 +38,13 @@ const initialFormState: FormState = {
 interface TransferFormModalProps {
     visible: boolean;
     onClose: () => void;
+    onSave: () => void;
     accounts: Account[];
     selectedAccount: Account;
-    mode?: 'transfer' | 'deposit';
+    mode?: 'transfer' | 'deposit' | 'payment';
 }
 
-export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount, mode = 'transfer' }: TransferFormModalProps) => {
+export const TransferFormModal = ({ visible, onClose, onSave, accounts, selectedAccount, mode = 'transfer' }: TransferFormModalProps) => {
     const [form, setForm] = useState<FormState>(initialFormState);
     const [loading, setLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -56,10 +57,11 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount,
             setForm({
                 ...initialFormState,
                 from_account_id: mode === 'transfer' ? (selectedAccount?.id || null) : '',
-                to_account_id: mode === 'deposit' ? (selectedAccount?.id || null) : '',
+                to_account_id: (mode === 'deposit' || mode === 'payment') ? (selectedAccount?.id || null) : '',
+                description: mode === 'payment' ? 'Pago tarjeta de credito' : '',
             });
         }
-    }, [visible, selectedAccount]);
+    }, [visible, selectedAccount, mode]);
 
     const handleInputChange = (field: keyof FormState, value: any) => {
         setForm(prev => ({ ...prev, [field]: value }));
@@ -121,6 +123,7 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount,
                 message: "Transferencia realizada correctamente.",
                 type: "success",
             })
+            onSave();
             onClose();
         } catch (error: any) {
             if (error.response?.status === 422) {
@@ -154,7 +157,7 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount,
     const safeAccounts = Array.isArray(accounts) ? accounts : [];
 
     // 1. Filter valid accounts based on mode
-    const validFromAccounts = safeAccounts.filter(acc => mode === 'deposit' ? acc.id !== form.to_account_id : true);
+    const validFromAccounts = safeAccounts.filter(acc => (mode === 'deposit' || mode === 'payment') ? acc.id !== form.to_account_id : true);
     const validToAccounts = safeAccounts.filter(acc => mode === 'transfer' ? acc.id !== form.from_account_id : true);
 
     // 2. Function to build grouped items
@@ -200,7 +203,7 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount,
     const toAccountItems = buildGroupedItems(validToAccounts);
 
     // Ensure selected account is present if not already (for edge cases)
-    if (mode === 'deposit' && selectedAccount) {
+    if ((mode === 'deposit' || mode === 'payment') && selectedAccount) {
         if (!toAccountItems.find(item => item.value === selectedAccount.id)) {
             toAccountItems.unshift({ label: selectedAccount.name, value: selectedAccount.id, color: '#1E293B' });
         }
@@ -231,7 +234,9 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount,
 
                 <View style={styles.modalContent}>
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Nueva Transferencia</Text>
+                        <Text style={styles.headerTitle}>
+                            {mode === 'payment' ? 'Pagar Tarjeta' : 'Nueva Transferencia'}
+                        </Text>
                         <TouchableOpacity onPress={onClose}>
                             <Lucide name="x" size={24} color="#64748B" />
                         </TouchableOpacity>
@@ -300,7 +305,7 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount,
                             Icon={() => {
                                 return <Lucide name="chevron-down" size={20} color="#64748B" />;
                             }}
-                            disabled={mode === 'deposit' || !form.from_account_id}
+                            disabled={mode === 'deposit' || mode === 'payment' || !form.from_account_id}
                         />
                         {errors.to_account_id && (
                             <Text style={styles.errorText}>{errors.to_account_id[0]}</Text>
@@ -352,7 +357,9 @@ export const TransferFormModal = ({ visible, onClose, accounts, selectedAccount,
                             ) : (
                                 <>
                                     <Lucide name="save" size={18} color="#FFF" />
-                                    <Text style={styles.saveButtonText}>Transferir</Text>
+                                    <Text style={styles.saveButtonText}>
+                                        {mode === 'payment' ? 'Pagar' : 'Transferir'}
+                                    </Text>
                                 </>
                             )}
                         </TouchableOpacity>
