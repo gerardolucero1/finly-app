@@ -161,14 +161,14 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                                 {/* Selector de Tipo */}
                                 <Text style={styles.label}>Tipo de movimiento</Text>
                                 <View style={styles.segmentContainer}>
-                                    {['income', 'expense'].map((type) => (
+                                    {['income', 'expense'].map((register_type) => (
                                         <TouchableOpacity
-                                            key={type}
-                                            style={[styles.segmentButton, localFilters.type === type && styles.segmentActive]}
-                                            onPress={() => updateFilter('type', localFilters.type === type ? null : type)}
+                                            key={register_type}
+                                            style={[styles.segmentButton, localFilters.register_type === register_type && styles.segmentActive]}
+                                            onPress={() => updateFilter('register_type', localFilters.register_type === register_type ? null : register_type)}
                                         >
-                                            <Text style={[styles.segmentText, localFilters.type === type && styles.segmentActiveText]}>
-                                                {type === 'income' ? 'Ingreso' : 'Gasto'}
+                                            <Text style={[styles.segmentText, localFilters.register_type === register_type && styles.segmentActiveText]}>
+                                                {register_type === 'income' ? 'Ingreso' : 'Gasto'}
                                             </Text>
                                         </TouchableOpacity>
                                     ))}

@@ -5,7 +5,6 @@ import { Lucide } from '@react-native-vector-icons/lucide';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCustomAlert } from './CustomAlert';
 
 interface DebtFormState {
     name: string;
@@ -76,6 +76,7 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
     const [showDatePicker, setShowDatePicker] = useState<keyof DebtFormState | null>(null);
     const [loading, setLoading] = useState(false);
     const insets = useSafeAreaInsets();
+    const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
 
     // Efecto para cargar datos si es edición o limpiar si es nuevo
     useEffect(() => {
@@ -114,14 +115,40 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
             onSave(); // Recargar lista
             onClose(); // Cerrar modal
         } catch (error: any) {
-            console.log(error);
-            if (error.response?.status === 422) {
-                console.log(error.response.data.errors);
-                setErrors(error.response.data.errors);
-            } else {
-                console.log('Error:', error);
-                Alert.alert("Error", "Ocurrió un error al guardar la deuda.");
+            // Si no hay response, probablemente es un error de red o Axios cortó
+            if (!error.response) {
+                console.log("Network error:", error);
+                showAlert({
+                    title: "Error",
+                    message: "No se pudo conectar con el servidor.",
+                    type: "danger",
+                });
+                return;
             }
+
+            const status = error.response.status;
+            const data = error.response.data;
+
+            // Validaciones 422 típicas de Laravel
+            if (status === 422 && data.errors) {
+                console.log(data.errors);
+                setErrors(data.errors);
+                return;
+            }
+
+            // Mensaje genérico
+            const message =
+                data?.message ||
+                data?.error ||
+                "Ocurrió un error inesperado.";
+
+            console.log("Error:", message);
+
+            showAlert({
+                title: "Error",
+                message,
+                type: "danger",
+            });
         } finally {
             setLoading(false);
         }
@@ -347,6 +374,7 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                         </View>
 
                         {renderDatePicker()}
+                        <AlertComponent />
                     </KeyboardAvoidingView>
                 </View>
             </View>

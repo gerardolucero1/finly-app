@@ -8,6 +8,7 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Platform,
+    ScrollView, // Importamos ScrollView
     StyleSheet,
     Text,
     TextInput,
@@ -15,6 +16,7 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInput } from '../../hooks/useInput';
 import { useAuth } from '../context/auth';
 
@@ -29,6 +31,7 @@ export default function LoginPage() {
 
     const [isLoading, setIsLoading] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const insets = useSafeAreaInsets();
 
     const handleLogin = async () => {
         if (!email.value || !password.value) {
@@ -51,15 +54,20 @@ export default function LoginPage() {
 
     return (
         <View style={styles.mainContainer}>
+            {/* Ajuste: behavior en Android a veces funciona mejor como 'height' o undefined dependiendo de la config de Expo, pero con ScrollView 'padding' suele ir bien en iOS */}
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={{ flex: 1 }}
             >
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <View style={styles.contentContainer}>
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        bounces={false}
+                    >
 
-                        {/* 1. SECCIÓN DE ILUSTRACIÓN (Flexible) */}
-                        {/* Usamos flex: 1 para que ocupe el espacio disponible arriba */}
+                        {/* 1. SECCIÓN DE ILUSTRACIÓN */}
+                        {/* Ya no usamos flex: 1, sino una altura fija proporcional a la pantalla */}
                         <View style={styles.illustrationContainer}>
                             <Image
                                 source={require("../../assets/images/login.png")}
@@ -74,7 +82,7 @@ export default function LoginPage() {
                             <Text style={styles.subtitle}>Ingresa tus datos para iniciar sesión.</Text>
                         </View>
 
-                        {/* 3. FORMULARIO (Espacio Fijo) */}
+                        {/* 3. FORMULARIO */}
                         <View style={styles.formContainer}>
 
                             {error.value ? (
@@ -150,7 +158,7 @@ export default function LoginPage() {
                             </TouchableOpacity>
                         </View>
 
-                    </View>
+                    </ScrollView>
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
         </View>
@@ -162,27 +170,28 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
     },
-    contentContainer: {
-        flex: 1,
+    scrollContent: {
+        flexGrow: 1,
         paddingHorizontal: 30,
-        paddingBottom: 20, // Un poco de espacio abajo para seguridad
-        justifyContent: 'center',
+        paddingBottom: 20,
+        justifyContent: 'center', // Centra el contenido si la pantalla es alta
     },
     // --- ILUSTRACIÓN ---
     illustrationContainer: {
-        flex: 1, // Esto hace que la imagen ocupe todo el espacio libre vertical
+        // CAMBIO CLAVE: Usamos altura fija relativa a la pantalla en lugar de flex: 1
+        height: height * 0.35, // Ocupa el 35% de la altura de la pantalla siempre
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: 150, // Altura mínima para que no desaparezca del todo
-        marginBottom: 10,
+        marginBottom: 20,
+        marginTop: 20,
     },
     illustrationImage: {
-        width: '100%', // Ocupa el ancho disponible del contenedor
-        height: '90%', // Deja un pequeño margen
+        width: '100%',
+        height: '100%',
     },
     // --- HEADER ---
     headerContainer: {
-        marginBottom: 20,
+        marginBottom: 25,
         alignItems: 'flex-start',
     },
     title: {
@@ -192,22 +201,21 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     subtitle: {
-        fontSize: 15, // Reduje un poco para ahorrar espacio
+        fontSize: 15,
         fontFamily: 'Inter_400Regular',
         color: '#64748B',
     },
     // --- FORMULARIO ---
     formContainer: {
         width: '100%',
-        // No ponemos flex aquí para que el formulario tenga su altura natural
     },
     errorBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#FEF2F2',
-        padding: 8, // Reduje un poco el padding
+        padding: 10,
         borderRadius: 10,
-        marginBottom: 12,
+        marginBottom: 16,
     },
     errorText: {
         color: '#EF4444',
@@ -220,9 +228,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#F8FAFC',
         borderRadius: 14,
-        height: 54, // Reduje de 58 a 54 para ganar espacio vertical
+        height: 56,
         paddingHorizontal: 20,
-        marginBottom: 14,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#E2E8F0', // Añadí un borde sutil para mejor definición
     },
     inputIcon: {
         marginRight: 12,
@@ -240,17 +250,17 @@ const styles = StyleSheet.create({
     optionsRow: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        marginBottom: 20, // Reduje el margen
+        marginBottom: 24,
     },
     forgotText: {
-        color: '#1E293B',
+        color: '#4F46E5', // Color primario para el enlace
         fontSize: 13,
         fontFamily: 'Inter_500Medium',
     },
     // --- BOTÓN ---
     loginButton: {
         backgroundColor: '#1E293B',
-        height: 54, // Coincide con el input
+        height: 56,
         borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
@@ -269,10 +279,11 @@ const styles = StyleSheet.create({
     footer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 20, // Reduje el margen
+        marginTop: 30,
+        marginBottom: 10,
     },
     footerText: {
-        color: '#94A3B8',
+        color: '#64748B',
         fontFamily: 'Inter_400Regular',
     },
     signUpText: {

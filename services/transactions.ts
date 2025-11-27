@@ -5,7 +5,7 @@ import api from './apiClient';
 
 export interface TransactionFilters {
     search?: string;
-    type?: 'income' | 'expense';
+    register_type?: 'income' | 'expense';
     account_id?: number;
     category_id?: number;
     sub_category_id?: number;
@@ -18,7 +18,7 @@ export const TransactionsService = {
         const params = new URLSearchParams({ page: page.toString() });
 
         if (filters.search) params.append('search', filters.search);
-        if (filters.type) params.append('type', filters.type);
+        if (filters.register_type) params.append('register_type', filters.register_type);
         if (filters.account_id) params.append('account_id', filters.account_id.toString());
         if (filters.category_id) params.append('category_id', filters.category_id.toString());
         if (filters.sub_category_id) params.append('sub_category_id', filters.sub_category_id.toString());

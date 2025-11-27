@@ -147,7 +147,7 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
             onSave();
             onClose();
         } catch (error: any) {
-            console.log(error);
+            console.log(error.response.data);
             if (error.response?.status === 422) {
                 console.log(error.response.data.errors);
 

@@ -8,6 +8,7 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Platform,
+    ScrollView, // Importamos ScrollView
     StyleSheet,
     Text,
     TextInput,
@@ -21,7 +22,7 @@ import { useAuth } from '../context/auth';
 // Obtenemos las dimensiones para cálculos responsivos
 const { width, height } = Dimensions.get('window');
 
-export default function LoginPage() {
+export default function RegisterPage() {
     const name = useInput('');
     const email = useInput('');
     const password = useInput('');
@@ -33,7 +34,7 @@ export default function LoginPage() {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [isPasswordConfirmationVisible, setIsPasswordConfirmationVisible] = useState(false);
 
-    const handleLogin = async () => {
+    const handleRegister = async () => {
         if (!name.value || !email.value || !password.value || !password_confirmation.value) {
             error.onChangeText('Please fill in all fields');
             return;
@@ -55,14 +56,18 @@ export default function LoginPage() {
     return (
         <View style={styles.mainContainer}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={{ flex: 1 }}
             >
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <View style={styles.contentContainer}>
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        bounces={false}
+                    >
 
-                        {/* 1. SECCIÓN DE ILUSTRACIÓN (Flexible) */}
-                        {/* Usamos flex: 1 para que ocupe el espacio disponible arriba */}
+                        {/* 1. SECCIÓN DE ILUSTRACIÓN */}
+                        {/* Altura fija relativa (25% de la pantalla) para dejar espacio al formulario largo */}
                         <View style={styles.illustrationContainer}>
                             <Image
                                 source={require("../../assets/images/login.png")}
@@ -77,7 +82,7 @@ export default function LoginPage() {
                             <Text style={styles.subtitle}>Ingresa tus datos para registrarte.</Text>
                         </View>
 
-                        {/* 3. FORMULARIO (Espacio Fijo) */}
+                        {/* 3. FORMULARIO */}
                         <View style={styles.formContainer}>
 
                             {error.value ? (
@@ -96,8 +101,7 @@ export default function LoginPage() {
                                     placeholderTextColor="#94A3B8"
                                     value={name.value}
                                     onChangeText={name.onChangeText}
-                                    autoCapitalize="none"
-                                    keyboardType="email-address"
+                                    autoCapitalize="words"
                                 />
                             </View>
 
@@ -138,7 +142,7 @@ export default function LoginPage() {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Input Password */}
+                            {/* Input Password Confirmation */}
                             <View style={styles.inputWrapper}>
                                 <Lucide name="lock" size={20} color="#94A3B8" style={styles.inputIcon} />
                                 <TextInput
@@ -161,16 +165,12 @@ export default function LoginPage() {
                                 </TouchableOpacity>
                             </View>
 
-                            <View style={styles.optionsRow}>
-                                <View style={{ flex: 1 }} />
-                                <TouchableOpacity>
-                                    <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
-                                </TouchableOpacity>
-                            </View>
+                            {/* Espacio extra en lugar de "Olvide contraseña" para separar el botón */}
+                            <View style={{ marginBottom: 20 }} />
 
                             <TouchableOpacity
                                 style={styles.loginButton}
-                                onPress={handleLogin}
+                                onPress={handleRegister}
                                 disabled={isLoading}
                                 activeOpacity={0.8}
                             >
@@ -190,7 +190,7 @@ export default function LoginPage() {
                             </TouchableOpacity>
                         </View>
 
-                    </View>
+                    </ScrollView>
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
         </View>
@@ -202,27 +202,28 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
     },
-    contentContainer: {
-        flex: 1,
+    scrollContent: {
+        flexGrow: 1,
         paddingHorizontal: 30,
-        paddingBottom: 20, // Un poco de espacio abajo para seguridad
+        paddingBottom: 30,
         justifyContent: 'center',
     },
     // --- ILUSTRACIÓN ---
     illustrationContainer: {
-        flex: 1, // Esto hace que la imagen ocupe todo el espacio libre vertical
+        // Altura fija: 25% de la pantalla (más pequeña que en Login porque hay más inputs)
+        height: height * 0.25,
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: 150, // Altura mínima para que no desaparezca del todo
-        marginBottom: 10,
+        marginBottom: 20,
+        marginTop: 10,
     },
     illustrationImage: {
-        width: '100%', // Ocupa el ancho disponible del contenedor
-        height: '90%', // Deja un pequeño margen
+        width: '100%',
+        height: '100%',
     },
     // --- HEADER ---
     headerContainer: {
-        marginBottom: 20,
+        marginBottom: 25,
         alignItems: 'flex-start',
     },
     title: {
@@ -232,22 +233,21 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     subtitle: {
-        fontSize: 15, // Reduje un poco para ahorrar espacio
+        fontSize: 15,
         fontFamily: 'Inter_400Regular',
         color: '#64748B',
     },
     // --- FORMULARIO ---
     formContainer: {
         width: '100%',
-        // No ponemos flex aquí para que el formulario tenga su altura natural
     },
     errorBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#FEF2F2',
-        padding: 8, // Reduje un poco el padding
+        padding: 10,
         borderRadius: 10,
-        marginBottom: 12,
+        marginBottom: 16,
     },
     errorText: {
         color: '#EF4444',
@@ -260,9 +260,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#F8FAFC',
         borderRadius: 14,
-        height: 54, // Reduje de 58 a 54 para ganar espacio vertical
+        height: 54, // Mantengo 54 para ahorrar un poco de espacio vertical
         paddingHorizontal: 20,
-        marginBottom: 14,
+        marginBottom: 14, // Margen ligeramente reducido entre inputs
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
     },
     inputIcon: {
         marginRight: 12,
@@ -277,20 +279,10 @@ const styles = StyleSheet.create({
     eyeIcon: {
         padding: 8,
     },
-    optionsRow: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        marginBottom: 20, // Reduje el margen
-    },
-    forgotText: {
-        color: '#1E293B',
-        fontSize: 13,
-        fontFamily: 'Inter_500Medium',
-    },
     // --- BOTÓN ---
     loginButton: {
         backgroundColor: '#1E293B',
-        height: 54, // Coincide con el input
+        height: 56,
         borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
@@ -309,10 +301,11 @@ const styles = StyleSheet.create({
     footer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 20, // Reduje el margen
+        marginTop: 30,
+        marginBottom: 10,
     },
     footerText: {
-        color: '#94A3B8',
+        color: '#64748B',
         fontFamily: 'Inter_400Regular',
     },
     signUpText: {

@@ -109,6 +109,7 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                 await AccountsService.create(form);
             }
 
+            setErrors({});
             onSave();
             onClose();
         } catch (error: any) {
@@ -278,6 +279,7 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                         <Text style={styles.datePickerText}>{form.expiry_date.toLocaleDateString()}</Text>
                                         <Lucide name="calendar" size={20} color="#64748B" />
                                     </TouchableOpacity>
+                                    {errors.expiry_date && <Text style={styles.errorText}>{errors.expiry_date}</Text>}
                                 </>
                             )}
 
@@ -324,12 +326,14 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                             <TouchableOpacity onPress={() => setShowDatePicker('cut_off_date')} style={styles.datePickerButton}>
                                                 <Text style={styles.datePickerText}>{form.cut_off_date.toLocaleDateString()}</Text>
                                             </TouchableOpacity>
+                                            {errors.cut_off_date && <Text style={styles.errorText}>{errors.cut_off_date}</Text>}
                                         </View>
                                         <View style={styles.col}>
                                             <Text style={styles.label}>Fecha de Pago</Text>
                                             <TouchableOpacity onPress={() => setShowDatePicker('payment_due_date')} style={styles.datePickerButton}>
                                                 <Text style={styles.datePickerText}>{form.payment_due_date.toLocaleDateString()}</Text>
                                             </TouchableOpacity>
+                                            {errors.payment_due_date && <Text style={styles.errorText}>{errors.payment_due_date}</Text>}
                                         </View>
                                     </View>
                                 </>
@@ -393,18 +397,6 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                             )}
                         </TouchableOpacity>
                     </View>
-
-                    {/* Botones de Acción */}
-                    {/* <View style={styles.footer}>
-                        <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-                            <Text style={styles.cancelButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                            <Lucide name="save" size={18} color="#FFF" />
-                            <Text style={styles.saveButtonText}>{editingAccount ? 'Actualizar' : 'Guardar'}</Text>
-                        </TouchableOpacity>
-                    </View> */}
-
                     {renderDatePicker()}
                 </View>
             </View>
@@ -562,6 +554,7 @@ const pickerSelectStyles = StyleSheet.create({
         backgroundColor: '#F1F5F9',
         borderRadius: 8,
         color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
     },
     inputAndroid: {
         fontSize: 16,
@@ -570,6 +563,7 @@ const pickerSelectStyles = StyleSheet.create({
         backgroundColor: '#F1F5F9',
         borderRadius: 8,
         color: '#1E293B',
+        fontFamily: 'Inter_400Regular',
     },
     iconContainer: {
         top: 15,

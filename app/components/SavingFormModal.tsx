@@ -165,7 +165,7 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                             <Text style={styles.label}>Nombre de la cuenta <Text style={styles.required}>*</Text></Text>
                             <TextInput
                                 style={[styles.input, errors.name && styles.inputError]}
-                                placeholder="Ej: Ahorro Emergencia, Inversión Bolsa..."
+                                placeholder="Ej: Inversión Bolsa"
                                 value={form.name}
                                 onChangeText={(value) => handleInputChange('name', value)}
                             />
@@ -261,7 +261,7 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                                     </View>
                                     <Text style={styles.label}>Tipo de Interés</Text>
                                     <View style={styles.typeSelectorContainer}>
-                                        {['fixed', 'variable'].map((type) => (
+                                        {['compound', 'simple'].map((type) => (
                                             <TouchableOpacity
                                                 key={type}
                                                 style={[

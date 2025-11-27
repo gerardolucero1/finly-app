@@ -1,3 +1,5 @@
+import { useCustomAlert } from '@/app/components/CustomAlert';
+import { ExpenseFormModal } from '@/app/components/ExpenseFormModal';
 import { FilterModal } from '@/app/components/FilterModal';
 import { SearchBar } from '@/app/components/SearchBar';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -6,10 +8,18 @@ import { TransactionFilters, TransactionsService } from '@/services/transactions
 import Lucide from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { DateTime } from 'luxon';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from 'react-native-gesture-handler';
+// Importamos RectButton para mejor respuesta táctil en swipes (opcional, pero recomendado)
+import { useInput } from '@/hooks/useInput';
+import { Account } from '@/models/account';
+import { AccountsService } from '@/services/accounts';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Swipeable, { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Reanimated, { Extrapolation, interpolate, SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
-// Constante para la altura fija de la fila (Crucial para getItemLayout)
+// Constante para la altura fija de la fila
 const ITEM_HEIGHT = 86;
 
 const formatCurrency = (value?: string | number): string => {
@@ -21,63 +31,133 @@ const formatCurrency = (value?: string | number): string => {
 
 interface TransactionItemProps {
     item: Transaction;
+    onDelete: (id: number) => void;
+    onEdit: (item: Transaction) => void;
 }
 
-// 1. OPTIMIZACIÓN: Usar React.memo para evitar re-renders innecesarios
-// El componente solo se actualizará si 'item' cambia.
-const TransactionItem = React.memo(({ item }: TransactionItemProps) => {
-    const amount = item.amount;
-    const isPositive = item.type == 'income';
+const TransactionItem = React.memo(({ item, onDelete, onEdit }: TransactionItemProps) => {
+    // Referencia para controlar el Swipeable
+    const swipeableRef = useRef<SwipeableMethods>(null);
 
-    // Memoizar la fecha para no recalcularla si no cambia
+    const amount = item.amount;
+    const isPositive = item.register_type == 'income';
+
     const formattedDate = useMemo(() => {
         return item.date
-            ? DateTime.fromISO(item.date)
-                .setLocale('es')
-                .toFormat("d 'de' LLLL yyyy")
+            ? DateTime.fromISO(item.date).setLocale('es').toFormat("d 'de' LLLL yyyy")
             : '';
     }, [item.date]);
 
     const getIconName = () => {
-        // Nota: Para mejor performance, idealmente esto debería venir del backend o ser un mapa simple
         const sub = item.sub_category?.toLowerCase() || '';
         if (sub.includes('comida rápida')) return 'hamburger';
         if (sub.includes('snacks')) return 'donut';
         if (sub.includes('despensa')) return 'store';
+        if (sub.includes('cafeterías')) return 'coffee';
+        if (sub.includes('gasolina')) return 'fuel';
         return 'circle-dollar-sign';
     };
 
+    // Funciones locales para cerrar el swipe antes de la acción
+    const handleLocalDelete = () => {
+        swipeableRef.current?.close();
+        // Pequeño timeout para que la animación de cierre se vea fluida antes de la alerta
+        setTimeout(() => onDelete(item.id), 100);
+    };
+
+    const handleLocalEdit = () => {
+        console.log('Editando', item);
+        swipeableRef.current?.close();
+        onEdit(item);
+    };
+
+    const renderRightActions = (progress: SharedValue<number>, drag: SharedValue<number>) => {
+        const animatedStyle = useAnimatedStyle(() => {
+            const scale = interpolate(drag.value, [-80, 0], [1, 0], Extrapolation.CLAMP);
+            return { transform: [{ scale }] };
+        });
+
+        return (
+            <View style={styles.actionButtonContainer}>
+                {/* Usamos TouchableOpacity con flex:1 para asegurar área de toque */}
+                <Pressable onPress={handleLocalDelete} style={styles.rightActionBtn}>
+                    <View style={styles.deleteButton}>
+                        <Reanimated.View style={[styles.deleteContent, animatedStyle]}>
+                            <Lucide name="trash-2" size={24} color="#FFFFFF" />
+                            <Text style={styles.deleteText}>Eliminar</Text>
+                        </Reanimated.View>
+                    </View>
+                </Pressable>
+            </View>
+        );
+    };
+
+    const renderLeftActions = (progress: SharedValue<number>, drag: SharedValue<number>) => {
+        const animatedStyle = useAnimatedStyle(() => {
+            const scale = interpolate(drag.value, [0, 80], [0, 1], Extrapolation.CLAMP);
+            return { transform: [{ scale }] };
+        });
+
+        return (
+            <View style={styles.actionButtonContainer}>
+                <Pressable onPress={handleLocalEdit} style={styles.leftActionBtn}>
+                    <View style={styles.editButton}>
+                        <Reanimated.View style={[styles.deleteContent, animatedStyle]}>
+                            <Lucide name="pencil" size={24} color="#FFFFFF" />
+                            <Text style={styles.deleteText}>Editar</Text>
+                        </Reanimated.View>
+                    </View>
+                </Pressable>
+            </View>
+        );
+    };
+
     return (
-        <View style={styles.transactionItem}>
-            <View style={[
-                styles.transactionIconContainer,
-                { backgroundColor: isPositive ? '#E0F2F1' : '#F1F5F9' }
-            ]}>
-                <Lucide name={getIconName()} size={22} color={isPositive ? '#00796B' : '#475569'} />
-            </View>
+        <Swipeable
+            ref={swipeableRef}
+            renderRightActions={renderRightActions}
+            renderLeftActions={renderLeftActions}
+            friction={2}
+            overshootRight={false} // Evita rebote excesivo que puede bloquear clicks
+            overshootLeft={false}
+            rightThreshold={40}
+            leftThreshold={40}
+            containerStyle={styles.swipeableContainer}
+        >
+            <View style={styles.transactionItem}>
+                <View style={[
+                    styles.transactionIconContainer,
+                    { backgroundColor: isPositive ? '#E0F2F1' : '#F1F5F9' }
+                ]}>
+                    <Lucide name={getIconName()} size={22} color={isPositive ? '#00796B' : '#475569'} />
+                </View>
 
-            <View style={styles.transactionDetails}>
-                <Text style={styles.transactionName} numberOfLines={1}>{item.name}</Text>
+                <View style={styles.transactionDetails}>
+                    <Text style={styles.transactionName} numberOfLines={1}>{item.name}</Text>
 
-                <Text style={styles.transactionCategory} numberOfLines={1}>
-                    {item.category || 'Sin categoría'}
-                    {item.sub_category ? ` · ${item.sub_category}` : ''}
+                    <Text style={styles.transactionCategory} numberOfLines={1}>
+                        {item.category || 'Sin categoría'}
+                        {item.sub_category ? ` · ${item.sub_category}` : ''}
+                    </Text>
+
+                    <Text style={styles.transactionDate}>{formattedDate}</Text>
+                </View>
+
+                <Text style={[
+                    styles.transactionAmount,
+                    { color: isPositive ? '#2E7D32' : '#DC2626' }
+                ]}>
+                    {isPositive ? `+${formatCurrency(amount)}` : `-${formatCurrency(amount)}`}
                 </Text>
-
-                <Text style={styles.transactionDate}>{formattedDate}</Text>
             </View>
-
-            <Text style={[
-                styles.transactionAmount,
-                { color: isPositive ? '#2E7D32' : '#DC2626' }
-            ]}>
-                {isPositive ? `+${formatCurrency(amount)}` : `-${formatCurrency(amount)}`}
-            </Text>
-        </View>
+        </Swipeable>
     );
 });
 
 export default function MovementsScreen() {
+    // ... (El resto de tu lógica de MovementsScreen se mantiene igual, no necesita cambios)
+    // Solo incluyo las partes necesarias para el contexto
+    const accounts = useInput<Account[]>([]);
     const headerHeight = useHeaderHeight();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
@@ -86,39 +166,33 @@ export default function MovementsScreen() {
     const [filters, setFilters] = useState<TransactionFilters>({});
     const [searchQuery, setSearchQuery] = useState('');
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
-
+    const [isExpenseModalVisible, setExpenseModalVisible] = useState(false);
+    const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+    const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
     const debouncedSearchTerm = useDebounce(searchQuery, 500);
 
+    // ... (fetchTransactions y useEffects iguales)
+
     const fetchTransactions = async (isNewSearch = false) => {
-        // Validación extra: Si está cargando y no es búsqueda nueva, no hacer nada
         if (loading && !isNewSearch) return;
-        // Si no hay más datos y no es búsqueda nueva, no hacer nada
         if (!hasMore && !isNewSearch) return;
-
         setLoading(true);
-
         try {
             const currentPage = isNewSearch ? 1 : page;
+
             const response = await TransactionsService.getAll(currentPage, filters);
+
 
             if (response.data && response.data.length > 0) {
                 setTransactions(prev => {
-                    // 1. Combinamos los datos anteriores con los nuevos
                     const rawList = isNewSearch ? response.data : [...prev, ...response.data];
-
-                    // 2. ELIMINAMOS DUPLICADOS POR ID
-                    // Creamos un Map donde la clave es el ID. Si el ID se repite, el Map lo sobrescribe (dejando solo uno).
                     const uniqueList = Array.from(new Map(rawList.map(item => [item.id, item])).values());
-
                     return uniqueList;
                 });
-
-                // Solo aumentamos página si obtuvimos datos
                 setPage(currentPage + 1);
             }
-
-            setHasMore(response.current_page < response.last_page);
-
+            const lastPage = Math.ceil(response.total / response.per_page);
+            setHasMore(response.current_page < lastPage);
         } catch (error: any) {
             console.error("Error fetching transactions:", error.response);
         } finally {
@@ -131,15 +205,18 @@ export default function MovementsScreen() {
         setTransactions([]);
         setPage(1);
         setHasMore(true);
-
         const fetchData = async () => {
             setLoading(true);
             try {
                 const response = await TransactionsService.getAll(1, allFilters);
+                const accountsRes = await AccountsService.getAll(1);
+                accounts.setValue(accountsRes.data);
+
                 if (response.data && response.data.length > 0) {
                     setTransactions(response.data);
                     setPage(2);
-                    setHasMore(response.current_page < response.last_page);
+                    const lastPage = Math.ceil(response.total / response.per_page);
+                    setHasMore(response.current_page < lastPage);
                 } else {
                     setHasMore(false);
                 }
@@ -152,24 +229,62 @@ export default function MovementsScreen() {
         fetchData();
     }, [filters, debouncedSearchTerm]);
 
-    const handleLoadMore = () => {
-        if (!loading && hasMore) {
-            fetchTransactions();
-        }
-    };
-
+    const handleLoadMore = () => { if (!loading && hasMore) fetchTransactions(); };
     const applyFilters = (newFilters: TransactionFilters) => {
         const { search, ...restOfFilters } = newFilters;
         setFilters(restOfFilters);
         setFilterModalVisible(false);
     };
 
-    // 2. OPTIMIZACIÓN: renderItem memoizado
-    const renderItem = useCallback(({ item }: { item: Transaction }) => (
-        <TransactionItem item={item} />
-    ), []);
+    const handleEdit = useCallback((item: Transaction) => {
+        if (item.register_type === 'expense') {
+            setEditingTransaction(item);
+            setExpenseModalVisible(true);
+        } else {
+            Alert.alert("Info", "La edición de ingresos se implementará pronto.");
+        }
+    }, []);
 
-    // 3. OPTIMIZACIÓN: keyExtractor estable
+    const handleDelete = useCallback((id: number) => {
+        const transaction = transactions.find(t => t.id === id);
+        if (!transaction) return;
+        showAlert({
+            title: "Eliminar movimiento",
+            message: "¿Estás seguro de que deseas eliminar este movimiento?",
+            buttons: [
+                { text: "Cancelar", style: "default", onPress: () => hideAlert() },
+                {
+                    text: "Eliminar",
+                    style: "danger",
+                    onPress: async () => {
+                        try {
+                            setTransactions(prev => prev.filter(t => t.id !== id));
+                            if (transaction.register_type === 'expense') {
+                                const { ExpensesService } = require('@/services/expenses');
+                                await ExpensesService.delete(id);
+                            } else {
+                                const { IncomesService } = require('@/services/incomes');
+                                await IncomesService.delete(id);
+                            }
+                            hideAlert();
+                        } catch (error: any) {
+                            console.error("Error deleting transaction:", error.response.data);
+                            fetchTransactions(true);
+                            showAlert({
+                                title: "Error",
+                                message: "No se pudo eliminar el movimiento.",
+                            });
+                        }
+                    }
+                }
+            ]
+        });
+    }, [transactions, hideAlert]);
+
+    const renderItem = useCallback(({ item }: { item: Transaction }) => (
+        <TransactionItem item={item} onDelete={handleDelete} onEdit={handleEdit} />
+    ), [handleDelete, handleEdit]);
+
     const keyExtractor = useCallback((item: Transaction) => item.id.toString(), []);
 
     const renderFooter = () => {
@@ -177,55 +292,40 @@ export default function MovementsScreen() {
         return <ActivityIndicator style={{ marginVertical: 20 }} color="#4F46E5" />;
     };
 
-    // 4. OPTIMIZACIÓN: getItemLayout
-    // Esto permite saltar cálculos de layout costosos
     const getItemLayout = useCallback((data: any, index: number) => ({
-        length: ITEM_HEIGHT,
-        offset: ITEM_HEIGHT * index,
-        index,
+        length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index,
     }), []);
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight }]}>
-            <SearchBar
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                onFilterPress={() => setFilterModalVisible(true)}
-            />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <View style={[styles.container, { paddingTop: headerHeight }]}>
+                <SearchBar value={searchQuery} onChangeText={setSearchQuery} onFilterPress={() => setFilterModalVisible(true)} />
+                <FlatList
+                    data={transactions}
+                    keyExtractor={keyExtractor}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContent}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={renderFooter}
+                    ListEmptyComponent={!loading ? (<View style={styles.emptyContainer}><Lucide name="banknote-x" size={48} color="#CBD5E1" /><Text style={styles.emptyText}>No se encontraron movimientos.</Text><Text style={styles.emptySubText}>Intenta ajustar tu búsqueda o filtros.</Text></View>) : null}
+                    getItemLayout={getItemLayout}
+                    initialNumToRender={10}
+                    maxToRenderPerBatch={10}
+                    windowSize={11}
+                    removeClippedSubviews={true}
+                />
+                <FilterModal visible={isFilterModalVisible} onClose={() => setFilterModalVisible(false)} onApply={applyFilters} currentFilters={filters} />
 
-            <FlatList
-                data={transactions}
-                keyExtractor={keyExtractor}
-                renderItem={renderItem}
-                contentContainerStyle={styles.listContent}
-                onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={renderFooter}
-                ListEmptyComponent={
-                    !loading ? (
-                        <View style={styles.emptyContainer}>
-                            <Lucide name="banknote-x" size={50} color="#4F46E5" />
-                            <Text style={[styles.emptyText, { marginTop: 10 }]}>No se encontraron movimientos.</Text>
-                            <Text style={styles.emptySubText}>Intenta ajustar tu búsqueda o filtros.</Text>
-                        </View>
-                    ) : null
-                }
-
-                // --- PROPIEDADES DE RENDIMIENTO CRÍTICAS ---
-                getItemLayout={getItemLayout}
-                initialNumToRender={10} // Renderiza pocos al inicio (lo que quepa en pantalla)
-                maxToRenderPerBatch={10} // No intentes renderizar 50 a la vez al scrollear
-                windowSize={11} // Reduce el área de renderizado fuera de pantalla (default es 21)
-                removeClippedSubviews={true} // Desmonta vistas fuera de pantalla (Vital en Android)
-            />
-
-            <FilterModal
-                visible={isFilterModalVisible}
-                onClose={() => setFilterModalVisible(false)}
-                onApply={applyFilters}
-                currentFilters={filters}
-            />
-        </View>
+                <ExpenseFormModal
+                    visible={isExpenseModalVisible}
+                    onClose={() => { setExpenseModalVisible(false); setEditingTransaction(null); }}
+                    onSave={() => fetchTransactions(true)}
+                    accounts={accounts.value}
+                    editingTransaction={editingTransaction} />
+                <AlertComponent />
+            </View>
+        </GestureHandlerRootView>
     );
 }
 
@@ -257,14 +357,16 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter_400Regular',
     },
     transactionItem: {
-        // 5. OPTIMIZACIÓN: Altura fija
-        height: ITEM_HEIGHT, // Forzamos la altura
+        height: ITEM_HEIGHT,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 12, // Ajusta esto si el contenido se corta
+        paddingVertical: 12,
         borderBottomWidth: 1,
         borderBottomColor: '#E2E8F0',
+        // --- CAMBIO IMPORTANTE 1: COLOR DE FONDO ---
+        // Esto previene que veas los botones de atrás cuando el item se cierra
+        backgroundColor: '#F8FAFC',
     },
     transactionIconContainer: {
         width: 40,
@@ -276,7 +378,7 @@ const styles = StyleSheet.create({
     transactionDetails: {
         flex: 1,
         marginLeft: 10,
-        justifyContent: 'center', // Centrar verticalmente el texto
+        justifyContent: 'center',
     },
     transactionName: {
         fontSize: 16,
@@ -300,5 +402,43 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter_700Bold',
         minWidth: 80,
         textAlign: 'right',
+    },
+    swipeableContainer: {
+        overflow: 'hidden',
+        backgroundColor: 'transparent',
+    },
+    // Nuevos estilos para asegurar el área táctil
+    actionButtonContainer: {
+        width: 80,
+    },
+    rightActionBtn: {
+        flex: 1,
+        backgroundColor: '#EF4444',
+    },
+    leftActionBtn: {
+        flex: 1,
+        backgroundColor: '#10B981',
+    },
+    deleteButton: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    editButton: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    deleteContent: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        height: '100%'
+    },
+    deleteText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontFamily: 'Inter_500Medium',
+        marginTop: 4,
     },
 });

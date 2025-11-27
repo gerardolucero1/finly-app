@@ -42,13 +42,13 @@ export const StrategyInfoCard = ({ strategy, onPress, onCreate }: StrategyProps)
         return (
             <TouchableOpacity style={styles.emptyCard} onPress={onCreate} activeOpacity={0.7}>
                 <View style={styles.emptyIcon}>
-                    <Lucide name="plus" size={20} color="#7C3AED" />
+                    <Lucide name="dollar-sign" size={20} color="#7C3AED" />
                 </View>
                 <View>
-                    <Text style={styles.emptyTitle}>Crear Estrategia</Text>
-                    <Text style={styles.emptySubtitle}>Define tu plan de pagos</Text>
+                    <Text style={styles.emptyTitle}>Sin estrategia</Text>
+                    <Text style={styles.emptySubtitle}>Activala desde la plataforma</Text>
                 </View>
-                <Lucide name="chevron-right" size={20} color="#CBD5E1" style={{ marginLeft: 'auto' }} />
+                {/* <Lucide name="chevron-right" size={20} color="#CBD5E1" style={{ marginLeft: 'auto' }} /> */}
             </TouchableOpacity>
         );
     }

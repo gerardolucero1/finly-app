@@ -27,6 +27,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { RefreshControl } from 'react-native-gesture-handler';
 
 // --- COMPONENTES VISUALES ---
 
@@ -145,6 +146,7 @@ const SIDECARD_SPACING = (screenWidth - CARD_WIDTH) / 2;
 export default function AccountsScreen() {
     const accounts = useInput<Account[]>([]);
     const loading = useInput(true);
+    const [refreshing, setRefreshing] = useState(false);
     const isExpenseModalVisible = useInput(false);
     const isTransferModalVisible = useInput(false);
     const isIncomeModalVisible = useInput(false);
@@ -181,6 +183,7 @@ export default function AccountsScreen() {
             console.log(error);
         } finally {
             loading.setValue(false);
+            setRefreshing(false);
         }
     };
 
@@ -257,6 +260,11 @@ export default function AccountsScreen() {
     const openAccountModal = () => isAccountModalVisible.setValue(true)
     const closeAccountModal = () => isAccountModalVisible.setValue(false)
 
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchAccounts();
+    };
+
     const carouselData = useMemo(() => {
         return [...accounts.value, { id: 'add' }];
     }, [accounts.value]);
@@ -291,6 +299,7 @@ export default function AccountsScreen() {
                         snapToInterval={CARD_WIDTH + SPACING}
                         decelerationRate="fast"
                         onScroll={onScroll}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4F46E5']} />}
                         scrollEventThrottle={16}
                     />
                 </View>

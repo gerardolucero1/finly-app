@@ -248,7 +248,7 @@ const QuickAction = ({ icon, label, color, onPress }: any) => (
 );
 
 const SectionCard = ({ title, value, subtitle, icon, color, buttonText, onPress, progress }: any) => (
-    <View style={styles.sectionCard}>
+    <TouchableOpacity style={styles.sectionCard} onPress={onPress} activeOpacity={0.1}>
         <View style={styles.sectionHeader}>
             <View style={[styles.iconCircle, { backgroundColor: `${color}15` }]}>
                 <Lucide name={icon} size={20} color={color} />
@@ -273,7 +273,7 @@ const SectionCard = ({ title, value, subtitle, icon, color, buttonText, onPress,
             <Text style={[styles.cardButtonText, { color }]}>{buttonText}</Text>
             <Lucide name="arrow-right" size={14} color={color} />
         </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
 );
 
 const ActiveDebtItem = ({ name, amount, date }: { name: string, amount: number, date: string }) => {
@@ -286,7 +286,7 @@ const ActiveDebtItem = ({ name, amount, date }: { name: string, amount: number, 
             </View>
             <View style={{ flex: 1, paddingHorizontal: 12 }}>
                 <Text style={styles.debtName}>{name}</Text>
-                <Text style={[styles.debtDate, isUrgent && { color: '#EF4444', fontWeight: 'bold' }]}>
+                <Text style={[styles.debtDate, isUrgent && { color: '#EF4444' }]}>
                     {daysLeft < 0 ? 'Vencido' : (daysLeft === 0 ? 'Vence hoy' : `Vence en ${daysLeft} días`)}
                 </Text>
             </View>
@@ -433,9 +433,9 @@ export default function DashboardScreen() {
                     <View style={styles.debtsSection}>
                         <View style={styles.sectionTitleRow}>
                             <Text style={styles.sectionHeaderTitle}>Proximos Pagos</Text>
-                            <TouchableOpacity onPress={() => handleNavigate('Deudas')}>
+                            {/* <TouchableOpacity onPress={() => handleNavigate('Deudas')}>
                                 <Text style={styles.linkText}>Ver todas</Text>
-                            </TouchableOpacity>
+                            </TouchableOpacity> */}
                         </View>
                         <View style={styles.debtList}>
                             {activeDebts.slice(0, 3).map((debt) => (

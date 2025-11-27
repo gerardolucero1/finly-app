@@ -74,7 +74,7 @@ const SavingCard = ({ account, onEdit, onDelete, onToggleCompound, onDeposit, on
                             <Text style={styles.interestValue}>{account.yield_rate}% {account.yield_period === 'yearly' ? 'Anual' : account.yield_period === 'monthly' ? 'Mensual' : 'Diario'}</Text>
                         </View>
                         <View style={styles.compoundRow}>
-                            <Text style={styles.interestLabel}>Interés Compuesto</Text>
+                            <Text style={styles.interestLabel}>Interés Diario</Text>
                             <Switch
                                 trackColor={{ false: "#E2E8F0", true: "#C7D2FE" }}
                                 thumbColor={account.auto_compound_daily ? "#4F46E5" : "#f4f3f4"}

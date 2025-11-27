@@ -31,6 +31,7 @@ interface FormState {
     description: string;
     type: string;
     amount: string;
+    scope: string | 'personal' | 'business';
     frequency: string;
     due_date: Date;
     dispensable: boolean;
@@ -54,6 +55,7 @@ const initialFormState: FormState = {
     description: '',
     type: 'variable',
     amount: '',
+    scope: 'personal',
     frequency: 'one-time',
     due_date: new Date(),
     dispensable: false,
@@ -77,10 +79,10 @@ interface ExpenseFormModalProps {
     onClose: () => void;
     onSave: () => void;
     accounts: Account[];
-    selectedAccount: Account | null;
+    editingTransaction?: any; // Using any for now to avoid circular dependency or strict type issues with Transaction vs Expense
 }
 
-export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedAccount }: ExpenseFormModalProps) => {
+export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedAccount, editingTransaction }: ExpenseFormModalProps) => {
     const [form, setForm] = useState<FormState>(initialFormState);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -91,12 +93,41 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
 
     useEffect(() => {
         if (visible) {
-            setForm({
-                ...initialFormState,
-                account_id: selectedAccount?.id || null,
-            });
+            if (editingTransaction) {
+                // Populate form with existing transaction data
+                setForm({
+                    name: editingTransaction.name || '',
+                    description: editingTransaction.description || '',
+                    type: editingTransaction.type || 'variable',
+                    amount: editingTransaction.amount ? editingTransaction.amount.toString() : '',
+                    scope: editingTransaction.scope || 'personal',
+                    frequency: editingTransaction.frequency || 'one-time',
+                    due_date: editingTransaction.date ? new Date(editingTransaction.date) : new Date(),
+                    dispensable: editingTransaction.dispensable || false,
+                    reminder: editingTransaction.reminder || false,
+                    is_paid: editingTransaction.is_paid || false,
+                    is_late: editingTransaction.is_late || false,
+                    programmed: editingTransaction.programmed || false,
+                    estimated_amount: editingTransaction.estimated_amount ? editingTransaction.estimated_amount.toString() : '',
+                    category_id: editingTransaction.category_id || null,
+                    sub_category_id: editingTransaction.sub_category_id || null,
+                    account_id: editingTransaction.account_id || selectedAccount?.id || null,
+                    ticket_image_url: editingTransaction.ticket_image_url || '',
+                    invoice_xml_url: editingTransaction.invoice_xml_url || '',
+                    remove_ticket_image: false,
+                    remove_invoice_xml: false,
+                    ticketImage: null,
+                });
+            } else {
+                // Reset form for new expense
+                setForm({
+                    ...initialFormState,
+                    account_id: selectedAccount?.id || null,
+                });
+            }
+            setErrors({});
         }
-    }, [visible, selectedAccount]);
+    }, [visible, selectedAccount, editingTransaction]);
 
     useEffect(() => {
         const getCategories = async () => {
@@ -134,7 +165,11 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
     const handleSave = async () => {
         setLoading(true);
         try {
-            let response = await ExpensesService.create(form);
+            if (editingTransaction) {
+                await ExpensesService.update(editingTransaction.id, form);
+            } else {
+                await ExpensesService.create(form);
+            }
             onSave();
             onClose();
         } catch (error: any) {
@@ -173,7 +208,7 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
 
                 <View style={styles.modalContent}>
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Nuevo Gasto</Text>
+                        <Text style={styles.headerTitle}>{editingTransaction ? 'Editar Gasto' : 'Nuevo Gasto'}</Text>
                         <TouchableOpacity onPress={onClose}>
                             <Lucide name="x" size={24} color="#64748B" />
                         </TouchableOpacity>
@@ -291,6 +326,56 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                                 }}
                             />
 
+                            {/* Etiqueta */}
+                            <Text style={styles.label}>Etiqueta *</Text>
+                            <View style={styles.radioGroup}>
+                                {/* Opción: Personal */}
+                                <TouchableOpacity
+                                    style={[
+                                        styles.radioOption,
+                                        form.scope === 'personal' && styles.radioOptionSelected
+                                    ]}
+                                    onPress={() => handleInputChange('scope', 'personal')}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={[
+                                        styles.radioCircle,
+                                        form.scope === 'personal' && styles.radioCircleSelected
+                                    ]}>
+                                        {form.scope === 'personal' && <View style={styles.radioInnerCircle} />}
+                                    </View>
+                                    <Text style={[
+                                        styles.radioText,
+                                        form.scope === 'personal' && styles.radioTextSelected
+                                    ]}>Personal</Text>
+                                </TouchableOpacity>
+
+                                {/* Opción: Negocio */}
+                                <TouchableOpacity
+                                    style={[
+                                        styles.radioOption,
+                                        form.scope === 'business' && styles.radioOptionSelected
+                                    ]}
+                                    onPress={() => handleInputChange('scope', 'business')}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={[
+                                        styles.radioCircle,
+                                        form.scope === 'business' && styles.radioCircleSelected
+                                    ]}>
+                                        {form.scope === 'business' && <View style={styles.radioInnerCircle} />}
+                                    </View>
+                                    <Text style={[
+                                        styles.radioText,
+                                        form.scope === 'business' && styles.radioTextSelected
+                                    ]}>Negocio</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {errors.scope && (
+                                <Text style={styles.errorText}>{errors.scope[0]}</Text>
+                            )}
+
                             {/* Fecha */}
                             <Text style={styles.label}>Fecha</Text>
                             <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
@@ -328,7 +413,7 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                                 ) : (
                                     <>
                                         <Lucide name="save" size={18} color="#FFF" />
-                                        <Text style={styles.saveButtonText}>Guardar</Text>
+                                        <Text style={styles.saveButtonText}>{editingTransaction ? 'Actualizar' : 'Guardar'}</Text>
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -448,6 +533,53 @@ const styles = StyleSheet.create({
         fontSize: 11,
         marginTop: 2,
         fontFamily: 'Inter_400Regular',
+    },
+    radioGroup: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    radioOption: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+    },
+    radioOptionSelected: {
+        backgroundColor: '#EEF2FF',
+        borderColor: '#4F46E5',
+    },
+    radioCircle: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: '#94A3B8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 10,
+    },
+    radioCircleSelected: {
+        borderColor: '#4F46E5',
+    },
+    radioInnerCircle: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#4F46E5',
+    },
+    radioText: {
+        fontSize: 14,
+        color: '#64748B',
+        fontFamily: 'Inter_500Medium',
+    },
+    radioTextSelected: {
+        color: '#1E293B',
+        fontFamily: 'Inter_700Bold',
     },
 });
 

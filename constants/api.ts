@@ -1,6 +1,6 @@
-// export const API_BASE_URL = 'https://finly.bombochao.com/api';
+export const API_BASE_URL = 'https://finly.bombochao.com/api';
 // export const API_BASE_URL = 'http://192.168.1.135:8000/api';
-export const API_BASE_URL = 'http://192.168.1.92:80/api';
+// export const API_BASE_URL = 'http://192.168.1.92:80/api';
 
 export const API_ENDPOINTS = {
     LOGIN: '/login',
