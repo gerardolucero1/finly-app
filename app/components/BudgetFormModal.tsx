@@ -20,6 +20,7 @@ import {
     View
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCustomAlert } from './CustomAlert';
 
 interface BudgetFormState {
@@ -74,6 +75,7 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
     const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
     const [filteredSubcategories, setFilteredSubcategories] = useState<SubCategory[]>([]);
     const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
         if (visible) {
@@ -190,10 +192,7 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
             onRequestClose={onClose}
             statusBarTranslucent={true}
         >
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.flexEnd}
-            >
+            <View style={styles.flexEnd}>
                 <TouchableWithoutFeedback onPress={onClose}>
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
@@ -208,155 +207,160 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={{ flex: 1 }}
+                    >
+                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
 
-                        {/* Nombre */}
-                        <Text style={styles.label}>Nombre del presupuesto <Text style={styles.required}>*</Text></Text>
-                        <TextInput
-                            style={[styles.input, errors.name && styles.inputError]}
-                            placeholder="Ej: Comida, Transporte..."
-                            value={form.name}
-                            onChangeText={(value) => handleInputChange('name', value)}
-                        />
-                        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-
-                        {/* Monto */}
-                        <Text style={styles.label}>Monto Límite <Text style={styles.required}>*</Text></Text>
-                        <View style={styles.currencyInputContainer}>
-                            <Text style={styles.currencySymbol}>$</Text>
+                            {/* Nombre */}
+                            <Text style={styles.label}>Nombre del presupuesto <Text style={styles.required}>*</Text></Text>
                             <TextInput
-                                style={styles.currencyInput}
-                                placeholder="0.00"
-                                keyboardType="decimal-pad"
-                                value={form.amount}
-                                onChangeText={(value) => handleInputChange('amount', value)}
+                                style={[styles.input, errors.name && styles.inputError]}
+                                placeholder="Ej: Comida, Transporte..."
+                                value={form.name}
+                                onChangeText={(value) => handleInputChange('name', value)}
                             />
-                        </View>
-                        {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
+                            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
-                        {/* Categoría */}
-                        <Text style={styles.label}>Categoría</Text>
-                        <View style={styles.inputContainer}>
-                            <RNPickerSelect
-                                value={form.category_id}
-                                onValueChange={(value) => handleInputChange('category_id', value)}
-                                items={categories.map(cat => ({ label: cat.name, value: cat.id.toString() }))}
-                                placeholder={{ label: "Seleccionar categoría...", value: null }}
-                                style={pickerSelectStyles}
-                                useNativeAndroidPickerStyle={false}
-                                Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
-                            />
-                        </View>
-                        {errors.sub_category_id && <Text style={styles.errorText}>{errors.sub_category_id}</Text>}
-
-                        {/* Subcategoría */}
-                        {filteredSubcategories.length > 0 && (
-                            <>
-                                <Text style={styles.label}>Subcategoría</Text>
-                                <View style={styles.inputContainer}>
-                                    <RNPickerSelect
-                                        value={form.sub_category_id}
-                                        onValueChange={(value) => handleInputChange('sub_category_id', value)}
-                                        items={filteredSubcategories.map(sub => ({ label: sub.name, value: sub.id.toString() }))}
-                                        placeholder={{ label: "Seleccionar subcategoría...", value: null }}
-                                        style={pickerSelectStyles}
-                                        useNativeAndroidPickerStyle={false}
-                                        Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
-                                    />
-                                </View>
-                                {errors.sub_category_id && <Text style={styles.errorText}>{errors.sub_category_id}</Text>}
-                            </>
-                        )}
-
-                        {/* Periodo */}
-                        <Text style={styles.label}>Periodo</Text>
-                        <View style={styles.typeSelectorContainer}>
-                            {periodOptions.map((option) => (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    style={[
-                                        styles.typeButton,
-                                        form.period === option.value && styles.typeButtonSelected
-                                    ]}
-                                    onPress={() => handleInputChange('period', option.value)}
-                                >
-                                    <Text style={[
-                                        styles.typeButtonText,
-                                        form.period === option.value && styles.typeButtonTextSelected
-                                    ]}>
-                                        {option.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-
-                        {/* Fechas */}
-                        <View style={styles.row}>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Fecha Inicio</Text>
-                                <TouchableOpacity onPress={() => setShowDatePicker('start_date')} style={styles.datePickerButton}>
-                                    <Text style={styles.datePickerText}>{form.start_date.toLocaleDateString()}</Text>
-                                    <Lucide name="calendar" size={18} color="#64748B" />
-                                </TouchableOpacity>
-                            </View>
-                            {errors.start_date && <Text style={styles.errorText}>{errors.start_date}</Text>}
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Fecha Fin</Text>
-                                <TouchableOpacity onPress={() => setShowDatePicker('end_date')} style={styles.datePickerButton}>
-                                    <Text style={styles.datePickerText}>{form.end_date.toLocaleDateString()}</Text>
-                                    <Lucide name="calendar" size={18} color="#64748B" />
-                                </TouchableOpacity>
-                            </View>
-                            {errors.end_date && <Text style={styles.errorText}>{errors.end_date}</Text>}
-                        </View>
-
-                        {/* Alertas */}
-                        <View style={styles.row}>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Alerta al (%)</Text>
+                            {/* Monto */}
+                            <Text style={styles.label}>Monto Límite <Text style={styles.required}>*</Text></Text>
+                            <View style={styles.currencyInputContainer}>
+                                <Text style={styles.currencySymbol}>$</Text>
                                 <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej: 80"
+                                    style={styles.currencyInput}
+                                    placeholder="0.00"
                                     keyboardType="decimal-pad"
-                                    value={form.alert_threshold}
-                                    onChangeText={(value) => handleInputChange('alert_threshold', value)}
+                                    value={form.amount}
+                                    onChangeText={(value) => handleInputChange('amount', value)}
                                 />
                             </View>
-                            <View style={[styles.col, { justifyContent: 'center', paddingTop: 30 }]}>
-                                <TouchableOpacity
-                                    style={[styles.checkboxContainer, form.alerts_enabled && styles.checkboxActive]}
-                                    onPress={() => handleInputChange('alerts_enabled', !form.alerts_enabled)}
-                                >
-                                    <View style={[styles.checkbox, form.alerts_enabled && styles.checkboxChecked]}>
-                                        {form.alerts_enabled && <Lucide name="check" size={12} color="#FFF" />}
-                                    </View>
-                                    <Text style={styles.checkboxLabel}>Activar alertas</Text>
-                                </TouchableOpacity>
+                            {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
+
+                            {/* Categoría */}
+                            <Text style={styles.label}>Categoría</Text>
+                            <View style={styles.inputContainer}>
+                                <RNPickerSelect
+                                    value={form.category_id}
+                                    onValueChange={(value) => handleInputChange('category_id', value)}
+                                    items={categories.map(cat => ({ label: cat.name, value: cat.id.toString() }))}
+                                    placeholder={{ label: "Seleccionar categoría...", value: null }}
+                                    style={pickerSelectStyles}
+                                    useNativeAndroidPickerStyle={false}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                />
                             </View>
-                        </View>
+                            {errors.sub_category_id && <Text style={styles.errorText}>{errors.sub_category_id}</Text>}
 
-                    </ScrollView>
-
-                    {/* Footer */}
-                    <View style={styles.footer}>
-                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                            <Text style={styles.cancelButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
-                            {loading ? (
-                                <ActivityIndicator color="#FFF" size="small" />
-                            ) : (
+                            {/* Subcategoría */}
+                            {filteredSubcategories.length > 0 && (
                                 <>
-                                    <Lucide name="save" size={18} color="#FFF" />
-                                    <Text style={styles.saveButtonText}>{editingBudget ? 'Actualizar' : 'Guardar'}</Text>
+                                    <Text style={styles.label}>Subcategoría</Text>
+                                    <View style={styles.inputContainer}>
+                                        <RNPickerSelect
+                                            value={form.sub_category_id}
+                                            onValueChange={(value) => handleInputChange('sub_category_id', value)}
+                                            items={filteredSubcategories.map(sub => ({ label: sub.name, value: sub.id.toString() }))}
+                                            placeholder={{ label: "Seleccionar subcategoría...", value: null }}
+                                            style={pickerSelectStyles}
+                                            useNativeAndroidPickerStyle={false}
+                                            Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                        />
+                                    </View>
+                                    {errors.sub_category_id && <Text style={styles.errorText}>{errors.sub_category_id}</Text>}
                                 </>
                             )}
-                        </TouchableOpacity>
-                    </View>
+
+                            {/* Periodo */}
+                            <Text style={styles.label}>Periodo</Text>
+                            <View style={styles.typeSelectorContainer}>
+                                {periodOptions.map((option) => (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={[
+                                            styles.typeButton,
+                                            form.period === option.value && styles.typeButtonSelected
+                                        ]}
+                                        onPress={() => handleInputChange('period', option.value)}
+                                    >
+                                        <Text style={[
+                                            styles.typeButtonText,
+                                            form.period === option.value && styles.typeButtonTextSelected
+                                        ]}>
+                                            {option.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {/* Fechas */}
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Fecha Inicio</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker('start_date')} style={styles.datePickerButton}>
+                                        <Text style={styles.datePickerText}>{form.start_date.toLocaleDateString()}</Text>
+                                        <Lucide name="calendar" size={18} color="#64748B" />
+                                    </TouchableOpacity>
+                                </View>
+                                {errors.start_date && <Text style={styles.errorText}>{errors.start_date}</Text>}
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Fecha Fin</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker('end_date')} style={styles.datePickerButton}>
+                                        <Text style={styles.datePickerText}>{form.end_date.toLocaleDateString()}</Text>
+                                        <Lucide name="calendar" size={18} color="#64748B" />
+                                    </TouchableOpacity>
+                                </View>
+                                {errors.end_date && <Text style={styles.errorText}>{errors.end_date}</Text>}
+                            </View>
+
+                            {/* Alertas */}
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Alerta al (%)</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Ej: 80"
+                                        keyboardType="decimal-pad"
+                                        value={form.alert_threshold}
+                                        onChangeText={(value) => handleInputChange('alert_threshold', value)}
+                                    />
+                                </View>
+                                <View style={[styles.col, { justifyContent: 'center', paddingTop: 30 }]}>
+                                    <TouchableOpacity
+                                        style={[styles.checkboxContainer, form.alerts_enabled && styles.checkboxActive]}
+                                        onPress={() => handleInputChange('alerts_enabled', !form.alerts_enabled)}
+                                    >
+                                        <View style={[styles.checkbox, form.alerts_enabled && styles.checkboxChecked]}>
+                                            {form.alerts_enabled && <Lucide name="check" size={12} color="#FFF" />}
+                                        </View>
+                                        <Text style={styles.checkboxLabel}>Activar alertas</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                        </ScrollView>
+
+                        {/* Footer */}
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
+                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
+                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                                {loading ? (
+                                    <ActivityIndicator color="#FFF" size="small" />
+                                ) : (
+                                    <>
+                                        <Lucide name="save" size={18} color="#FFF" />
+                                        <Text style={styles.saveButtonText}>{editingBudget ? 'Actualizar' : 'Guardar'}</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </KeyboardAvoidingView>
 
                     {renderDatePicker()}
                 </View>
-            </KeyboardAvoidingView>
+            </View>
 
             <AlertComponent />
         </Modal>
@@ -406,7 +410,7 @@ const styles = StyleSheet.create({
     checkboxActive: { opacity: 1 },
     checkboxLabel: { fontSize: 14, color: '#1E293B', fontFamily: 'Inter_500Medium' },
 
-    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 50 : 50 },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
     cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
     cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
     saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },

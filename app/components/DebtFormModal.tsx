@@ -18,6 +18,7 @@ import {
     View
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DebtFormState {
     name: string;
@@ -74,6 +75,7 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
     const [errors, setErrors] = useState<Partial<Record<keyof DebtFormState, string>>>({});
     const [showDatePicker, setShowDatePicker] = useState<keyof DebtFormState | null>(null);
     const [loading, setLoading] = useState(false);
+    const insets = useSafeAreaInsets();
 
     // Efecto para cargar datos si es edición o limpiar si es nuevo
     useEffect(() => {
@@ -151,10 +153,7 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
             onRequestClose={onClose}
             statusBarTranslucent={true}
         >
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.flexEnd}
-            >
+            <View style={styles.flexEnd}>
                 <TouchableWithoutFeedback onPress={onClose}>
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
@@ -169,183 +168,188 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={{ flex: 1 }}
+                    >
+                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
 
-                        {/* Nombre */}
-                        <Text style={styles.label}>Nombre de la deuda <Text style={styles.required}>*</Text></Text>
-                        <TextInput
-                            style={[styles.input, errors.name && styles.inputError]}
-                            placeholder="Ej: Préstamo Auto, Hipoteca..."
-                            value={form.name}
-                            onChangeText={(value) => handleInputChange('name', value)}
-                        />
-                        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-
-                        {/* Tipo de deuda */}
-                        <Text style={styles.label}>Tipo de deuda <Text style={styles.required}>*</Text></Text>
-                        <View style={styles.col}>
-                            <RNPickerSelect
-                                value={form.type}
-                                onValueChange={(value) => handleInputChange('type', value)}
-                                items={[
-                                    { label: "Prestamo", value: "loan" },
-                                    { label: "Hipoteca", value: "mortgage" },
-                                    { label: "Financiamiento", value: "financing" },
-                                    { label: "Otro", value: "other" },
-                                ]}
-                                placeholder={{ label: "Seleccionar...", value: null }}
-                                style={pickerSelectStyles}
-                                useNativeAndroidPickerStyle={false}
-                                Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
-                            />
-                            {errors.type && <Text style={styles.errorText}>{errors.type}</Text>}
-                        </View>
-
-
-                        {/* Monto Total */}
-                        <Text style={styles.label}>Monto Total Original <Text style={styles.required}>*</Text></Text>
-                        <View style={styles.currencyInputContainer}>
-                            <Text style={styles.currencySymbol}>$</Text>
+                            {/* Nombre */}
+                            <Text style={styles.label}>Nombre de la deuda <Text style={styles.required}>*</Text></Text>
                             <TextInput
-                                style={styles.currencyInput}
-                                placeholder="0.00"
-                                keyboardType="decimal-pad"
-                                value={form.total_amount}
-                                onChangeText={(value) => handleInputChange('total_amount', value)}
+                                style={[styles.input, errors.name && styles.inputError]}
+                                placeholder="Ej: Préstamo Auto, Hipoteca..."
+                                value={form.name}
+                                onChangeText={(value) => handleInputChange('name', value)}
                             />
-                        </View>
-                        {errors.total_amount && <Text style={styles.errorText}>{errors.total_amount}</Text>}
+                            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
-                        {/* Fila: Monto pendiente y Pago Fijo */}
-                        <View style={styles.row}>
+                            {/* Tipo de deuda */}
+                            <Text style={styles.label}>Tipo de deuda <Text style={styles.required}>*</Text></Text>
                             <View style={styles.col}>
-                                <Text style={styles.label}>Monto Pendiente <Text style={styles.required}>*</Text></Text>
-                                <View style={styles.currencyInputContainer}>
-                                    <Text style={styles.currencySymbol}>$</Text>
-                                    <TextInput
-                                        style={[styles.input, errors.remaining_amount && styles.inputError]}
-                                        placeholder="0.00"
-                                        keyboardType="decimal-pad"
-                                        value={form.remaining_amount}
-                                        onChangeText={(value) => handleInputChange('remaining_amount', value)}
-                                    />
-                                </View>
-                            </View>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Pago Fijo <Text style={styles.required}>*</Text></Text>
-                                <View style={styles.currencyInputContainer}>
-                                    <Text style={styles.currencySymbol}>$</Text>
-                                    <TextInput
-                                        style={[styles.input, errors.debt_payment && styles.inputError]}
-                                        placeholder="0.00"
-                                        keyboardType="decimal-pad"
-                                        value={form.debt_payment}
-                                        onChangeText={(value) => handleInputChange('debt_payment', value)}
-                                    />
-                                </View>
-                            </View>
-                        </View>
-
-                        {/* Fila: Tasa Interés y Pago Fijo */}
-                        <View style={styles.row}>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Tasa Anual (%)</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej: 15.5"
-                                    keyboardType="decimal-pad"
-                                    value={form.interest_rate}
-                                    onChangeText={(value) => handleInputChange('interest_rate', value)}
-                                />
-                            </View>
-
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Dia de pago*</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej: 1"
-                                    keyboardType="decimal-pad"
-                                    value={form.due_day}
-                                    onChangeText={(value) => handleInputChange('due_day', value)}
-                                />
-                            </View>
-                        </View>
-
-
-
-                        {/* Frecuencia */}
-                        <Text style={styles.label}>Frecuencia de Pagos</Text>
-                        <View style={styles.typeSelectorContainer}>
-                            {frequencyOptions.map((option) => (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    style={[
-                                        styles.typeButton,
-                                        form.frequency === option.value && styles.typeButtonSelected
+                                <RNPickerSelect
+                                    value={form.type}
+                                    onValueChange={(value) => handleInputChange('type', value)}
+                                    items={[
+                                        { label: "Prestamo", value: "loan" },
+                                        { label: "Hipoteca", value: "mortgage" },
+                                        { label: "Financiamiento", value: "financing" },
+                                        { label: "Otro", value: "other" },
                                     ]}
-                                    onPress={() => handleInputChange('frequency', option.value)}
-                                >
-                                    <Text style={[
-                                        styles.typeButtonText,
-                                        form.frequency === option.value && styles.typeButtonTextSelected
-                                    ]}>
-                                        {option.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                    placeholder={{ label: "Seleccionar...", value: null }}
+                                    style={pickerSelectStyles}
+                                    useNativeAndroidPickerStyle={false}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                />
+                                {errors.type && <Text style={styles.errorText}>{errors.type}</Text>}
+                            </View>
+
+
+                            {/* Monto Total */}
+                            <Text style={styles.label}>Monto Total Original <Text style={styles.required}>*</Text></Text>
+                            <View style={styles.currencyInputContainer}>
+                                <Text style={styles.currencySymbol}>$</Text>
+                                <TextInput
+                                    style={styles.currencyInput}
+                                    placeholder="0.00"
+                                    keyboardType="decimal-pad"
+                                    value={form.total_amount}
+                                    onChangeText={(value) => handleInputChange('total_amount', value)}
+                                />
+                            </View>
+                            {errors.total_amount && <Text style={styles.errorText}>{errors.total_amount}</Text>}
+
+                            {/* Fila: Monto pendiente y Pago Fijo */}
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Monto Pendiente <Text style={styles.required}>*</Text></Text>
+                                    <View style={styles.currencyInputContainer}>
+                                        <Text style={styles.currencySymbol}>$</Text>
+                                        <TextInput
+                                            style={[styles.input, errors.remaining_amount && styles.inputError]}
+                                            placeholder="0.00"
+                                            keyboardType="decimal-pad"
+                                            value={form.remaining_amount}
+                                            onChangeText={(value) => handleInputChange('remaining_amount', value)}
+                                        />
+                                    </View>
+                                </View>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Pago Fijo <Text style={styles.required}>*</Text></Text>
+                                    <View style={styles.currencyInputContainer}>
+                                        <Text style={styles.currencySymbol}>$</Text>
+                                        <TextInput
+                                            style={[styles.input, errors.debt_payment && styles.inputError]}
+                                            placeholder="0.00"
+                                            keyboardType="decimal-pad"
+                                            value={form.debt_payment}
+                                            onChangeText={(value) => handleInputChange('debt_payment', value)}
+                                        />
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* Fila: Tasa Interés y Pago Fijo */}
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Tasa Anual (%)</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Ej: 15.5"
+                                        keyboardType="decimal-pad"
+                                        value={form.interest_rate}
+                                        onChangeText={(value) => handleInputChange('interest_rate', value)}
+                                    />
+                                </View>
+
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Dia de pago*</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Ej: 1"
+                                        keyboardType="decimal-pad"
+                                        value={form.due_day}
+                                        onChangeText={(value) => handleInputChange('due_day', value)}
+                                    />
+                                </View>
+                            </View>
+
+
+
+                            {/* Frecuencia */}
+                            <Text style={styles.label}>Frecuencia de Pagos</Text>
+                            <View style={styles.typeSelectorContainer}>
+                                {frequencyOptions.map((option) => (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={[
+                                            styles.typeButton,
+                                            form.frequency === option.value && styles.typeButtonSelected
+                                        ]}
+                                        onPress={() => handleInputChange('frequency', option.value)}
+                                    >
+                                        <Text style={[
+                                            styles.typeButtonText,
+                                            form.frequency === option.value && styles.typeButtonTextSelected
+                                        ]}>
+                                            {option.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {/* Fechas */}
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Fecha Inicio</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker('start_date')} style={styles.datePickerButton}>
+                                        <Text style={styles.datePickerText}>{form.start_date.toLocaleDateString()}</Text>
+                                        <Lucide name="calendar" size={18} color="#64748B" />
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Próximo Pago</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker('next_payment_date')} style={styles.datePickerButton}>
+                                        <Text style={styles.datePickerText}>{form.next_payment_date.toLocaleDateString()}</Text>
+                                        <Lucide name="calendar" size={18} color="#64748B" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {/* Notas */}
+                            <Text style={styles.label}>Notas (Opcional)</Text>
+                            <TextInput
+                                style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+                                placeholder="Detalles adicionales..."
+                                multiline
+                                numberOfLines={3}
+                                value={form.notes}
+                                onChangeText={(value) => handleInputChange('notes', value)}
+                            />
+
+                        </ScrollView>
+
+                        {/* Botones de Acción */}
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
+                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
+                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                                {loading ? (
+                                    <ActivityIndicator color="#FFF" size="small" />
+                                ) : (
+                                    <>
+                                        <Lucide name="save" size={18} color="#FFF" />
+                                        <Text style={styles.saveButtonText}>{editingDebt ? 'Actualizar' : 'Guardar'}</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
                         </View>
 
-                        {/* Fechas */}
-                        <View style={styles.row}>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Fecha Inicio</Text>
-                                <TouchableOpacity onPress={() => setShowDatePicker('start_date')} style={styles.datePickerButton}>
-                                    <Text style={styles.datePickerText}>{form.start_date.toLocaleDateString()}</Text>
-                                    <Lucide name="calendar" size={18} color="#64748B" />
-                                </TouchableOpacity>
-                            </View>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Próximo Pago</Text>
-                                <TouchableOpacity onPress={() => setShowDatePicker('next_payment_date')} style={styles.datePickerButton}>
-                                    <Text style={styles.datePickerText}>{form.next_payment_date.toLocaleDateString()}</Text>
-                                    <Lucide name="calendar" size={18} color="#64748B" />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        {/* Notas */}
-                        <Text style={styles.label}>Notas (Opcional)</Text>
-                        <TextInput
-                            style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
-                            placeholder="Detalles adicionales..."
-                            multiline
-                            numberOfLines={3}
-                            value={form.notes}
-                            onChangeText={(value) => handleInputChange('notes', value)}
-                        />
-
-                    </ScrollView>
-
-                    {/* Botones de Acción */}
-                    <View style={styles.footer}>
-                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                            <Text style={styles.cancelButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
-                            {loading ? (
-                                <ActivityIndicator color="#FFF" size="small" />
-                            ) : (
-                                <>
-                                    <Lucide name="save" size={18} color="#FFF" />
-                                    <Text style={styles.saveButtonText}>{editingDebt ? 'Actualizar' : 'Guardar'}</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-
-                    {renderDatePicker()}
+                        {renderDatePicker()}
+                    </KeyboardAvoidingView>
                 </View>
-            </KeyboardAvoidingView>
+            </View>
         </Modal>
     );
 };
@@ -387,7 +391,7 @@ const styles = StyleSheet.create({
     datePickerButton: { backgroundColor: '#F1F5F9', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     datePickerText: { fontSize: 16, color: '#1E293B', fontFamily: 'Inter_400Regular' },
 
-    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 60 : 50 },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
     cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
     cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
     saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },

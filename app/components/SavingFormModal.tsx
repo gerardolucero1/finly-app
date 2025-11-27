@@ -17,6 +17,7 @@ import {
     View
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCustomAlert } from './CustomAlert';
 
 interface SavingFormState {
@@ -27,7 +28,7 @@ interface SavingFormState {
     interest_enabled: boolean;
     yield_rate: string;
     yield_period: 'daily' | 'monthly' | 'yearly';
-    interest_type: 'fixed' | 'variable';
+    interest_type: 'compound' | 'simple';
     goal_amount: string;
     goal_due_date: Date | null;
 }
@@ -40,7 +41,7 @@ const initialFormState: SavingFormState = {
     interest_enabled: false,
     yield_rate: '',
     yield_period: 'yearly',
-    interest_type: 'fixed',
+    interest_type: 'compound',
     goal_amount: '',
     goal_due_date: null,
 };
@@ -60,7 +61,7 @@ const mapAccountToFormState = (account: Account): SavingFormState => ({
     interest_enabled: Boolean(account.interest_enabled),
     yield_rate: account.yield_rate?.toString() || '',
     yield_period: (account.yield_period as 'daily' | 'monthly' | 'yearly') || 'yearly',
-    interest_type: (account.interest_type as 'fixed' | 'variable') || 'fixed',
+    interest_type: (account.interest_type as 'compound' | 'simple') || 'compound',
     goal_amount: account.goal_amount?.toString() || '',
     goal_due_date: account.goal_due_date ? new Date(account.goal_due_date) : null,
 });
@@ -71,6 +72,7 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
     const { showAlert, AlertComponent } = useCustomAlert();
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
         if (visible) {
@@ -114,7 +116,8 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
             onSave();
             onClose();
         } catch (error: any) {
-            console.log(error);
+            console.log(error.response.data);
+
             if (error.response?.status === 422) {
                 setErrors(error.response.data.errors);
             } else {
@@ -137,10 +140,7 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
             onRequestClose={onClose}
             statusBarTranslucent={true}
         >
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.flexEnd}
-            >
+            <View style={styles.flexEnd}>
                 <TouchableWithoutFeedback onPress={onClose}>
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
@@ -155,173 +155,178 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={{ flex: 1 }}
+                    >
+                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
 
-                        {/* Nombre */}
-                        <Text style={styles.label}>Nombre de la cuenta <Text style={styles.required}>*</Text></Text>
-                        <TextInput
-                            style={[styles.input, errors.name && styles.inputError]}
-                            placeholder="Ej: Ahorro Emergencia, Inversión Bolsa..."
-                            value={form.name}
-                            onChangeText={(value) => handleInputChange('name', value)}
-                        />
-                        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+                            {/* Nombre */}
+                            <Text style={styles.label}>Nombre de la cuenta <Text style={styles.required}>*</Text></Text>
+                            <TextInput
+                                style={[styles.input, errors.name && styles.inputError]}
+                                placeholder="Ej: Ahorro Emergencia, Inversión Bolsa..."
+                                value={form.name}
+                                onChangeText={(value) => handleInputChange('name', value)}
+                            />
+                            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
-                        {/* Tipo y Banco */}
-                        <View style={styles.row}>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Tipo <Text style={styles.required}>*</Text></Text>
-                                <View style={styles.inputContainer}>
-                                    <RNPickerSelect
-                                        value={form.type}
-                                        onValueChange={(value) => handleInputChange('type', value)}
-                                        items={[
-                                            { label: "Ahorro", value: "savings" },
-                                            { label: "Inversión", value: "investment" },
-                                        ]}
-                                        placeholder={{}}
-                                        style={pickerSelectStyles}
-                                        useNativeAndroidPickerStyle={false}
-                                        Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                            {/* Tipo y Banco */}
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Tipo <Text style={styles.required}>*</Text></Text>
+                                    <View style={styles.inputContainer}>
+                                        <RNPickerSelect
+                                            value={form.type}
+                                            onValueChange={(value) => handleInputChange('type', value)}
+                                            items={[
+                                                { label: "Ahorro", value: "savings" },
+                                                { label: "Inversión", value: "investment" },
+                                            ]}
+                                            placeholder={{}}
+                                            style={pickerSelectStyles}
+                                            useNativeAndroidPickerStyle={false}
+                                            Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                        />
+                                    </View>
+                                </View>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Institución/Banco</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Ej: BBVA, GBM..."
+                                        value={form.bank}
+                                        onChangeText={(value) => handleInputChange('bank', value)}
                                     />
                                 </View>
                             </View>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Institución/Banco</Text>
+
+                            {/* Saldo Actual */}
+                            <Text style={styles.label}>Saldo Actual <Text style={styles.required}>*</Text></Text>
+                            <View style={styles.currencyInputContainer}>
+                                <Text style={styles.currencySymbol}>$</Text>
                                 <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej: BBVA, GBM..."
-                                    value={form.bank}
-                                    onChangeText={(value) => handleInputChange('bank', value)}
-                                />
-                            </View>
-                        </View>
-
-                        {/* Saldo Actual */}
-                        <Text style={styles.label}>Saldo Actual <Text style={styles.required}>*</Text></Text>
-                        <View style={styles.currencyInputContainer}>
-                            <Text style={styles.currencySymbol}>$</Text>
-                            <TextInput
-                                style={styles.currencyInput}
-                                placeholder="0.00"
-                                keyboardType="decimal-pad"
-                                value={form.current_balance}
-                                onChangeText={(value) => handleInputChange('current_balance', value)}
-                            />
-                        </View>
-                        {errors.current_balance && <Text style={styles.errorText}>{errors.current_balance}</Text>}
-
-                        {/* Interés Compuesto */}
-                        <View style={styles.sectionDivider} />
-                        <TouchableOpacity
-                            style={styles.checkboxContainer}
-                            onPress={() => handleInputChange('interest_enabled', !form.interest_enabled)}
-                        >
-                            <View style={[styles.checkbox, form.interest_enabled && styles.checkboxChecked]}>
-                                {form.interest_enabled && <Lucide name="check" size={12} color="#FFF" />}
-                            </View>
-                            <Text style={styles.checkboxLabel}>Habilitar Interés / Rendimientos</Text>
-                        </TouchableOpacity>
-
-                        {form.interest_enabled && (
-                            <View style={styles.interestSection}>
-                                <View style={styles.row}>
-                                    <View style={styles.col}>
-                                        <Text style={styles.label}>Tasa (%)</Text>
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="Ej: 10.5"
-                                            keyboardType="decimal-pad"
-                                            value={form.yield_rate}
-                                            onChangeText={(value) => handleInputChange('yield_rate', value)}
-                                        />
-                                    </View>
-                                    <View style={styles.col}>
-                                        <Text style={styles.label}>Periodo</Text>
-                                        <View style={styles.inputContainer}>
-                                            <RNPickerSelect
-                                                value={form.yield_period}
-                                                onValueChange={(value) => handleInputChange('yield_period', value)}
-                                                items={[
-                                                    { label: "Diario", value: "daily" },
-                                                    { label: "Mensual", value: "monthly" },
-                                                    { label: "Anual", value: "yearly" },
-                                                ]}
-                                                placeholder={{}}
-                                                style={pickerSelectStyles}
-                                                useNativeAndroidPickerStyle={false}
-                                                Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
-                                            />
-                                        </View>
-                                    </View>
-                                </View>
-                                <Text style={styles.label}>Tipo de Interés</Text>
-                                <View style={styles.typeSelectorContainer}>
-                                    {['fixed', 'variable'].map((type) => (
-                                        <TouchableOpacity
-                                            key={type}
-                                            style={[
-                                                styles.typeButton,
-                                                form.interest_type === type && styles.typeButtonSelected
-                                            ]}
-                                            onPress={() => handleInputChange('interest_type', type)}
-                                        >
-                                            <Text style={[
-                                                styles.typeButtonText,
-                                                form.interest_type === type && styles.typeButtonTextSelected
-                                            ]}>
-                                                {type === 'fixed' ? 'Fijo' : 'Variable'}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            </View>
-                        )}
-
-                        {/* Metas (Opcional) */}
-                        <View style={styles.sectionDivider} />
-                        <Text style={styles.sectionTitle}>Meta de Ahorro (Opcional)</Text>
-
-                        <View style={styles.row}>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Monto Objetivo</Text>
-                                <TextInput
-                                    style={styles.input}
+                                    style={styles.currencyInput}
                                     placeholder="0.00"
                                     keyboardType="decimal-pad"
-                                    value={form.goal_amount}
-                                    onChangeText={(value) => handleInputChange('goal_amount', value)}
+                                    value={form.current_balance}
+                                    onChangeText={(value) => handleInputChange('current_balance', value)}
                                 />
                             </View>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Fecha Objetivo</Text>
-                                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                                    <Text style={styles.datePickerText}>
-                                        {form.goal_due_date ? form.goal_due_date.toLocaleDateString() : 'Seleccionar'}
-                                    </Text>
-                                    <Lucide name="calendar" size={18} color="#64748B" />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                            {errors.current_balance && <Text style={styles.errorText}>{errors.current_balance}</Text>}
 
-                    </ScrollView>
+                            {/* Interés Compuesto */}
+                            <View style={styles.sectionDivider} />
+                            <TouchableOpacity
+                                style={styles.checkboxContainer}
+                                onPress={() => handleInputChange('interest_enabled', !form.interest_enabled)}
+                            >
+                                <View style={[styles.checkbox, form.interest_enabled && styles.checkboxChecked]}>
+                                    {form.interest_enabled && <Lucide name="check" size={12} color="#FFF" />}
+                                </View>
+                                <Text style={styles.checkboxLabel}>Habilitar Interés / Rendimientos</Text>
+                            </TouchableOpacity>
 
-                    {/* Footer */}
-                    <View style={styles.footer}>
-                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                            <Text style={styles.cancelButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
-                            {loading ? (
-                                <ActivityIndicator color="#FFF" size="small" />
-                            ) : (
-                                <>
-                                    <Lucide name="save" size={18} color="#FFF" />
-                                    <Text style={styles.saveButtonText}>{editingAccount ? 'Actualizar' : 'Guardar'}</Text>
-                                </>
+                            {form.interest_enabled && (
+                                <View style={styles.interestSection}>
+                                    <View style={styles.row}>
+                                        <View style={styles.col}>
+                                            <Text style={styles.label}>Tasa (%)</Text>
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="Ej: 10.5"
+                                                keyboardType="decimal-pad"
+                                                value={form.yield_rate}
+                                                onChangeText={(value) => handleInputChange('yield_rate', value)}
+                                            />
+                                        </View>
+                                        <View style={styles.col}>
+                                            <Text style={styles.label}>Periodo</Text>
+                                            <View style={styles.inputContainer}>
+                                                <RNPickerSelect
+                                                    value={form.yield_period}
+                                                    onValueChange={(value) => handleInputChange('yield_period', value)}
+                                                    items={[
+                                                        { label: "Diario", value: "daily" },
+                                                        { label: "Mensual", value: "monthly" },
+                                                        { label: "Anual", value: "yearly" },
+                                                    ]}
+                                                    placeholder={{}}
+                                                    style={pickerSelectStyles}
+                                                    useNativeAndroidPickerStyle={false}
+                                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                                />
+                                            </View>
+                                        </View>
+                                    </View>
+                                    <Text style={styles.label}>Tipo de Interés</Text>
+                                    <View style={styles.typeSelectorContainer}>
+                                        {['fixed', 'variable'].map((type) => (
+                                            <TouchableOpacity
+                                                key={type}
+                                                style={[
+                                                    styles.typeButton,
+                                                    form.interest_type === type && styles.typeButtonSelected
+                                                ]}
+                                                onPress={() => handleInputChange('interest_type', type)}
+                                            >
+                                                <Text style={[
+                                                    styles.typeButtonText,
+                                                    form.interest_type === type && styles.typeButtonTextSelected
+                                                ]}>
+                                                    {type === 'compound' ? 'Compuesto' : 'Simple'}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </View>
                             )}
-                        </TouchableOpacity>
-                    </View>
+
+                            {/* Metas (Opcional) */}
+                            <View style={styles.sectionDivider} />
+                            <Text style={styles.sectionTitle}>Meta de Ahorro (Opcional)</Text>
+
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Monto Objetivo</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="0.00"
+                                        keyboardType="decimal-pad"
+                                        value={form.goal_amount}
+                                        onChangeText={(value) => handleInputChange('goal_amount', value)}
+                                    />
+                                </View>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Fecha Objetivo</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
+                                        <Text style={styles.datePickerText}>
+                                            {form.goal_due_date ? form.goal_due_date.toLocaleDateString() : 'Seleccionar'}
+                                        </Text>
+                                        <Lucide name="calendar" size={18} color="#64748B" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                        </ScrollView>
+
+                        {/* Footer */}
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
+                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
+                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                                {loading ? (
+                                    <ActivityIndicator color="#FFF" size="small" />
+                                ) : (
+                                    <>
+                                        <Lucide name="save" size={18} color="#FFF" />
+                                        <Text style={styles.saveButtonText}>{editingAccount ? 'Actualizar' : 'Guardar'}</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </KeyboardAvoidingView>
 
                     {showDatePicker && (
                         <DateTimePicker
@@ -332,7 +337,7 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                         />
                     )}
                 </View>
-            </KeyboardAvoidingView>
+            </View>
             <AlertComponent />
         </Modal>
     );
@@ -385,7 +390,7 @@ const styles = StyleSheet.create({
     datePickerButton: { backgroundColor: '#F1F5F9', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     datePickerText: { fontSize: 16, color: '#1E293B', fontFamily: 'Inter_400Regular' },
 
-    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 50 : 50 },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
     cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
     cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
     saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },

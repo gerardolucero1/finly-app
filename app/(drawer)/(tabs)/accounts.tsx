@@ -19,12 +19,9 @@ import { DateTime } from 'luxon';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
-    Animated,
     Dimensions,
     FlatList,
-    PanResponder,
     Pressable,
-    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -138,15 +135,12 @@ const ActionButton = ({ icon, label, onPress }: { icon: any, label: string, onPr
     </TouchableOpacity>
 );
 
-
-
 // --- PANTALLA PRINCIPAL ---
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth * 0.8;
 const SPACING = 10;
 const SIDECARD_SPACING = (screenWidth - CARD_WIDTH) / 2;
-const BOTTOM_SHEET_HEIGHT = 280; // Altura del bottom sheet colapsado
 
 export default function AccountsScreen() {
     const accounts = useInput<Account[]>([]);
@@ -161,95 +155,9 @@ export default function AccountsScreen() {
     const [transferAccounts, setTransferAccounts] = useState<Account[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [transactionsLoading, setTransactionsLoading] = useState(false);
-    const [isExpanded, setIsExpanded] = useState(false);
     const [transferMode, setTransferMode] = useState<'transfer' | 'payment'>('transfer');
 
-    // Refs para animación del Bottom Sheet
-    const bottomSheetHeight = useRef(new Animated.Value(BOTTOM_SHEET_HEIGHT)).current;
-    const overlayOpacity = useRef(new Animated.Value(0)).current;
     const flatListRef = useRef<FlatList>(null);
-
-    // PanResponder para gestos de deslizamiento
-    const panResponder = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: (_, gestureState) => {
-                // Solo activar si el movimiento es mayormente vertical
-                return Math.abs(gestureState.dy) > 5;
-            },
-            onPanResponderMove: (_, gestureState) => {
-                const newHeight = isExpanded
-                    ? screenHeight * 0.85 - gestureState.dy
-                    : BOTTOM_SHEET_HEIGHT - gestureState.dy;
-
-                // Limitar el movimiento entre altura mínima y máxima
-                if (newHeight >= BOTTOM_SHEET_HEIGHT && newHeight <= screenHeight * 0.85) {
-                    bottomSheetHeight.setValue(newHeight);
-                }
-            },
-            onPanResponderRelease: (_, gestureState) => {
-                // Determinar si expandir o colapsar basado en la velocidad y dirección
-                if (gestureState.dy < -50 || gestureState.vy < -0.5) {
-                    // Deslizar hacia arriba -> Expandir
-                    expandBottomSheet();
-                } else if (gestureState.dy > 50 || gestureState.vy > 0.5) {
-                    // Deslizar hacia abajo -> Colapsar
-                    collapseBottomSheet();
-                } else {
-                    // Volver al estado actual basado en qué está más cerca
-                    const currentValue = isExpanded ? screenHeight * 0.85 : BOTTOM_SHEET_HEIGHT;
-                    Animated.spring(bottomSheetHeight, {
-                        toValue: currentValue,
-                        useNativeDriver: false,
-                        tension: 50,
-                        friction: 8,
-                    }).start();
-                }
-            },
-        })
-    ).current;
-
-    const expandBottomSheet = () => {
-        setIsExpanded(true);
-        Animated.parallel([
-            Animated.spring(bottomSheetHeight, {
-                toValue: screenHeight * 0.85,
-                useNativeDriver: false,
-                tension: 50,
-                friction: 8,
-            }),
-            Animated.timing(overlayOpacity, {
-                toValue: 1,
-                duration: 250,
-                useNativeDriver: true,
-            })
-        ]).start();
-    };
-
-    const collapseBottomSheet = () => {
-        setIsExpanded(false);
-        Animated.parallel([
-            Animated.spring(bottomSheetHeight, {
-                toValue: BOTTOM_SHEET_HEIGHT,
-                useNativeDriver: false,
-                tension: 50,
-                friction: 8,
-            }),
-            Animated.timing(overlayOpacity, {
-                toValue: 0,
-                duration: 250,
-                useNativeDriver: true,
-            })
-        ]).start();
-    };
-
-    const toggleBottomSheet = () => {
-        if (isExpanded) {
-            collapseBottomSheet();
-        } else {
-            expandBottomSheet();
-        }
-    };
 
     const fetchAccounts = async () => {
         try {
@@ -365,33 +273,31 @@ export default function AccountsScreen() {
     }
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight - 30 }]}>
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: BOTTOM_SHEET_HEIGHT }}
-            >
-                <View>
-                    <Text style={[{ fontFamily: 'Inter_700Bold', fontSize: 24, marginTop: 30, textAlign: 'center', marginBottom: 10 }]}>Mis Cuentas</Text>
+        <View style={[styles.container, { paddingTop: headerHeight }]}>
+
+            {/* SECCION 1: CARDS Y TITULO (1/3 de pantalla) */}
+            <View style={styles.sectionContainer}>
+                {/* <Text style={styles.screenTitle}>Mis Cuentas</Text> */}
+                <View style={styles.carouselContainer}>
+                    <FlatList
+                        horizontal
+                        data={carouselData}
+                        keyExtractor={(item) => item.id.toString()}
+                        renderItem={({ item, index }) => (
+                            <AccountCard item={item} isAddCard={item.id === 'add'} onPressAccount={openAccountModal} />
+                        )}
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingHorizontal: SIDECARD_SPACING }}
+                        snapToInterval={CARD_WIDTH + SPACING}
+                        decelerationRate="fast"
+                        onScroll={onScroll}
+                        scrollEventThrottle={16}
+                    />
                 </View>
+            </View>
 
-                {/* Carrusel de Tarjetas */}
-                <FlatList
-                    horizontal
-                    data={carouselData}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item, index }) => (
-                        <AccountCard item={item} isAddCard={item.id === 'add'} onPressAccount={openAccountModal} />
-                    )}
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.carousel}
-                    contentContainerStyle={{ paddingHorizontal: SIDECARD_SPACING }}
-                    snapToInterval={CARD_WIDTH + SPACING}
-                    decelerationRate="fast"
-                    onScroll={onScroll}
-                    scrollEventThrottle={16}
-                />
-
-                {/* Botones de Acción */}
+            {/* SECCION 2: BOTONES DE ACCION (1/3 de pantalla) */}
+            <View style={styles.sectionContainer}>
                 <View style={styles.actionsContainer}>
                     <ActionButton
                         icon="banknote-arrow-up"
@@ -411,47 +317,14 @@ export default function AccountsScreen() {
                         openTransferModal();
                     }} />
                 </View>
-            </ScrollView>
+            </View>
 
-            {/* Overlay oscuro - AHORA CUBRE TODO */}
-            <Animated.View
-                style={[
-                    styles.overlay,
-                    {
-                        opacity: overlayOpacity,
-                        pointerEvents: isExpanded ? 'auto' : 'none',
-                    }
-                ]}
-                onTouchEnd={toggleBottomSheet}
-            />
-
-            {/* Bottom Sheet de Transacciones */}
-            <Animated.View
-                style={[
-                    styles.transactionsSection,
-                    { height: bottomSheetHeight }
-                ]}
-            >
-                {/* Header con barra de arrastre y botón */}
-                <View {...panResponder.panHandlers}>
-                    <TouchableOpacity
-                        style={styles.transactionHeader}
-                        onPress={toggleBottomSheet}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.handleBar} />
-                        <View style={styles.headerContent}>
-                            <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
-                            <Lucide
-                                name={isExpanded ? "chevron-down" : "chevron-up"}
-                                size={24}
-                                color="#64748B"
-                            />
-                        </View>
-                    </TouchableOpacity>
+            {/* SECCION 3: ULTIMOS MOVIMIENTOS (1/3 de pantalla) */}
+            <View style={[styles.sectionContainer, styles.transactionsContainer]}>
+                <View style={styles.transactionHeader}>
+                    <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
                 </View>
 
-                {/* Lista de Transacciones */}
                 {transactionsLoading ? (
                     <ActivityIndicator style={{ marginTop: 20 }} color="#4F46E5" />
                 ) : (
@@ -462,13 +335,14 @@ export default function AccountsScreen() {
                         renderItem={({ item }) => <TransactionItem item={item} />}
                         ListEmptyComponent={<Text style={styles.emptyText}>No hay transacciones recientes.</Text>}
                         showsVerticalScrollIndicator={true}
-                        scrollEnabled={isExpanded}
                         contentContainerStyle={{ paddingBottom: 20 }}
                     />
                 )}
-            </Animated.View>
+            </View>
 
-            {/* Modal de Gasto */}
+            {/* --- MODALES --- */}
+
+            {/* Modal de Cuenta */}
             <AccountFormModal
                 visible={isAccountModalVisible.value}
                 onClose={closeAccountModal}
@@ -520,18 +394,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#F8FAFC',
     },
-    header: {
-        paddingHorizontal: 20,
-        paddingBottom: 10,
+    // Estilo genérico para dividir en 3 partes iguales
+    sectionContainer: {
+        flex: 1, // Ocupa 1/3 del espacio disponible
+        justifyContent: 'center',
+        width: '100%',
     },
-    headerTitle: {
-        alignItems: 'center',
-        fontSize: 28,
+
+    // Estilos Sección 1 (Cards)
+    screenTitle: {
         fontFamily: 'Inter_700Bold',
-        color: '#1E293B',
+        fontSize: 24,
+        textAlign: 'center',
+        marginBottom: 15,
+        color: '#1E293B'
     },
-    carousel: {
-        maxHeight: 220,
+    carouselContainer: {
+        height: 200, // Altura fija para el contenedor de la tarjeta
     },
     card: {
         width: CARD_WIDTH,
@@ -601,82 +480,64 @@ const styles = StyleSheet.create({
         letterSpacing: 2,
         fontFamily: 'Inter_500Medium',
     },
+
+    // Estilos Sección 2 (Botones)
     actionsContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
         paddingHorizontal: 20,
-        paddingVertical: 20,
+        alignItems: 'center',
     },
     actionButton: {
         alignItems: 'center',
     },
     actionButtonIconContainer: {
-        width: 60,
-        height: 60,
+        width: 70, // Un poco más grandes para llenar mejor el espacio central
+        height: 70,
         backgroundColor: '#FFF',
-        borderRadius: 30,
+        borderRadius: 35,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 10,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 3,
+        shadowRadius: 3,
+        elevation: 4,
     },
     actionButtonLabel: {
         color: '#475569',
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: '500',
         fontFamily: 'Inter_400Regular',
     },
-    // Estilos del Bottom Sheet optimizados
-    overlay: {
-        position: 'absolute',
-        top: 0, // Ahora cubre TODO incluyendo el header
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        zIndex: 1,
-    },
-    transactionsSection: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
+
+    // Estilos Sección 3 (Transacciones)
+    transactionsContainer: {
         backgroundColor: '#FFF',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
         paddingHorizontal: 20,
+        paddingTop: 20,
+        // Sombra suave para separar de la sección media
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 8,
-        zIndex: 2,
-    },
-    handleBar: {
-        width: 40,
-        height: 4,
-        backgroundColor: '#CBD5E1',
-        borderRadius: 2,
-        alignSelf: 'center',
-        marginTop: 12,
-        marginBottom: 8,
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 5,
+        justifyContent: 'flex-start', // Alineación superior para la lista
     },
     transactionHeader: {
-        paddingVertical: 8,
-    },
-    headerContent: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        marginBottom: 10,
+        paddingBottom: 5,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
     },
     sectionTitle: {
         fontSize: 18,
         fontFamily: 'Inter_700Bold',
         color: '#1E293B',
+        marginBottom: 5,
     },
     emptyText: {
         textAlign: 'center',

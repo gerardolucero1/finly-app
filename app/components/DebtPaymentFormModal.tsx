@@ -20,6 +20,7 @@ import {
     View
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface PaymentFormState {
     amount: string;
@@ -51,6 +52,7 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const insets = useSafeAreaInsets();
 
     // Cargar cuentas al abrir
     useEffect(() => {
@@ -123,7 +125,7 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
 
     return (
         <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose} statusBarTranslucent>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flexEnd}>
+            <View style={styles.flexEnd}>
                 <TouchableWithoutFeedback onPress={onClose}><View style={styles.overlay} /></TouchableWithoutFeedback>
 
                 <View style={styles.content}>
@@ -132,107 +134,98 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
                         <TouchableOpacity onPress={onClose}><Lucide name="x" size={24} color="#64748B" /></TouchableOpacity>
                     </View>
 
-                    <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={{ flex: 1 }}
+                    >
+                        <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
 
-                        {/* Monto */}
-                        <Text style={styles.label}>Monto del Pago <Text style={styles.req}>*</Text></Text>
-                        <View style={styles.moneyInput}>
-                            <Text style={styles.currencySymbol}>$</Text>
-                            <TextInput
-                                style={styles.inputCurrency}
-                                placeholder="0.00"
-                                keyboardType="decimal-pad"
-                                value={form.amount}
-                                onChangeText={(t) => setForm({ ...form, amount: t })}
-                            />
-                        </View>
-                        {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
-
-                        {/* Cuenta */}
-                        <Text style={styles.label}>Pagar desde <Text style={styles.req}>*</Text></Text>
-                        <View style={styles.pickerContainer}>
-                            <RNPickerSelect
-                                onValueChange={(val) => setForm({ ...form, account_id: val })}
-                                items={accountItems}
-                                value={form.account_id}
-                                placeholder={{ label: "Selecciona una cuenta...", value: null }}
-                                style={pickerSelectStyles}
-                                useNativeAndroidPickerStyle={false}
-                                Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
-                            />
-                        </View>
-                        {errors.account_id && <Text style={styles.errorText}>{errors.account_id}</Text>}
-
-                        {/* Fecha */}
-                        <Text style={styles.label}>Fecha de Pago</Text>
-                        <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
-                            <Text style={styles.dateText}>{form.paid_at.toLocaleDateString()}</Text>
-                            <Lucide name="calendar" size={20} color="#64748B" />
-                        </TouchableOpacity>
-                        {errors.paid_at && <Text style={styles.errorText}>{errors.paid_at}</Text>}
-
-                        {/* Switch Extra */}
-                        <TouchableOpacity
-                            style={[styles.switchRow, form.is_extra_payment && styles.switchActive]}
-                            onPress={() => setForm(prev => ({ ...prev, is_extra_payment: !prev.is_extra_payment }))}
-                        >
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.switchTitle, form.is_extra_payment && { color: '#4F46E5' }]}>Pago a Capital (Extra)</Text>
-                                <Text style={styles.switchSub}>Se aplicará directo al capital reduciendo intereses futuros.</Text>
+                            {/* Monto */}
+                            <Text style={styles.label}>Monto del Pago <Text style={styles.req}>*</Text></Text>
+                            <View style={styles.moneyInput}>
+                                <Text style={styles.currencySymbol}>$</Text>
+                                <TextInput
+                                    style={styles.inputCurrency}
+                                    placeholder="0.00"
+                                    keyboardType="decimal-pad"
+                                    value={form.amount}
+                                    onChangeText={(t) => setForm({ ...form, amount: t })}
+                                />
                             </View>
-                            <Lucide
-                                name={form.is_extra_payment ? "check" : "circle"}
-                                size={24}
-                                color={form.is_extra_payment ? "#4F46E5" : "#CBD5E1"}
+                            {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
+
+                            {/* Cuenta */}
+                            <Text style={styles.label}>Pagar desde <Text style={styles.req}>*</Text></Text>
+                            <View style={styles.pickerContainer}>
+                                <RNPickerSelect
+                                    onValueChange={(val) => setForm({ ...form, account_id: val })}
+                                    items={accountItems}
+                                    value={form.account_id}
+                                    placeholder={{ label: "Selecciona una cuenta...", value: null }}
+                                    style={pickerSelectStyles}
+                                    useNativeAndroidPickerStyle={false}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                />
+                            </View>
+                            {errors.account_id && <Text style={styles.errorText}>{errors.account_id}</Text>}
+
+                            {/* Fecha */}
+                            <Text style={styles.label}>Fecha de Pago</Text>
+                            <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
+                                <Text style={styles.dateText}>{form.paid_at.toLocaleDateString()}</Text>
+                                <Lucide name="calendar" size={20} color="#64748B" />
+                            </TouchableOpacity>
+                            {errors.paid_at && <Text style={styles.errorText}>{errors.paid_at}</Text>}
+
+                            {/* Switch Extra */}
+                            <TouchableOpacity
+                                style={[styles.switchRow, form.is_extra_payment && styles.switchActive]}
+                                onPress={() => setForm(prev => ({ ...prev, is_extra_payment: !prev.is_extra_payment }))}
+                            >
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.switchTitle, form.is_extra_payment && { color: '#4F46E5' }]}>Pago a Capital (Extra)</Text>
+                                    <Text style={styles.switchSub}>Se aplicará directo al capital reduciendo intereses futuros.</Text>
+                                </View>
+                                <Lucide
+                                    name={form.is_extra_payment ? "check" : "circle"}
+                                    size={24}
+                                    color={form.is_extra_payment ? "#4F46E5" : "#CBD5E1"}
+                                />
+                            </TouchableOpacity>
+
+                            {/* Notas */}
+                            <Text style={styles.label}>Notas</Text>
+                            <TextInput
+                                style={[styles.input, { height: 60 }]}
+                                multiline
+                                value={form.notes}
+                                onChangeText={(t) => setForm({ ...form, notes: t })}
                             />
-                        </TouchableOpacity>
 
-                        {/* Notas */}
-                        <Text style={styles.label}>Notas</Text>
-                        <TextInput
-                            style={[styles.input, { height: 60 }]}
-                            multiline
-                            value={form.notes}
-                            onChangeText={(t) => setForm({ ...form, notes: t })}
-                        />
+                        </ScrollView>
 
-                    </ScrollView>
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
+                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
+                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                                {loading ? (
+                                    <ActivityIndicator color="#FFF" size="small" />
+                                ) : (
+                                    <>
+                                        <Lucide name="save" size={18} color="#FFF" />
+                                        <Text style={styles.saveButtonText}>Guardar</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        </View>
 
-                    <View style={styles.footer}>
-                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                            <Text style={styles.cancelButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
-                            {loading ? (
-                                <ActivityIndicator color="#FFF" size="small" />
-                            ) : (
-                                <>
-                                    <Lucide name="save" size={18} color="#FFF" />
-                                    <Text style={styles.saveButtonText}>Guardar</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* <View style={styles.footer}>
-                        <TouchableOpacity style={styles.btnCancel} onPress={onClose}>
-                            <Text style={styles.txtCancel}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.btnSave} onPress={handleSave} disabled={loading}>
-                            {loading ? <ActivityIndicator color="#FFF" /> : (
-                                <>
-                                    <Lucide name="save" size={18} color="#FFF" />
-                                    <Text style={styles.txtSave}>Guardar</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    </View> */}
-
-                    {showDatePicker && (
-                        <DateTimePicker value={form.paid_at} mode="date" onChange={onDateChange} />
-                    )}
+                        {showDatePicker && (
+                            <DateTimePicker value={form.paid_at} mode="date" onChange={onDateChange} />
+                        )}
+                    </KeyboardAvoidingView>
                 </View>
-            </KeyboardAvoidingView>
+            </View>
         </Modal>
     );
 };
@@ -256,7 +249,7 @@ const styles = StyleSheet.create({
     switchActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
     switchTitle: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#1E293B' },
     switchSub: { fontSize: 12, color: '#64748B', marginTop: 2, paddingRight: 10, fontFamily: 'Inter_400Regular' },
-    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 50 : 50 },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
     cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
     cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
     saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },

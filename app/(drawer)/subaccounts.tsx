@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     // EMPTY STATE
     emptyContainer: { alignItems: 'center', marginTop: 60 },
     emptyText: { fontSize: 16, fontFamily: 'Inter_500Medium', color: '#1E293B', marginTop: 16 },
-    emptySubText: { fontSize: 14, color: '#64748B', marginTop: 4 },
+    emptySubText: { fontSize: 14, color: '#64748B', marginTop: 4, fontFamily: 'Inter_400Regular' },
     fab: {
         position: 'absolute',
         bottom: 24,

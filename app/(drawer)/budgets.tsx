@@ -397,5 +397,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#94A3B8',
         marginTop: 4,
+        fontFamily: 'Inter_400Regular',
     },
 });

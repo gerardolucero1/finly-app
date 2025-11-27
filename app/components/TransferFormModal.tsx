@@ -17,6 +17,7 @@ import {
     View
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCustomAlert } from './CustomAlert';
 
 interface FormState {
@@ -50,6 +51,7 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
     const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
+    const insets = useSafeAreaInsets();
 
     // Cuando el modal se abre, resetea el formulario y establece la cuenta origen seleccionada
     useEffect(() => {
@@ -224,10 +226,7 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
             statusBarTranslucent={true}
             presentationStyle="overFullScreen"
         >
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.flexEnd}
-            >
+            <View style={styles.flexEnd}>
                 <TouchableWithoutFeedback onPress={onClose}>
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
@@ -242,135 +241,136 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        {/* Monto */}
-                        <Text style={styles.label}>Monto *</Text>
-                        <View style={styles.amountContainer}>
-                            <Text style={styles.currencySymbol}>$</Text>
-                            <TextInput
-                                style={styles.amountInput}
-                                placeholder="0.00"
-                                keyboardType="decimal-pad"
-                                value={form.amount}
-                                onChangeText={(value) => handleInputChange('amount', value)}
-                            />
-                        </View>
-                        {errors.amount && (
-                            <Text style={styles.errorText}>{errors.amount[0]}</Text>
-                        )}
-
-                        {/* Cuenta Origen */}
-                        <Text style={styles.label}>Desde la cuenta *</Text>
-                        <RNPickerSelect
-                            value={form.from_account_id}
-                            onValueChange={(value) => {
-                                if (value && typeof value === 'string' && value.startsWith('HEADER_')) return;
-                                handleInputChange('from_account_id', value);
-                                // Si la cuenta destino es la misma, limpiala
-                                if (value === form.to_account_id) {
-                                    handleInputChange('to_account_id', null);
-                                }
-                            }}
-
-                            items={fromAccountItems}
-                            placeholder={{ label: "Seleccionar cuenta origen", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
-                            useNativeAndroidPickerStyle={false}
-                            Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
-                            }}
-                            disabled={mode === 'transfer'}
-                        />
-                        {errors.from_account_id && (
-                            <Text style={styles.errorText}>{errors.from_account_id[0]}</Text>
-                        )}
-
-                        {/* Ícono de transferencia */}
-                        <View style={styles.transferIconContainer}>
-                            <Lucide name="arrow-down" size={24} color="#4F46E5" />
-                        </View>
-
-                        {/* Cuenta Destino */}
-                        <Text style={styles.label}>Hacia la cuenta *</Text>
-                        <RNPickerSelect
-                            value={form.to_account_id}
-                            onValueChange={(value) => {
-                                if (value && typeof value === 'string' && value.startsWith('HEADER_')) return;
-                                handleInputChange('to_account_id', value);
-                            }}
-                            items={toAccountItems}
-                            placeholder={{ label: "Seleccionar cuenta destino", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
-                            useNativeAndroidPickerStyle={false}
-                            Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
-                            }}
-                            disabled={mode === 'deposit' || mode === 'payment' || !form.from_account_id}
-                        />
-                        {errors.to_account_id && (
-                            <Text style={styles.errorText}>{errors.to_account_id[0]}</Text>
-                        )}
-
-                        {/* Fecha */}
-                        <Text style={styles.label}>Fecha *</Text>
-                        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                            <Text style={styles.datePickerText}>{form.date.toLocaleDateString()}</Text>
-                            <Lucide name="calendar" size={20} color="#64748B" />
-                        </TouchableOpacity>
-                        {showDatePicker && (
-                            <DateTimePicker
-                                testID="dateTimePicker"
-                                value={form.date}
-                                mode="date"
-                                display="default"
-                                onChange={handleDateChange}
-                            />
-                        )}
-                        {errors.date && (
-                            <Text style={styles.errorText}>{errors.date[0]}</Text>
-                        )}
-
-                        {/* Descripción */}
-                        <Text style={styles.label}>Descripción (opcional)</Text>
-                        <TextInput
-                            style={[styles.input, styles.textArea]}
-                            placeholder="Ej: Transferencia para gastos mensuales..."
-                            value={form.description}
-                            onChangeText={(value) => handleInputChange('description', value)}
-                            multiline
-                            numberOfLines={3}
-                            textAlignVertical="top"
-                        />
-                        {errors.description && (
-                            <Text style={styles.errorText}>{errors.description[0]}</Text>
-                        )}
-                    </ScrollView>
-
-                    {/* Footer */}
-                    <View style={styles.footer}>
-                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                            <Text style={styles.cancelButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
-                            {loading ? (
-                                <ActivityIndicator color="#FFF" size="small" />
-                            ) : (
-                                <>
-                                    <Lucide name="save" size={18} color="#FFF" />
-                                    <Text style={styles.saveButtonText}>
-                                        {mode === 'payment' ? 'Pagar' : 'Transferir'}
-                                    </Text>
-                                </>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={{ flex: 1 }}
+                    >
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            {/* Monto */}
+                            <Text style={styles.label}>Monto *</Text>
+                            <View style={styles.amountContainer}>
+                                <Text style={styles.currencySymbol}>$</Text>
+                                <TextInput
+                                    style={styles.amountInput}
+                                    placeholder="0.00"
+                                    keyboardType="decimal-pad"
+                                    value={form.amount}
+                                    onChangeText={(value) => handleInputChange('amount', value)}
+                                />
+                            </View>
+                            {errors.amount && (
+                                <Text style={styles.errorText}>{errors.amount[0]}</Text>
                             )}
-                        </TouchableOpacity>
-                    </View>
 
-                    {/* <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                        <Text style={styles.saveButtonText}>Realizar Transferencia</Text>
-                    </TouchableOpacity> */}
+                            {/* Cuenta Origen */}
+                            <Text style={styles.label}>Desde la cuenta *</Text>
+                            <RNPickerSelect
+                                value={form.from_account_id}
+                                onValueChange={(value) => {
+                                    if (value && typeof value === 'string' && value.startsWith('HEADER_')) return;
+                                    handleInputChange('from_account_id', value);
+                                    // Si la cuenta destino es la misma, limpiala
+                                    if (value === form.to_account_id) {
+                                        handleInputChange('to_account_id', null);
+                                    }
+                                }}
+
+                                items={fromAccountItems}
+                                placeholder={{ label: "Seleccionar cuenta origen", value: null, color: '#94A3B8' }}
+                                style={pickerSelectStyles}
+                                useNativeAndroidPickerStyle={false}
+                                Icon={() => {
+                                    return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                }}
+                                disabled={mode === 'transfer'}
+                            />
+                            {errors.from_account_id && (
+                                <Text style={styles.errorText}>{errors.from_account_id[0]}</Text>
+                            )}
+
+                            {/* Ícono de transferencia */}
+                            <View style={styles.transferIconContainer}>
+                                <Lucide name="arrow-down" size={24} color="#4F46E5" />
+                            </View>
+
+                            {/* Cuenta Destino */}
+                            <Text style={styles.label}>Hacia la cuenta *</Text>
+                            <RNPickerSelect
+                                value={form.to_account_id}
+                                onValueChange={(value) => {
+                                    if (value && typeof value === 'string' && value.startsWith('HEADER_')) return;
+                                    handleInputChange('to_account_id', value);
+                                }}
+                                items={toAccountItems}
+                                placeholder={{ label: "Seleccionar cuenta destino", value: null, color: '#94A3B8' }}
+                                style={pickerSelectStyles}
+                                useNativeAndroidPickerStyle={false}
+                                Icon={() => {
+                                    return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                }}
+                                disabled={mode === 'deposit' || mode === 'payment' || !form.from_account_id}
+                            />
+                            {errors.to_account_id && (
+                                <Text style={styles.errorText}>{errors.to_account_id[0]}</Text>
+                            )}
+
+                            {/* Fecha */}
+                            <Text style={styles.label}>Fecha *</Text>
+                            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
+                                <Text style={styles.datePickerText}>{form.date.toLocaleDateString()}</Text>
+                                <Lucide name="calendar" size={20} color="#64748B" />
+                            </TouchableOpacity>
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    testID="dateTimePicker"
+                                    value={form.date}
+                                    mode="date"
+                                    display="default"
+                                    onChange={handleDateChange}
+                                />
+                            )}
+                            {errors.date && (
+                                <Text style={styles.errorText}>{errors.date[0]}</Text>
+                            )}
+
+                            {/* Descripción */}
+                            <Text style={styles.label}>Descripción (opcional)</Text>
+                            <TextInput
+                                style={[styles.input, styles.textArea]}
+                                placeholder="Ej: Transferencia para gastos mensuales..."
+                                value={form.description}
+                                onChangeText={(value) => handleInputChange('description', value)}
+                                multiline
+                                numberOfLines={3}
+                                textAlignVertical="top"
+                            />
+                            {errors.description && (
+                                <Text style={styles.errorText}>{errors.description[0]}</Text>
+                            )}
+                        </ScrollView>
+
+                        {/* Footer */}
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
+                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
+                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                                {loading ? (
+                                    <ActivityIndicator color="#FFF" size="small" />
+                                ) : (
+                                    <>
+                                        <Lucide name="save" size={18} color="#FFF" />
+                                        <Text style={styles.saveButtonText}>
+                                            {mode === 'payment' ? 'Pagar' : 'Transferir'}
+                                        </Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </KeyboardAvoidingView>
+                    <AlertComponent />
                 </View>
-                <AlertComponent />
-            </KeyboardAvoidingView>
+            </View>
         </Modal>
     );
 };
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
         color: '#1E293B',
         fontFamily: 'Inter_400Regular',
     },
-    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 50 : 50 },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
     cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
     cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
     saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },

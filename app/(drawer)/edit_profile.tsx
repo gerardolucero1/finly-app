@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 16,
-        fontFamily: 'Inter_600SemiBold',
+        fontFamily: 'Inter_500Medium',
         color: '#1E293B',
         marginBottom: 16,
     },

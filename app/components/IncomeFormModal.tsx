@@ -18,6 +18,7 @@ import {
     View
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface FormState {
     source: string;
@@ -56,6 +57,7 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
         if (visible) {
@@ -108,10 +110,7 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
             statusBarTranslucent={true}
             presentationStyle="overFullScreen"
         >
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.flexEnd}
-            >
+            <View style={styles.flexEnd}>
                 <TouchableWithoutFeedback onPress={onClose}>
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
@@ -123,101 +122,101 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                             <Lucide name="x" size={24} color="#64748B" />
                         </TouchableOpacity>
                     </View>
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom }}>
+                            {/* Monto */}
+                            <Text style={styles.label}>Monto *</Text>
+                            <View style={styles.amountContainer}>
+                                <Text style={styles.currencySymbol}>$</Text>
+                                <TextInput
+                                    style={styles.amountInput}
+                                    placeholder="0.00"
+                                    keyboardType="decimal-pad"
+                                    value={form.amount}
+                                    onChangeText={(value) => handleInputChange('amount', value)}
+                                />
+                            </View>
+                            {errors.amount && (
+                                <Text style={styles.errorText}>{errors.amount[0]}</Text>
+                            )}
 
-                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                        {/* Monto */}
-                        <Text style={styles.label}>Monto *</Text>
-                        <View style={styles.amountContainer}>
-                            <Text style={styles.currencySymbol}>$</Text>
+                            {/* Fuente */}
+                            <Text style={styles.label}>Fuente de Ingreso <Text style={styles.required}>*</Text></Text>
                             <TextInput
-                                style={styles.amountInput}
-                                placeholder="0.00"
-                                keyboardType="decimal-pad"
-                                value={form.amount}
-                                onChangeText={(value) => handleInputChange('amount', value)}
+                                style={[styles.input, errors.source && styles.inputError]}
+                                placeholder="Ej: Nómina, Venta de Garage..."
+                                value={form.source}
+                                onChangeText={(value) => handleInputChange('source', value)}
                             />
-                        </View>
-                        {errors.amount && (
-                            <Text style={styles.errorText}>{errors.amount[0]}</Text>
-                        )}
+                            {errors.source && <Text style={styles.errorText}>{errors.source[0]}</Text>}
 
-                        {/* Fuente */}
-                        <Text style={styles.label}>Fuente de Ingreso <Text style={styles.required}>*</Text></Text>
-                        <TextInput
-                            style={[styles.input, errors.source && styles.inputError]}
-                            placeholder="Ej: Nómina, Venta de Garage..."
-                            value={form.source}
-                            onChangeText={(value) => handleInputChange('source', value)}
-                        />
-                        {errors.source && <Text style={styles.errorText}>{errors.source[0]}</Text>}
-
-                        {/* Cuenta de Origen */}
-                        <Text style={styles.label}>Cuenta *</Text>
-                        <RNPickerSelect
-                            value={form.account_id}
-                            onValueChange={(value) => handleInputChange('account_id', value)}
-                            items={accountItems}
-                            placeholder={{ label: "Seleccionar cuenta", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
-                            useNativeAndroidPickerStyle={false}
-                            Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
-                            }}
-                        />
-
-                        {/* Tipo y Frecuencia */}
-                        <View style={styles.row}>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Tipo</Text>
-                                <RNPickerSelect
-                                    value={form.type}
-                                    onValueChange={(value) => handleInputChange('type', value)}
-                                    items={[
-                                        { label: "Fijo", value: "fixed" },
-                                        { label: "Variable", value: "variable" },
-                                    ]}
-                                    style={pickerSelectStyles}
-                                    useNativeAndroidPickerStyle={false}
-                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
-                                />
-                            </View>
-                            <View style={styles.col}>
-                                <Text style={styles.label}>Frecuencia</Text>
-                                <RNPickerSelect
-                                    value={form.frequency}
-                                    onValueChange={(value) => handleInputChange('frequency', value)}
-                                    items={[
-                                        { label: "Una vez", value: "one-time" },
-                                        { label: "Semanal", value: "weekly" },
-                                        { label: "Quincenal", value: "biweekly" },
-                                        { label: "Mensual", value: "monthly" },
-                                    ]}
-                                    style={pickerSelectStyles}
-                                    useNativeAndroidPickerStyle={false}
-                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
-                                />
-                            </View>
-                        </View>
-
-                        {/* Fecha */}
-                        <Text style={styles.label}>Fecha</Text>
-                        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                            <Text style={styles.datePickerText}>{form.date.toLocaleDateString()}</Text>
-                            <Lucide name="calendar" size={20} color="#64748B" />
-                        </TouchableOpacity>
-                        {showDatePicker && (
-                            <DateTimePicker
-                                testID="dateTimePicker"
-                                value={form.date}
-                                mode="date"
-                                display="default"
-                                onChange={handleDateChange}
+                            {/* Cuenta de Origen */}
+                            <Text style={styles.label}>Cuenta *</Text>
+                            <RNPickerSelect
+                                value={form.account_id}
+                                onValueChange={(value) => handleInputChange('account_id', value)}
+                                items={accountItems}
+                                placeholder={{ label: "Seleccionar cuenta", value: null, color: '#94A3B8' }}
+                                style={pickerSelectStyles}
+                                useNativeAndroidPickerStyle={false}
+                                Icon={() => {
+                                    return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                }}
                             />
-                        )}
-                    </ScrollView>
 
+                            {/* Tipo y Frecuencia */}
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Tipo</Text>
+                                    <RNPickerSelect
+                                        value={form.type}
+                                        onValueChange={(value) => handleInputChange('type', value)}
+                                        items={[
+                                            { label: "Fijo", value: "fixed" },
+                                            { label: "Variable", value: "variable" },
+                                        ]}
+                                        style={pickerSelectStyles}
+                                        useNativeAndroidPickerStyle={false}
+                                        Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                    />
+                                </View>
+                                <View style={styles.col}>
+                                    <Text style={styles.label}>Frecuencia</Text>
+                                    <RNPickerSelect
+                                        value={form.frequency}
+                                        onValueChange={(value) => handleInputChange('frequency', value)}
+                                        items={[
+                                            { label: "Una vez", value: "one-time" },
+                                            { label: "Semanal", value: "weekly" },
+                                            { label: "Quincenal", value: "biweekly" },
+                                            { label: "Mensual", value: "monthly" },
+                                        ]}
+                                        style={pickerSelectStyles}
+                                        useNativeAndroidPickerStyle={false}
+                                        Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                    />
+                                </View>
+                            </View>
+
+                            {/* Fecha */}
+                            <Text style={styles.label}>Fecha</Text>
+                            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
+                                <Text style={styles.datePickerText}>{form.date.toLocaleDateString()}</Text>
+                                <Lucide name="calendar" size={20} color="#64748B" />
+                            </TouchableOpacity>
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    testID="dateTimePicker"
+                                    value={form.date}
+                                    mode="date"
+                                    display="default"
+                                    onChange={handleDateChange}
+                                />
+                            )}
+                        </ScrollView>
+                    </KeyboardAvoidingView>
                     {/* Footer */}
-                    <View style={styles.footer}>
+                    <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
                         <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
                             <Text style={styles.cancelButtonText}>Cancelar</Text>
                         </TouchableOpacity>
@@ -237,7 +236,7 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                         <Text style={styles.saveButtonText}>Guardar Ingreso</Text>
                     </TouchableOpacity> */}
                 </View>
-            </KeyboardAvoidingView>
+            </View>
         </Modal>
     );
 };
@@ -339,7 +338,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter_400Regular',
         marginLeft: 10,
     },
-    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginBottom: Platform.OS === 'ios' ? 50 : 50 },
+    footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
     cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
     cancelButtonText: { color: '#475569', fontSize: 16, fontFamily: 'Inter_700Bold' },
     saveButton: { flex: 1, flexDirection: 'row', gap: 8, backgroundColor: '#4F46E5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },
