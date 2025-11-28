@@ -10,13 +10,23 @@ export const ExpensesService = {
         return data;
     },
 
-    async create(expense: Partial<Expense>) {
-        const { data } = await api.post(API_ENDPOINTS.EXPENSES, expense);
+    async create(expense: FormData | Partial<Expense>) {
+        const { data } = await api.post(API_ENDPOINTS.EXPENSES, expense, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // Importante para la subida
+            },
+        });
         return data;
     },
 
-    async update(id: number, expense: Partial<Expense>) {
-        const { data } = await api.put(`${API_ENDPOINTS.EXPENSES}/${id}`, expense);
+    async update(id: number, expense: FormData | Partial<Expense>) {
+        // NOTA IMPORTANTE: Para subir archivos en Laravel al editar,
+        // DEBES usar POST y no PUT. El verbo PUT se simula dentro del FormData.
+        const { data } = await api.post(`${API_ENDPOINTS.EXPENSES}/${id}`, expense, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return data;
     },
 

@@ -47,7 +47,7 @@ interface FormState {
     invoice_xml_url: string;
     remove_ticket_image: boolean;
     remove_invoice_xml: boolean;
-    ticketImage: ImagePicker.ImagePickerAsset | null;
+    ticket_image: ImagePicker.ImagePickerAsset | null;
 }
 
 const initialFormState: FormState = {
@@ -71,7 +71,7 @@ const initialFormState: FormState = {
     invoice_xml_url: '',
     remove_ticket_image: false,
     remove_invoice_xml: false,
-    ticketImage: null,
+    ticket_image: null,
 };
 
 interface ExpenseFormModalProps {
@@ -116,7 +116,7 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                     invoice_xml_url: editingTransaction.invoice_xml_url || '',
                     remove_ticket_image: false,
                     remove_invoice_xml: false,
-                    ticketImage: null,
+                    ticket_image: null,
                 });
             } else {
                 // Reset form for new expense
@@ -156,7 +156,7 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
         SheetManager.show('image-picker', {
             payload: {
                 onSelect: (asset: ImagePicker.ImagePickerAsset) => {
-                    handleInputChange('ticketImage', asset);
+                    handleInputChange('ticket_image', asset);
                 }
             }
         });
@@ -165,21 +165,67 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
     const handleSave = async () => {
         setLoading(true);
         try {
-            if (editingTransaction) {
-                await ExpensesService.update(editingTransaction.id, form);
-            } else {
-                await ExpensesService.create(form);
+            // Creamos una instancia de FormData
+            const formData = new FormData();
+
+            // 1. Añadimos los campos de texto normales
+            formData.append('name', form.name);
+            formData.append('description', form.description || ''); // Manejar nulos
+            formData.append('type', form.type);
+            formData.append('amount', form.amount);
+            formData.append('scope', form.scope);
+            formData.append('frequency', form.frequency);
+            formData.append('due_date', form.due_date.toISOString().split('T')[0]); // Formato YYYY-MM-DD
+            formData.append('dispensable', form.dispensable ? '1' : '0'); // Booleanos como 1 o 0
+            formData.append('reminder', form.reminder ? '1' : '0');
+            formData.append('is_paid', form.is_paid ? '1' : '0');
+            formData.append('is_late', form.is_late ? '1' : '0');
+            formData.append('programmed', form.programmed ? '1' : '0');
+            formData.append('remove_ticket_image', form.remove_ticket_image ? '1' : '0');
+
+            if (form.account_id) formData.append('account_id', String(form.account_id));
+            if (form.category_id) formData.append('category_id', String(form.category_id));
+            if (form.sub_category_id) formData.append('sub_category_id', String(form.sub_category_id));
+
+            // 2. Añadimos la IMAGEN con el formato específico que requiere React Native
+            if (form.ticket_image) {
+                const localUri = form.ticket_image.uri;
+                const filename = localUri.split('/').pop() || 'ticket.jpg';
+
+                // Infiere el tipo de archivo (mimeType) o usa un fallback
+                const match = /\.(\w+)$/.exec(filename);
+                const type = match ? `image/${match[1]}` : `image`;
+
+                // IMPORTANTE: Este objeto debe tener uri, name y type
+                const imageFile = {
+                    uri: Platform.OS === 'ios' ? localUri.replace('file://', '') : localUri,
+                    name: filename,
+                    type: form.ticket_image.mimeType || type || 'image/jpeg',
+                };
+
+                // "as any" es necesario en TypeScript para RN con FormData
+                formData.append('ticket_image', imageFile as any);
             }
+
+            // 3. Envío al servicio
+            if (editingTransaction) {
+                // TRUCO PARA LARAVEL (PUT/PATCH con archivos):
+                // Laravel tiene problemas procesando FormData con métodos PUT directos.
+                // Se recomienda usar POST y añadir el campo _method = 'PUT'.
+                formData.append('_method', 'PUT');
+                await ExpensesService.update(editingTransaction.id, formData);
+            } else {
+                await ExpensesService.create(formData);
+            }
+
             onSave();
             onClose();
         } catch (error: any) {
             if (error.response?.status === 422) {
-                console.log('Status:', error.response.status);
-                console.log('Data:', error.response.data);
                 console.log('Errors:', error.response.data.errors);
                 setErrors(error.response.data.errors);
             } else {
-                console.log('Error sin respuesta:', error.message);
+                console.log('Error:', error);
                 Alert.alert("Error", "Ocurrió un error inesperado.");
             }
         } finally {
@@ -394,12 +440,46 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
 
                             {/* Imagen del Ticket */}
                             <Text style={styles.label}>Imagen del ticket</Text>
-                            <TouchableOpacity onPress={handlePickImage} style={styles.filePickerButton}>
-                                <Lucide name="camera" size={20} color="#4F46E5" />
-                                <Text style={styles.filePickerText}>
-                                    {form.ticketImage ? form.ticketImage.fileName || 'Imagen seleccionada' : 'Adjuntar ticket'}
-                                </Text>
-                            </TouchableOpacity>
+
+                            {/* Caso 1: Imagen recién seleccionada */}
+                            {form.ticket_image ? (
+                                <View style={styles.selectedFileContainer}>
+                                    <View style={styles.fileInfo}>
+                                        <Lucide name="image" size={20} color="#4F46E5" />
+                                        <Text style={styles.selectedFileName} numberOfLines={1}>
+                                            {form.ticket_image.fileName || 'Imagen seleccionada'}
+                                        </Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={() => handleInputChange('ticket_image', null)}
+                                        style={styles.removeFileButton}
+                                    >
+                                        <Lucide name="x" size={16} color="#EF4444" />
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                /* Caso 2: Imagen existente en el servidor (y no marcada para borrar) */
+                                form.ticket_image_url && !form.remove_ticket_image ? (
+                                    <View style={styles.selectedFileContainer}>
+                                        <View style={styles.fileInfo}>
+                                            <Lucide name="image" size={20} color="#4F46E5" />
+                                            <Text style={styles.selectedFileName}>Ticket</Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            onPress={() => handleInputChange('remove_ticket_image', true)}
+                                            style={styles.removeFileButton}
+                                        >
+                                            <Lucide name="x" size={16} color="#EF4444" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    /* Caso 3: Sin imagen (o borrada) */
+                                    <TouchableOpacity onPress={handlePickImage} style={styles.filePickerButton}>
+                                        <Lucide name="camera" size={20} color="#4F46E5" />
+                                        <Text style={styles.filePickerText}>Adjuntar ticket</Text>
+                                    </TouchableOpacity>
+                                )
+                            )}
                         </ScrollView>
 
                         {/* Footer */}
@@ -522,6 +602,34 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         marginLeft: 10,
         fontFamily: 'Inter_400Regular',
+    },
+    selectedFileContainer: {
+        backgroundColor: '#EEF2FF',
+        borderRadius: 8,
+        padding: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#C7D2FE',
+    },
+    fileInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    selectedFileName: {
+        fontSize: 14,
+        color: '#4F46E5',
+        marginLeft: 10,
+        fontFamily: 'Inter_500Medium',
+    },
+    removeFileButton: {
+        padding: 4,
+        backgroundColor: '#FEF2F2',
+        borderRadius: 100,
+        borderWidth: 1,
+        borderColor: '#FECACA',
     },
     footer: { flexDirection: 'row', paddingTop: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
     cancelButton: { flex: 1, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 },
