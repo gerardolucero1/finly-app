@@ -9,9 +9,10 @@ import Lucide from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { DateTime } from 'luxon';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from 'react-native';
-import { Pressable } from 'react-native-gesture-handler';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { RectButton } from 'react-native-gesture-handler';
 // Importamos RectButton para mejor respuesta táctil en swipes (opcional, pero recomendado)
+import { IncomeFormModal } from '@/app/components/IncomeFormModal';
 import { useInput } from '@/hooks/useInput';
 import { Account } from '@/models/account';
 import { AccountsService } from '@/services/accounts';
@@ -66,7 +67,6 @@ const TransactionItem = React.memo(({ item, onDelete, onEdit }: TransactionItemP
     };
 
     const handleLocalEdit = () => {
-        console.log('Editando', item);
         swipeableRef.current?.close();
         onEdit(item);
     };
@@ -80,14 +80,14 @@ const TransactionItem = React.memo(({ item, onDelete, onEdit }: TransactionItemP
         return (
             <View style={styles.actionButtonContainer}>
                 {/* Usamos TouchableOpacity con flex:1 para asegurar área de toque */}
-                <Pressable onPress={handleLocalDelete} style={styles.rightActionBtn}>
+                <RectButton onPress={handleLocalDelete} style={styles.rightActionBtn}>
                     <View style={styles.deleteButton}>
                         <Reanimated.View style={[styles.deleteContent, animatedStyle]}>
                             <Lucide name="trash-2" size={24} color="#FFFFFF" />
                             <Text style={styles.deleteText}>Eliminar</Text>
                         </Reanimated.View>
                     </View>
-                </Pressable>
+                </RectButton>
             </View>
         );
     };
@@ -100,14 +100,14 @@ const TransactionItem = React.memo(({ item, onDelete, onEdit }: TransactionItemP
 
         return (
             <View style={styles.actionButtonContainer}>
-                <Pressable onPress={handleLocalEdit} style={styles.leftActionBtn}>
+                <RectButton onPress={handleLocalEdit} style={styles.leftActionBtn}>
                     <View style={styles.editButton}>
                         <Reanimated.View style={[styles.deleteContent, animatedStyle]}>
                             <Lucide name="pencil" size={24} color="#FFFFFF" />
                             <Text style={styles.deleteText}>Editar</Text>
                         </Reanimated.View>
                     </View>
-                </Pressable>
+                </RectButton>
             </View>
         );
     };
@@ -167,6 +167,7 @@ export default function MovementsScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
     const [isExpenseModalVisible, setExpenseModalVisible] = useState(false);
+    const [isIncomeModalVisible, setIncomeModalVisible] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
     const debouncedSearchTerm = useDebounce(searchQuery, 500);
@@ -237,11 +238,11 @@ export default function MovementsScreen() {
     };
 
     const handleEdit = useCallback((item: Transaction) => {
+        setEditingTransaction(item);
         if (item.register_type === 'expense') {
-            setEditingTransaction(item);
             setExpenseModalVisible(true);
         } else {
-            Alert.alert("Info", "La edición de ingresos se implementará pronto.");
+            setIncomeModalVisible(true);
         }
     }, []);
 
@@ -320,6 +321,13 @@ export default function MovementsScreen() {
                 <ExpenseFormModal
                     visible={isExpenseModalVisible}
                     onClose={() => { setExpenseModalVisible(false); setEditingTransaction(null); }}
+                    onSave={() => fetchTransactions(true)}
+                    accounts={accounts.value}
+                    editingTransaction={editingTransaction} />
+
+                <IncomeFormModal
+                    visible={isIncomeModalVisible}
+                    onClose={() => { setIncomeModalVisible(false); setEditingTransaction(null); }}
                     onSave={() => fetchTransactions(true)}
                     accounts={accounts.value}
                     editingTransaction={editingTransaction} />

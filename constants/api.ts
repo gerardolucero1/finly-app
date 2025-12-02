@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
     GET_SUBSCRIPTION: '/subscription',
     GET_NOTIFICATIONS: '/notifications',
     BUDGETS: '/budgets',
+    PROJECTS: '/projects',
 
 };
 

@@ -242,10 +242,17 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                     </View>
 
                     <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                        style={{ flex: 1 }}
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                        style={styles.flexEnd}
+                        // En Android dentro de un Modal, a veces el cálculo del teclado se desfasa.
+                        // Si sientes que sube demasiado o muy poco, ajusta este número (-100, 0, 30, etc.)
+                        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 70}
                     >
-                        <ScrollView showsVerticalScrollIndicator={false}>
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={{ paddingBottom: 100 }}
+                            keyboardShouldPersistTaps="handled"
+                        >
                             {/* Monto */}
                             <Text style={styles.label}>Monto *</Text>
                             <View style={styles.amountContainer}>

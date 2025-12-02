@@ -11,6 +11,8 @@ export interface TransactionFilters {
     sub_category_id?: number;
     start_date?: string; // YYYY-MM-DD
     end_date?: string;   // YYYY-MM-DD
+    scope?: 'personal' | 'business';
+    project_id?: number;
 }
 
 export const TransactionsService = {
@@ -24,6 +26,8 @@ export const TransactionsService = {
         if (filters.sub_category_id) params.append('sub_category_id', filters.sub_category_id.toString());
         if (filters.start_date) params.append('start_date', filters.start_date);
         if (filters.end_date) params.append('end_date', filters.end_date);
+        if (filters.scope) params.append('scope', filters.scope);
+        if (filters.project_id) params.append('project_id', filters.project_id.toString());
 
         const url = `${API_ENDPOINTS.TRANSACTIONS}?${params.toString()}`;
         const { data } = await api.get(url);

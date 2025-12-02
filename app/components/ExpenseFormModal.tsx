@@ -1,9 +1,11 @@
 import { useInput } from '@/hooks/useInput';
 import { Account } from '@/models/account';
 import { Category } from '@/models/category';
+import { Project } from '@/models/project';
 import { SubCategory } from '@/models/subcategory';
 import { CategoriesService } from '@/services/categories';
 import { ExpensesService } from '@/services/expenses';
+import { ProjectsService } from '@/services/projects';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import * as ImagePicker from 'expo-image-picker';
@@ -43,6 +45,7 @@ interface FormState {
     category_id: number | string | null;
     sub_category_id: number | string | null;
     account_id: number | string | null;
+    project_id: number | string | null;
     ticket_image_url: string;
     invoice_xml_url: string;
     remove_ticket_image: boolean;
@@ -67,6 +70,7 @@ const initialFormState: FormState = {
     category_id: '',
     sub_category_id: '',
     account_id: '',
+    project_id: '',
     ticket_image_url: '',
     invoice_xml_url: '',
     remove_ticket_image: false,
@@ -88,6 +92,7 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
     const all_categories = useInput<Category[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
     const all_subcategories = useInput<SubCategory[]>([]);
     const insets = useSafeAreaInsets();
 
@@ -112,6 +117,7 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                     category_id: editingTransaction.category_id || null,
                     sub_category_id: editingTransaction.sub_category_id || null,
                     account_id: editingTransaction.account_id || selectedAccount?.id || null,
+                    project_id: editingTransaction.project_id || null,
                     ticket_image_url: editingTransaction.ticket_image_url || '',
                     invoice_xml_url: editingTransaction.invoice_xml_url || '',
                     remove_ticket_image: false,
@@ -140,6 +146,18 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
             }
         };
         getCategories();
+    }, []);
+
+    useEffect(() => {
+        const getProjects = async () => {
+            try {
+                const response = await ProjectsService.getAll();
+                setProjects(response);
+            } catch (error) {
+                console.log(error);
+            }
+        };
+        getProjects();
     }, []);
 
     const handleInputChange = (field: keyof FormState, value: any) => {
@@ -186,6 +204,7 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
             if (form.account_id) formData.append('account_id', String(form.account_id));
             if (form.category_id) formData.append('category_id', String(form.category_id));
             if (form.sub_category_id) formData.append('sub_category_id', String(form.sub_category_id));
+            if (form.project_id) formData.append('project_id', String(form.project_id));
 
             // 2. Añadimos la IMAGEN con el formato específico que requiere React Native
             if (form.ticket_image) {
@@ -235,6 +254,7 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
 
     const accountItems = accounts.map(acc => ({ label: acc.name, value: acc.id }));
     const categoryItems = all_categories.value.map(acc => ({ label: acc.name, value: acc.id }));
+    const projectItems = projects.map(acc => ({ label: acc.name, value: acc.id }));
     const filteredSubCategoryItems = all_subcategories.value.filter(acc => acc.category_id == form.category_id);
     const subCategoryItems = filteredSubCategoryItems.map(acc => ({ label: acc.name, value: acc.id }));
 
@@ -247,7 +267,13 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
             statusBarTranslucent={true}
             presentationStyle="overFullScreen"
         >
-            <View style={styles.flexEnd}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                style={styles.flexEnd}
+                // En Android dentro de un Modal, a veces el cálculo del teclado se desfasa.
+                // Si sientes que sube demasiado o muy poco, ajusta este número (-100, 0, 30, etc.)
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -150}
+            >
                 <TouchableWithoutFeedback onPress={onClose}>
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
@@ -260,247 +286,259 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                         </TouchableOpacity>
                     </View>
 
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                        style={{ flex: 1 }}
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
                     >
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            {/* Monto */}
-                            <Text style={styles.label}>Monto *</Text>
-                            <View style={styles.amountContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
-                                <TextInput
-                                    style={styles.amountInput}
-                                    placeholder="0.00"
-                                    keyboardType="decimal-pad"
-                                    value={form.amount}
-                                    onChangeText={(value) => handleInputChange('amount', value)}
-                                />
-                            </View>
-                            {errors.amount && (
-                                <Text style={styles.errorText}>{errors.amount[0]}</Text>
-                            )}
-
-                            {/* Nombre del Gasto */}
-                            <Text style={styles.label}>Nombre del Gasto *</Text>
+                        {/* Monto */}
+                        <Text style={styles.label}>Monto *</Text>
+                        <View style={styles.amountContainer}>
+                            <Text style={styles.currencySymbol}>$</Text>
                             <TextInput
-                                style={styles.input}
-                                placeholder="Ej: Renta, Comida, Netflix..."
-                                value={form.name}
-                                onChangeText={(value) => handleInputChange('name', value)}
+                                style={styles.amountInput}
+                                placeholder="0.00"
+                                keyboardType="decimal-pad"
+                                value={form.amount}
+                                onChangeText={(value) => handleInputChange('amount', value)}
                             />
-                            {errors.name && (
-                                <Text style={styles.errorText}>{errors.name[0]}</Text>
-                            )}
+                        </View>
+                        {errors.amount && (
+                            <Text style={styles.errorText}>{errors.amount[0]}</Text>
+                        )}
 
-                            {/* Cuenta de Origen */}
-                            <Text style={styles.label}>Cuenta de origen *</Text>
-                            <RNPickerSelect
-                                value={form.account_id}
-                                onValueChange={(value) => handleInputChange('account_id', value)}
-                                items={accountItems}
-                                placeholder={{ label: "Seleccionar cuenta", value: null, color: '#94A3B8' }}
-                                style={pickerSelectStyles}
-                                useNativeAndroidPickerStyle={false}
-                                Icon={() => {
-                                    return <Lucide name="chevron-down" size={20} color="#64748B" />;
-                                }}
-                            />
+                        {/* Nombre del Gasto */}
+                        <Text style={styles.label}>Nombre del Gasto *</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Ej: Renta, Comida, Netflix..."
+                            value={form.name}
+                            onChangeText={(value) => handleInputChange('name', value)}
+                        />
+                        {errors.name && (
+                            <Text style={styles.errorText}>{errors.name[0]}</Text>
+                        )}
 
-                            {/* Categoría */}
-                            <Text style={styles.label}>Categoría *</Text>
-                            <RNPickerSelect
-                                value={form.category_id}
-                                onValueChange={(value) => handleInputChange('category_id', value)}
-                                items={categoryItems}
-                                placeholder={{ label: "Seleccionar categoría", value: null, color: '#94A3B8' }}
-                                style={pickerSelectStyles}
-                                useNativeAndroidPickerStyle={false}
-                                Icon={() => {
-                                    return <Lucide name="chevron-down" size={20} color="#64748B" />;
-                                }}
-                            />
+                        {/* Cuenta de Origen */}
+                        <Text style={styles.label}>Cuenta de origen *</Text>
+                        <RNPickerSelect
+                            value={form.account_id}
+                            onValueChange={(value) => handleInputChange('account_id', value)}
+                            items={accountItems}
+                            placeholder={{ label: "Seleccionar cuenta", value: null, color: '#94A3B8' }}
+                            style={pickerSelectStyles}
+                            useNativeAndroidPickerStyle={false}
+                            Icon={() => {
+                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                            }}
+                        />
 
-                            {/* Subcategoria */}
-                            <Text style={styles.label}>Subcategoria *</Text>
-                            <RNPickerSelect
-                                value={form.sub_category_id}
-                                onValueChange={(value) => handleInputChange('sub_category_id', value)}
-                                items={subCategoryItems}
-                                placeholder={{ label: "Seleccionar subcategoría", value: null, color: '#94A3B8' }}
-                                style={pickerSelectStyles}
-                                useNativeAndroidPickerStyle={false}
-                                Icon={() => {
-                                    return <Lucide name="chevron-down" size={20} color="#64748B" />;
-                                }}
-                            />
-                            {errors.sub_category_id && (
-                                <Text style={styles.errorText}>{errors.sub_category_id[0]}</Text>
-                            )}
+                        {/* Categoría */}
+                        <Text style={styles.label}>Categoría *</Text>
+                        <RNPickerSelect
+                            value={form.category_id}
+                            onValueChange={(value) => handleInputChange('category_id', value)}
+                            items={categoryItems}
+                            placeholder={{ label: "Seleccionar categoría", value: null, color: '#94A3B8' }}
+                            style={pickerSelectStyles}
+                            useNativeAndroidPickerStyle={false}
+                            Icon={() => {
+                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                            }}
+                        />
 
-                            {/* Tipo */}
-                            <Text style={styles.label}>Tipo *</Text>
-                            <RNPickerSelect
-                                value={form.type}
-                                onValueChange={(value) => handleInputChange('type', value)}
-                                items={[{ label: 'Fijo', value: 'fixed' }, { label: 'Variable', value: 'variable' }]}
-                                placeholder={{ label: "Seleccionar tipo", value: null, color: '#94A3B8' }}
-                                style={pickerSelectStyles}
-                                useNativeAndroidPickerStyle={false}
-                                Icon={() => {
-                                    return <Lucide name="chevron-down" size={20} color="#64748B" />;
-                                }}
-                            />
+                        {/* Subcategoria */}
+                        <Text style={styles.label}>Subcategoria *</Text>
+                        <RNPickerSelect
+                            value={form.sub_category_id}
+                            onValueChange={(value) => handleInputChange('sub_category_id', value)}
+                            items={subCategoryItems}
+                            placeholder={{ label: "Seleccionar subcategoría", value: null, color: '#94A3B8' }}
+                            style={pickerSelectStyles}
+                            useNativeAndroidPickerStyle={false}
+                            Icon={() => {
+                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                            }}
+                        />
+                        {errors.sub_category_id && (
+                            <Text style={styles.errorText}>{errors.sub_category_id[0]}</Text>
+                        )}
 
-                            {/* Frecuencia */}
-                            <Text style={styles.label}>Frecuencia *</Text>
-                            <RNPickerSelect
-                                value={form.frequency}
-                                onValueChange={(value) => handleInputChange('frequency', value)}
-                                items={[
-                                    { label: 'Una vez', value: 'one-time' },
-                                    { label: 'Semanal', value: 'weekly' },
-                                    { label: 'Quincenal', value: 'biweekly' },
-                                    { label: 'Mensual', value: 'monthly' },
-                                    { label: 'Anual', value: 'yearly' },
+                        {/* Proyecto */}
+                        <Text style={styles.label}>Proyecto</Text>
+                        <RNPickerSelect
+                            value={form.project_id}
+                            onValueChange={(value) => handleInputChange('project_id', value)}
+                            items={projectItems}
+                            placeholder={{ label: "Seleccionar proyecto", value: null, color: '#94A3B8' }}
+                            style={pickerSelectStyles}
+                            useNativeAndroidPickerStyle={false}
+                            Icon={() => {
+                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                            }}
+                        />
+
+                        {/* Tipo */}
+                        <Text style={styles.label}>Tipo *</Text>
+                        <RNPickerSelect
+                            value={form.type}
+                            onValueChange={(value) => handleInputChange('type', value)}
+                            items={[{ label: 'Fijo', value: 'fixed' }, { label: 'Variable', value: 'variable' }]}
+                            placeholder={{ label: "Seleccionar tipo", value: null, color: '#94A3B8' }}
+                            style={pickerSelectStyles}
+                            useNativeAndroidPickerStyle={false}
+                            Icon={() => {
+                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                            }}
+                        />
+
+                        {/* Frecuencia */}
+                        <Text style={styles.label}>Frecuencia *</Text>
+                        <RNPickerSelect
+                            value={form.frequency}
+                            onValueChange={(value) => handleInputChange('frequency', value)}
+                            items={[
+                                { label: 'Una vez', value: 'one-time' },
+                                { label: 'Semanal', value: 'weekly' },
+                                { label: 'Quincenal', value: 'biweekly' },
+                                { label: 'Mensual', value: 'monthly' },
+                                { label: 'Anual', value: 'yearly' },
+                            ]}
+                            placeholder={{ label: "Seleccionar frecuencia", value: null, color: '#94A3B8' }}
+                            style={pickerSelectStyles}
+                            useNativeAndroidPickerStyle={false}
+                            Icon={() => {
+                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                            }}
+                        />
+
+                        {/* Etiqueta */}
+                        <Text style={styles.label}>Etiqueta *</Text>
+                        <View style={styles.radioGroup}>
+                            {/* Opción: Personal */}
+                            <TouchableOpacity
+                                style={[
+                                    styles.radioOption,
+                                    form.scope === 'personal' && styles.radioOptionSelected
                                 ]}
-                                placeholder={{ label: "Seleccionar frecuencia", value: null, color: '#94A3B8' }}
-                                style={pickerSelectStyles}
-                                useNativeAndroidPickerStyle={false}
-                                Icon={() => {
-                                    return <Lucide name="chevron-down" size={20} color="#64748B" />;
-                                }}
+                                onPress={() => handleInputChange('scope', 'personal')}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[
+                                    styles.radioCircle,
+                                    form.scope === 'personal' && styles.radioCircleSelected
+                                ]}>
+                                    {form.scope === 'personal' && <View style={styles.radioInnerCircle} />}
+                                </View>
+                                <Text style={[
+                                    styles.radioText,
+                                    form.scope === 'personal' && styles.radioTextSelected
+                                ]}>Personal</Text>
+                            </TouchableOpacity>
+
+                            {/* Opción: Negocio */}
+                            <TouchableOpacity
+                                style={[
+                                    styles.radioOption,
+                                    form.scope === 'business' && styles.radioOptionSelected
+                                ]}
+                                onPress={() => handleInputChange('scope', 'business')}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[
+                                    styles.radioCircle,
+                                    form.scope === 'business' && styles.radioCircleSelected
+                                ]}>
+                                    {form.scope === 'business' && <View style={styles.radioInnerCircle} />}
+                                </View>
+                                <Text style={[
+                                    styles.radioText,
+                                    form.scope === 'business' && styles.radioTextSelected
+                                ]}>Negocio</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {errors.scope && (
+                            <Text style={styles.errorText}>{errors.scope[0]}</Text>
+                        )}
+
+                        {/* Fecha */}
+                        <Text style={styles.label}>Fecha</Text>
+                        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
+                            <Text style={styles.datePickerText}>{form.due_date.toLocaleDateString()}</Text>
+                            <Lucide name="calendar" size={20} color="#64748B" />
+                        </TouchableOpacity>
+                        {showDatePicker && (
+                            <DateTimePicker
+                                testID="dateTimePicker"
+                                value={form.due_date}
+                                mode="date"
+                                display="default"
+                                onChange={handleDateChange}
                             />
+                        )}
 
-                            {/* Etiqueta */}
-                            <Text style={styles.label}>Etiqueta *</Text>
-                            <View style={styles.radioGroup}>
-                                {/* Opción: Personal */}
-                                <TouchableOpacity
-                                    style={[
-                                        styles.radioOption,
-                                        form.scope === 'personal' && styles.radioOptionSelected
-                                    ]}
-                                    onPress={() => handleInputChange('scope', 'personal')}
-                                    activeOpacity={0.7}
-                                >
-                                    <View style={[
-                                        styles.radioCircle,
-                                        form.scope === 'personal' && styles.radioCircleSelected
-                                    ]}>
-                                        {form.scope === 'personal' && <View style={styles.radioInnerCircle} />}
-                                    </View>
-                                    <Text style={[
-                                        styles.radioText,
-                                        form.scope === 'personal' && styles.radioTextSelected
-                                    ]}>Personal</Text>
-                                </TouchableOpacity>
+                        {/* Imagen del Ticket */}
+                        <Text style={styles.label}>Imagen del ticket</Text>
 
-                                {/* Opción: Negocio */}
+                        {/* Caso 1: Imagen recién seleccionada */}
+                        {form.ticket_image ? (
+                            <View style={styles.selectedFileContainer}>
+                                <View style={styles.fileInfo}>
+                                    <Lucide name="image" size={20} color="#4F46E5" />
+                                    <Text style={styles.selectedFileName} numberOfLines={1}>
+                                        {form.ticket_image.fileName || 'Imagen seleccionada'}
+                                    </Text>
+                                </View>
                                 <TouchableOpacity
-                                    style={[
-                                        styles.radioOption,
-                                        form.scope === 'business' && styles.radioOptionSelected
-                                    ]}
-                                    onPress={() => handleInputChange('scope', 'business')}
-                                    activeOpacity={0.7}
+                                    onPress={() => handleInputChange('ticket_image', null)}
+                                    style={styles.removeFileButton}
                                 >
-                                    <View style={[
-                                        styles.radioCircle,
-                                        form.scope === 'business' && styles.radioCircleSelected
-                                    ]}>
-                                        {form.scope === 'business' && <View style={styles.radioInnerCircle} />}
-                                    </View>
-                                    <Text style={[
-                                        styles.radioText,
-                                        form.scope === 'business' && styles.radioTextSelected
-                                    ]}>Negocio</Text>
+                                    <Lucide name="x" size={16} color="#EF4444" />
                                 </TouchableOpacity>
                             </View>
-
-                            {errors.scope && (
-                                <Text style={styles.errorText}>{errors.scope[0]}</Text>
-                            )}
-
-                            {/* Fecha */}
-                            <Text style={styles.label}>Fecha</Text>
-                            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                                <Text style={styles.datePickerText}>{form.due_date.toLocaleDateString()}</Text>
-                                <Lucide name="calendar" size={20} color="#64748B" />
-                            </TouchableOpacity>
-                            {showDatePicker && (
-                                <DateTimePicker
-                                    testID="dateTimePicker"
-                                    value={form.due_date}
-                                    mode="date"
-                                    display="default"
-                                    onChange={handleDateChange}
-                                />
-                            )}
-
-                            {/* Imagen del Ticket */}
-                            <Text style={styles.label}>Imagen del ticket</Text>
-
-                            {/* Caso 1: Imagen recién seleccionada */}
-                            {form.ticket_image ? (
+                        ) : (
+                            /* Caso 2: Imagen existente en el servidor (y no marcada para borrar) */
+                            form.ticket_image_url && !form.remove_ticket_image ? (
                                 <View style={styles.selectedFileContainer}>
                                     <View style={styles.fileInfo}>
                                         <Lucide name="image" size={20} color="#4F46E5" />
-                                        <Text style={styles.selectedFileName} numberOfLines={1}>
-                                            {form.ticket_image.fileName || 'Imagen seleccionada'}
-                                        </Text>
+                                        <Text style={styles.selectedFileName}>Ticket</Text>
                                     </View>
                                     <TouchableOpacity
-                                        onPress={() => handleInputChange('ticket_image', null)}
+                                        onPress={() => handleInputChange('remove_ticket_image', true)}
                                         style={styles.removeFileButton}
                                     >
                                         <Lucide name="x" size={16} color="#EF4444" />
                                     </TouchableOpacity>
                                 </View>
                             ) : (
-                                /* Caso 2: Imagen existente en el servidor (y no marcada para borrar) */
-                                form.ticket_image_url && !form.remove_ticket_image ? (
-                                    <View style={styles.selectedFileContainer}>
-                                        <View style={styles.fileInfo}>
-                                            <Lucide name="image" size={20} color="#4F46E5" />
-                                            <Text style={styles.selectedFileName}>Ticket</Text>
-                                        </View>
-                                        <TouchableOpacity
-                                            onPress={() => handleInputChange('remove_ticket_image', true)}
-                                            style={styles.removeFileButton}
-                                        >
-                                            <Lucide name="x" size={16} color="#EF4444" />
-                                        </TouchableOpacity>
-                                    </View>
-                                ) : (
-                                    /* Caso 3: Sin imagen (o borrada) */
-                                    <TouchableOpacity onPress={handlePickImage} style={styles.filePickerButton}>
-                                        <Lucide name="camera" size={20} color="#4F46E5" />
-                                        <Text style={styles.filePickerText}>Adjuntar ticket</Text>
-                                    </TouchableOpacity>
-                                )
-                            )}
-                        </ScrollView>
+                                /* Caso 3: Sin imagen (o borrada) */
+                                <TouchableOpacity onPress={handlePickImage} style={styles.filePickerButton}>
+                                    <Lucide name="camera" size={20} color="#4F46E5" />
+                                    <Text style={styles.filePickerText}>Adjuntar ticket</Text>
+                                </TouchableOpacity>
+                            )
+                        )}
+                    </ScrollView>
 
-                        {/* Footer */}
-                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                                <Text style={styles.cancelButtonText}>Cancelar</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
-                                {loading ? (
-                                    <ActivityIndicator color="#FFF" size="small" />
-                                ) : (
-                                    <>
-                                        <Lucide name="save" size={18} color="#FFF" />
-                                        <Text style={styles.saveButtonText}>{editingTransaction ? 'Actualizar' : 'Guardar'}</Text>
-                                    </>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </KeyboardAvoidingView>
+                    {/* Footer */}
+                    <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
+                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            {loading ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <>
+                                    <Lucide name="save" size={18} color="#FFF" />
+                                    <Text style={styles.saveButtonText}>{editingTransaction ? 'Actualizar' : 'Guardar'}</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };

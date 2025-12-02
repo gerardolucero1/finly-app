@@ -3,9 +3,11 @@
 import { useInput } from '@/hooks/useInput';
 import { Account } from '@/models/account';
 import { Category } from '@/models/category';
+import { Project } from '@/models/project';
 import { SubCategory } from '@/models/subcategory';
 import { AccountsService } from '@/services/accounts';
 import { CategoriesService } from '@/services/categories';
+import { ProjectsService } from '@/services/projects';
 import { TransactionFilters } from '@/services/transactions';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Lucide } from '@react-native-vector-icons/lucide';
@@ -34,6 +36,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
 
     // Estado para los datos de los selectores
     const [accounts, setAccounts] = useState<{ label: string; value: number }[]>([]);
+    const [projects, setProjects] = useState<{ label: string; value: number }[]>([]);
     const all_categories = useInput<Category[]>([]);
     const all_subcategories = useInput<SubCategory[]>([]);
 
@@ -65,6 +68,14 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                 const { categories, subcategories } = await CategoriesService.getAll();
                 all_categories.setValue(categories);
                 all_subcategories.setValue(subcategories);
+
+                // Cargar Proyectos
+                const projectResponse = await ProjectsService.getAll();
+                const formattedProjects = projectResponse.map((proj: Project) => ({
+                    label: proj.name,
+                    value: proj.id,
+                }));
+                setProjects(formattedProjects);
 
             } catch (error) {
                 console.error("Failed to fetch filter data:", error);
@@ -212,6 +223,34 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                                         />
                                     </>
                                 )}
+
+                                {/* Selector de Scope (Etiqueta) */}
+                                <Text style={styles.label}>Etiqueta</Text>
+                                <View style={styles.segmentContainer}>
+                                    {['personal', 'business'].map((scopeType) => (
+                                        <TouchableOpacity
+                                            key={scopeType}
+                                            style={[styles.segmentButton, localFilters.scope === scopeType && styles.segmentActive]}
+                                            onPress={() => updateFilter('scope', localFilters.scope === scopeType ? null : scopeType)}
+                                        >
+                                            <Text style={[styles.segmentText, localFilters.scope === scopeType && styles.segmentActiveText]}>
+                                                {scopeType === 'personal' ? 'Personal' : 'Negocio'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                {/* Selector de Proyecto */}
+                                <Text style={styles.label}>Proyecto</Text>
+                                <RNPickerSelect
+                                    onValueChange={(value) => updateFilter('project_id', value)}
+                                    items={projects}
+                                    value={localFilters.project_id}
+                                    placeholder={{ label: 'Todos los proyectos', value: null }}
+                                    style={pickerSelectStyles}
+                                    useNativeAndroidPickerStyle={false}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color="#94A3B8" />}
+                                />
 
                                 {/* Selector de Fecha con Toggle */}
                                 <Text style={styles.label}>Filtro de Fechas</Text>

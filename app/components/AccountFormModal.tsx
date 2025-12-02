@@ -167,7 +167,13 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
             onRequestClose={onClose}
             statusBarTranslucent={true}
         >
-            <View style={styles.flexEnd}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                style={styles.flexEnd}
+                // En Android dentro de un Modal, a veces el cálculo del teclado se desfasa.
+                // Si sientes que sube demasiado o muy poco, ajusta este número (-100, 0, 30, etc.)
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -150}
+            >
                 <TouchableWithoutFeedback onPress={onClose}>
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
@@ -181,187 +187,191 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                             <Lucide name="x" size={24} color="#64748B" />
                         </TouchableOpacity>
                     </View>
-                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                            {/* Tipo de cuenta */}
-                            <Text style={styles.label}>Tipo de Cuenta <Text style={styles.required}>*</Text></Text>
-                            <View style={styles.typeSelectorContainer}>
-                                {typeOptions.map((option) => (
-                                    <TouchableOpacity
-                                        key={option.value}
-                                        style={[
-                                            styles.typeButton,
-                                            form.type === option.value && { borderColor: option.color, backgroundColor: `${option.color}1A` }
-                                        ]}
-                                        onPress={() => handleInputChange('type', option.value)}
-                                    >
-                                        <Lucide name={option.icon} size={28} color={form.type === option.value ? option.color : '#94A3B8'} />
-                                        <Text style={[styles.typeButtonText, form.type === option.value && { color: option.color, fontWeight: '600' }]}>
-                                            {option.label}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                            {errors.type && <Text style={styles.errorText}>{errors.type}</Text>}
+
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{ paddingBottom: 100 }}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Tipo de cuenta */}
+                        <Text style={styles.label}>Tipo de Cuenta <Text style={styles.required}>*</Text></Text>
+                        <View style={styles.typeSelectorContainer}>
+                            {typeOptions.map((option) => (
+                                <TouchableOpacity
+                                    key={option.value}
+                                    style={[
+                                        styles.typeButton,
+                                        form.type === option.value && { borderColor: option.color, backgroundColor: `${option.color}1A` }
+                                    ]}
+                                    onPress={() => handleInputChange('type', option.value)}
+                                >
+                                    <Lucide name={option.icon} size={28} color={form.type === option.value ? option.color : '#94A3B8'} />
+                                    <Text style={[styles.typeButtonText, form.type === option.value && { color: option.color, fontWeight: '600' }]}>
+                                        {option.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        {errors.type && <Text style={styles.errorText}>{errors.type}</Text>}
 
 
-                            {/* Nombre */}
-                            <Text style={styles.label}>Nombre de la cuenta <Text style={styles.required}>*</Text></Text>
-                            <TextInput
-                                style={[styles.input, errors.name && styles.inputError]}
-                                placeholder="Ej: BBVA Azul, Santander Free..."
-                                value={form.name}
-                                onChangeText={(value) => handleInputChange('name', value)}
-                            />
-                            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+                        {/* Nombre */}
+                        <Text style={styles.label}>Nombre de la cuenta <Text style={styles.required}>*</Text></Text>
+                        <TextInput
+                            style={[styles.input, errors.name && styles.inputError]}
+                            placeholder="Ej: BBVA Azul, Santander Free..."
+                            value={form.name}
+                            onChangeText={(value) => handleInputChange('name', value)}
+                        />
+                        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
-                            {/* Color Picker */}
-                            <Text style={styles.label}>Color de la tarjeta</Text>
-                            <View style={styles.colorPickerContainer}>
-                                {colorOptions.map((color) => (
-                                    <TouchableOpacity
-                                        key={color}
-                                        style={[
-                                            styles.colorOption,
-                                            { backgroundColor: color },
-                                            form.color === color && styles.selectedColorOption
-                                        ]}
-                                        onPress={() => handleInputChange('color', color)}
-                                    >
-                                        {form.color === color && <Lucide name="check" size={16} color="#FFF" />}
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
+                        {/* Color Picker */}
+                        <Text style={styles.label}>Color de la tarjeta</Text>
+                        <View style={styles.colorPickerContainer}>
+                            {colorOptions.map((color) => (
+                                <TouchableOpacity
+                                    key={color}
+                                    style={[
+                                        styles.colorOption,
+                                        { backgroundColor: color },
+                                        form.color === color && styles.selectedColorOption
+                                    ]}
+                                    onPress={() => handleInputChange('color', color)}
+                                >
+                                    {form.color === color && <Lucide name="check" size={16} color="#FFF" />}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
 
-                            {/* Campos que no son para efectivo */}
-                            {form.type !== 'cash' && (
-                                <>
-                                    <View style={styles.row}>
-                                        {/* Banco */}
-                                        <View style={styles.col}>
-                                            <Text style={styles.label}>Banco <Text style={styles.required}>*</Text></Text>
-                                            <RNPickerSelect
-                                                value={form.bank}
-                                                onValueChange={(value) => handleInputChange('bank', value)}
-                                                items={[
-                                                    { label: "BBVA", value: "BBVA" },
-                                                    { label: "Santander", value: "Santander" },
-                                                    { label: "Banorte", value: "Banorte" },
-                                                    { label: "HSBC", value: "HSBC" },
-                                                    { label: "Nu", value: "Nu" },
-                                                    { label: "Otro", value: "Otro" },
-                                                ]}
-                                                placeholder={{ label: "Seleccionar...", value: null }}
-                                                style={pickerSelectStyles}
-                                                useNativeAndroidPickerStyle={false}
-                                                Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
-                                            />
-                                            {errors.bank && <Text style={styles.errorText}>{errors.bank}</Text>}
-                                        </View>
-                                        {/* Últimos 4 dígitos */}
-                                        <View style={styles.col}>
-                                            <Text style={styles.label}>4 dígitos <Text style={styles.required}>*</Text></Text>
-                                            <TextInput
-                                                style={[styles.input, errors.number && styles.inputError]}
-                                                placeholder="1234"
-                                                keyboardType="number-pad"
-                                                maxLength={4}
-                                                value={String(form.number ?? '')}
-                                                onChangeText={(value) => handleInputChange('number', value)}
-                                            />
-                                            {errors.number && <Text style={styles.errorText}>{errors.number}</Text>}
-                                        </View>
+                        {/* Campos que no son para efectivo */}
+                        {form.type !== 'cash' && (
+                            <>
+                                <View style={styles.row}>
+                                    {/* Banco */}
+                                    <View style={styles.col}>
+                                        <Text style={styles.label}>Banco <Text style={styles.required}>*</Text></Text>
+                                        <RNPickerSelect
+                                            value={form.bank}
+                                            onValueChange={(value) => handleInputChange('bank', value)}
+                                            items={[
+                                                { label: "BBVA", value: "BBVA" },
+                                                { label: "Santander", value: "Santander" },
+                                                { label: "Banorte", value: "Banorte" },
+                                                { label: "HSBC", value: "HSBC" },
+                                                { label: "Nu", value: "Nu" },
+                                                { label: "Otro", value: "Otro" },
+                                            ]}
+                                            placeholder={{ label: "Seleccionar...", value: null }}
+                                            style={pickerSelectStyles}
+                                            useNativeAndroidPickerStyle={false}
+                                            Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                        />
+                                        {errors.bank && <Text style={styles.errorText}>{errors.bank}</Text>}
                                     </View>
-
-                                    {/* Fecha de vencimiento */}
-                                    <Text style={styles.label}>Fecha de Vencimiento</Text>
-                                    <TouchableOpacity onPress={() => setShowDatePicker('expiry_date')} style={styles.datePickerButton}>
-                                        <Text style={styles.datePickerText}>{form.expiry_date.toLocaleDateString()}</Text>
-                                        <Lucide name="calendar" size={20} color="#64748B" />
-                                    </TouchableOpacity>
-                                    {errors.expiry_date && <Text style={styles.errorText}>{errors.expiry_date}</Text>}
-                                </>
-                            )}
-
-                            {/* Campos solo para crédito */}
-                            {form.type === 'credit' && (
-                                <>
-                                    <Text style={styles.label}>Límite de crédito <Text style={styles.required}>*</Text></Text>
-                                    <View style={styles.currencyInputContainer}>
-                                        <Text style={styles.currencySymbol}>$</Text>
+                                    {/* Últimos 4 dígitos */}
+                                    <View style={styles.col}>
+                                        <Text style={styles.label}>4 dígitos <Text style={styles.required}>*</Text></Text>
                                         <TextInput
-                                            style={styles.currencyInput}
-                                            placeholder="0.00"
+                                            style={[styles.input, errors.number && styles.inputError]}
+                                            placeholder="1234"
+                                            keyboardType="number-pad"
+                                            maxLength={4}
+                                            value={String(form.number ?? '')}
+                                            onChangeText={(value) => handleInputChange('number', value)}
+                                        />
+                                        {errors.number && <Text style={styles.errorText}>{errors.number}</Text>}
+                                    </View>
+                                </View>
+
+                                {/* Fecha de vencimiento */}
+                                <Text style={styles.label}>Fecha de Vencimiento</Text>
+                                <TouchableOpacity onPress={() => setShowDatePicker('expiry_date')} style={styles.datePickerButton}>
+                                    <Text style={styles.datePickerText}>{form.expiry_date.toLocaleDateString()}</Text>
+                                    <Lucide name="calendar" size={20} color="#64748B" />
+                                </TouchableOpacity>
+                                {errors.expiry_date && <Text style={styles.errorText}>{errors.expiry_date}</Text>}
+                            </>
+                        )}
+
+                        {/* Campos solo para crédito */}
+                        {form.type === 'credit' && (
+                            <>
+                                <Text style={styles.label}>Límite de crédito <Text style={styles.required}>*</Text></Text>
+                                <View style={styles.currencyInputContainer}>
+                                    <Text style={styles.currencySymbol}>$</Text>
+                                    <TextInput
+                                        style={styles.currencyInput}
+                                        placeholder="0.00"
+                                        keyboardType="decimal-pad"
+                                        value={form.credit_limit}
+                                        onChangeText={(value) => handleInputChange('credit_limit', value)}
+                                    />
+                                </View>
+                                {errors.credit_limit && <Text style={styles.errorText}>{errors.credit_limit}</Text>}
+                                <View style={styles.row}>
+                                    <View style={styles.col}>
+                                        <Text style={styles.label}>Tasa Anual (%)</Text>
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="18.50"
                                             keyboardType="decimal-pad"
-                                            value={form.credit_limit}
-                                            onChangeText={(value) => handleInputChange('credit_limit', value)}
+                                            value={String(form.interest_rate ?? '')}
+                                            onChangeText={(value) => handleInputChange('interest_rate', value)}
                                         />
                                     </View>
-                                    {errors.credit_limit && <Text style={styles.errorText}>{errors.credit_limit}</Text>}
-                                    <View style={styles.row}>
-                                        <View style={styles.col}>
-                                            <Text style={styles.label}>Tasa Anual (%)</Text>
-                                            <TextInput
-                                                style={styles.input}
-                                                placeholder="18.50"
-                                                keyboardType="decimal-pad"
-                                                value={String(form.interest_rate ?? '')}
-                                                onChangeText={(value) => handleInputChange('interest_rate', value)}
-                                            />
-                                        </View>
-                                        <View style={styles.col}>
-                                            <Text style={styles.label}>Pago Mínimo (%)</Text>
-                                            <TextInput
-                                                style={styles.input}
-                                                placeholder="5.00"
-                                                keyboardType="decimal-pad"
-                                                value={String(form.min_payment_rate ?? '')}
-                                                onChangeText={(value) => handleInputChange('min_payment_rate', value)}
-                                            />
-                                        </View>
+                                    <View style={styles.col}>
+                                        <Text style={styles.label}>Pago Mínimo (%)</Text>
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="5.00"
+                                            keyboardType="decimal-pad"
+                                            value={String(form.min_payment_rate ?? '')}
+                                            onChangeText={(value) => handleInputChange('min_payment_rate', value)}
+                                        />
                                     </View>
-                                    <View style={styles.row}>
-                                        <View style={styles.col}>
-                                            <Text style={styles.label}>Fecha de Corte</Text>
-                                            <TouchableOpacity onPress={() => setShowDatePicker('cut_off_date')} style={styles.datePickerButton}>
-                                                <Text style={styles.datePickerText}>{form.cut_off_date.toLocaleDateString()}</Text>
-                                            </TouchableOpacity>
-                                            {errors.cut_off_date && <Text style={styles.errorText}>{errors.cut_off_date}</Text>}
-                                        </View>
-                                        <View style={styles.col}>
-                                            <Text style={styles.label}>Fecha de Pago</Text>
-                                            <TouchableOpacity onPress={() => setShowDatePicker('payment_due_date')} style={styles.datePickerButton}>
-                                                <Text style={styles.datePickerText}>{form.payment_due_date.toLocaleDateString()}</Text>
-                                            </TouchableOpacity>
-                                            {errors.payment_due_date && <Text style={styles.errorText}>{errors.payment_due_date}</Text>}
-                                        </View>
+                                </View>
+                                <View style={styles.row}>
+                                    <View style={styles.col}>
+                                        <Text style={styles.label}>Fecha de Corte</Text>
+                                        <TouchableOpacity onPress={() => setShowDatePicker('cut_off_date')} style={styles.datePickerButton}>
+                                            <Text style={styles.datePickerText}>{form.cut_off_date.toLocaleDateString()}</Text>
+                                        </TouchableOpacity>
+                                        {errors.cut_off_date && <Text style={styles.errorText}>{errors.cut_off_date}</Text>}
                                     </View>
-                                </>
+                                    <View style={styles.col}>
+                                        <Text style={styles.label}>Fecha de Pago</Text>
+                                        <TouchableOpacity onPress={() => setShowDatePicker('payment_due_date')} style={styles.datePickerButton}>
+                                            <Text style={styles.datePickerText}>{form.payment_due_date.toLocaleDateString()}</Text>
+                                        </TouchableOpacity>
+                                        {errors.payment_due_date && <Text style={styles.errorText}>{errors.payment_due_date}</Text>}
+                                    </View>
+                                </View>
+                            </>
+                        )}
+
+                        {/* Saldo Actual */}
+                        <Text style={styles.label}>Saldo Actual <Text style={styles.required}>*</Text></Text>
+                        <View style={styles.currencyInputContainer}>
+                            <Text style={styles.currencySymbol}>$</Text>
+                            <TextInput
+                                style={styles.currencyInput}
+                                placeholder="0.00"
+                                keyboardType="decimal-pad"
+                                value={form.current_balance}
+                                onChangeText={(value) => handleInputChange('current_balance', value)}
+                            />
+                            {(form.type === 'debit' || form.type === 'cash') ? (
+                                <Text style={[{ fontFamily: 'Inter_400Regular', fontSize: 9 }]}>El saldo actual en tu cuenta</Text>
+                            ) : (
+                                <Text style={[{ fontFamily: 'Inter_400Regular', fontSize: 9 }]}>Deuda actual de tu TDC</Text>
                             )}
+                        </View>
+                        {errors.current_balance && <Text style={styles.errorText}>{errors.current_balance}</Text>}
 
-                            {/* Saldo Actual */}
-                            <Text style={styles.label}>Saldo Actual <Text style={styles.required}>*</Text></Text>
-                            <View style={styles.currencyInputContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
-                                <TextInput
-                                    style={styles.currencyInput}
-                                    placeholder="0.00"
-                                    keyboardType="decimal-pad"
-                                    value={form.current_balance}
-                                    onChangeText={(value) => handleInputChange('current_balance', value)}
-                                />
-                                {(form.type === 'debit' || form.type === 'cash') ? (
-                                    <Text style={[{ fontFamily: 'Inter_400Regular', fontSize: 9 }]}>El saldo actual en tu cuenta</Text>
-                                ) : (
-                                    <Text style={[{ fontFamily: 'Inter_400Regular', fontSize: 9 }]}>Deuda actual de tu TDC</Text>
-                                )}
-                            </View>
-                            {errors.current_balance && <Text style={styles.errorText}>{errors.current_balance}</Text>}
-
-                            {/* Saldo Disponible */}
-                            {(form.type === 'debit' || form.type === 'cash') && (
-                                <>
-                                    {/* <Text style={styles.label}>Saldo Disponible</Text>
+                        {/* Saldo Disponible */}
+                        {(form.type === 'debit' || form.type === 'cash') && (
+                            <>
+                                {/* <Text style={styles.label}>Saldo Disponible</Text>
                                     <View style={styles.currencyInputContainer}>
                                         <Text style={styles.currencySymbol}>$</Text>
                                         <TextInput
@@ -376,11 +386,11 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                             onChangeText={(value) => handleInputChange('available_balance', value)}
                                         />
                                     </View> */}
-                                </>
-                            )}
+                            </>
+                        )}
 
-                        </ScrollView>
-                    </KeyboardAvoidingView>
+                    </ScrollView>
+
                     {/* Footer */}
                     <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
                         <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
@@ -399,7 +409,7 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                     </View>
                     {renderDatePicker()}
                 </View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };
@@ -412,12 +422,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalContent: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FFF',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        height: '90%',
+        padding: 20,
+        height: '85%',
     },
     header: {
         flexDirection: 'row',

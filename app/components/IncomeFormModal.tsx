@@ -1,5 +1,7 @@
 import { Account } from '@/models/account';
+import { Project } from '@/models/project';
 import { IncomesService } from '@/services/incomes';
+import { ProjectsService } from '@/services/projects';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import React, { useEffect, useState } from 'react';
@@ -25,11 +27,13 @@ interface FormState {
     description: string;
     type: string;
     amount: string;
+    scope: string | 'personal' | 'business';
     frequency: string;
     date: Date;
     reminder: boolean;
     programmed: boolean;
     account_id: number | string | null;
+    project_id: number | string | null;
 }
 
 const initialFormState: FormState = {
@@ -37,11 +41,13 @@ const initialFormState: FormState = {
     description: '',
     type: 'variable',
     amount: '',
+    scope: 'personal',
     frequency: 'one-time',
     date: new Date(),
     reminder: false,
     programmed: false,
     account_id: '',
+    project_id: '',
 };
 
 interface IncomeFormModalProps {
@@ -50,23 +56,53 @@ interface IncomeFormModalProps {
     onSave: () => void;
     accounts: Account[];
     selectedAccount: Account | null;
+    editingTransaction?: any;
 }
 
-export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAccount }: IncomeFormModalProps) => {
+export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAccount, editingTransaction }: IncomeFormModalProps) => {
     const [form, setForm] = useState<FormState>(initialFormState);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
     const insets = useSafeAreaInsets();
+    const [projects, setProjects] = useState<Project[]>([]);
 
     useEffect(() => {
         if (visible) {
-            setForm({
-                ...initialFormState,
-                account_id: selectedAccount?.id || null,
-            });
+            if (editingTransaction) {
+                setForm({
+                    source: editingTransaction.name,
+                    description: editingTransaction.description,
+                    type: editingTransaction.type,
+                    amount: editingTransaction.amount ? editingTransaction.amount.toString() : '',
+                    scope: editingTransaction.scope || 'personal',
+                    frequency: editingTransaction.frequency,
+                    date: new Date(editingTransaction.date),
+                    reminder: editingTransaction.reminder,
+                    programmed: editingTransaction.programmed,
+                    account_id: editingTransaction.account_id,
+                    project_id: editingTransaction.project_id,
+                })
+            } else {
+                setForm({
+                    ...initialFormState,
+                    account_id: selectedAccount?.id || null,
+                });
+            }
         }
     }, [visible, selectedAccount]);
+
+    useEffect(() => {
+        const getProjects = async () => {
+            try {
+                const response = await ProjectsService.getAll();
+                setProjects(response);
+            } catch (error) {
+                console.log(error);
+            }
+        };
+        getProjects();
+    }, []);
 
     const handleInputChange = (field: keyof FormState, value: any) => {
         setForm(prev => ({ ...prev, [field]: value }));
@@ -100,7 +136,7 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
     };
 
     const accountItems = accounts.map(acc => ({ label: acc.name, value: acc.id }));
-
+    const projectItems = projects.map(acc => ({ label: acc.name, value: acc.id }));
     return (
         <Modal
             animationType="slide"
@@ -110,111 +146,183 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
             statusBarTranslucent={true}
             presentationStyle="overFullScreen"
         >
-            <View style={styles.flexEnd}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                style={styles.flexEnd}
+                // En Android dentro de un Modal, a veces el cálculo del teclado se desfasa.
+                // Si sientes que sube demasiado o muy poco, ajusta este número (-100, 0, 30, etc.)
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -150}
+            >
                 <TouchableWithoutFeedback onPress={onClose}>
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
 
-                <View style={styles.modalContent}>
+                <View
+                    style={styles.modalContent}
+                >
                     <View style={styles.header}>
                         <Text style={styles.headerTitle}>Nuevo Ingreso</Text>
                         <TouchableOpacity onPress={onClose}>
                             <Lucide name="x" size={24} color="#64748B" />
                         </TouchableOpacity>
                     </View>
-                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom }}>
-                            {/* Monto */}
-                            <Text style={styles.label}>Monto *</Text>
-                            <View style={styles.amountContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
-                                <TextInput
-                                    style={styles.amountInput}
-                                    placeholder="0.00"
-                                    keyboardType="decimal-pad"
-                                    value={form.amount}
-                                    onChangeText={(value) => handleInputChange('amount', value)}
-                                />
-                            </View>
-                            {errors.amount && (
-                                <Text style={styles.errorText}>{errors.amount[0]}</Text>
-                            )}
 
-                            {/* Fuente */}
-                            <Text style={styles.label}>Fuente de Ingreso <Text style={styles.required}>*</Text></Text>
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Monto */}
+                        <Text style={styles.label}>Monto *</Text>
+                        <View style={styles.amountContainer}>
+                            <Text style={styles.currencySymbol}>$</Text>
                             <TextInput
-                                style={[styles.input, errors.source && styles.inputError]}
-                                placeholder="Ej: Nómina, Venta de Garage..."
-                                value={form.source}
-                                onChangeText={(value) => handleInputChange('source', value)}
+                                style={styles.amountInput}
+                                placeholder="0.00"
+                                keyboardType="decimal-pad"
+                                value={form.amount}
+                                onChangeText={(value) => handleInputChange('amount', value)}
                             />
-                            {errors.source && <Text style={styles.errorText}>{errors.source[0]}</Text>}
+                        </View>
+                        {errors.amount && (
+                            <Text style={styles.errorText}>{errors.amount[0]}</Text>
+                        )}
 
-                            {/* Cuenta de Origen */}
-                            <Text style={styles.label}>Cuenta *</Text>
-                            <RNPickerSelect
-                                value={form.account_id}
-                                onValueChange={(value) => handleInputChange('account_id', value)}
-                                items={accountItems}
-                                placeholder={{ label: "Seleccionar cuenta", value: null, color: '#94A3B8' }}
-                                style={pickerSelectStyles}
-                                useNativeAndroidPickerStyle={false}
-                                Icon={() => {
-                                    return <Lucide name="chevron-down" size={20} color="#64748B" />;
-                                }}
-                            />
+                        {/* Fuente */}
+                        <Text style={styles.label}>Fuente de Ingreso <Text style={styles.errorText}>*</Text></Text>
+                        <TextInput
+                            style={[styles.input, errors.source && styles.errorText]}
+                            placeholder="Ej: Nómina, Venta de Garage..."
+                            value={form.source}
+                            onChangeText={(value) => handleInputChange('source', value)}
+                        />
+                        {errors.source && <Text style={styles.errorText}>{errors.source[0]}</Text>}
 
-                            {/* Tipo y Frecuencia */}
-                            <View style={styles.row}>
-                                <View style={styles.col}>
-                                    <Text style={styles.label}>Tipo</Text>
-                                    <RNPickerSelect
-                                        value={form.type}
-                                        onValueChange={(value) => handleInputChange('type', value)}
-                                        items={[
-                                            { label: "Fijo", value: "fixed" },
-                                            { label: "Variable", value: "variable" },
-                                        ]}
-                                        style={pickerSelectStyles}
-                                        useNativeAndroidPickerStyle={false}
-                                        Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
-                                    />
+                        {/* Cuenta de Origen */}
+                        <Text style={styles.label}>Cuenta *</Text>
+                        <RNPickerSelect
+                            value={form.account_id}
+                            onValueChange={(value) => handleInputChange('account_id', value)}
+                            items={accountItems}
+                            placeholder={{ label: "Seleccionar cuenta", value: null, color: '#94A3B8' }}
+                            style={pickerSelectStyles}
+                            useNativeAndroidPickerStyle={false}
+                            Icon={() => {
+                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                            }}
+                        />
+
+                        {/* Tipo y Frecuencia */}
+                        <Text style={styles.label}>Tipo</Text>
+                        <RNPickerSelect
+                            value={form.type}
+                            onValueChange={(value) => handleInputChange('type', value)}
+                            items={[
+                                { label: "Fijo", value: "fixed" },
+                                { label: "Variable", value: "variable" },
+                            ]}
+                            style={pickerSelectStyles}
+                            useNativeAndroidPickerStyle={false}
+                            Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                        />
+
+                        <Text style={styles.label}>Frecuencia</Text>
+                        <RNPickerSelect
+                            value={form.frequency}
+                            onValueChange={(value) => handleInputChange('frequency', value)}
+                            items={[
+                                { label: "Una vez", value: "one-time" },
+                                { label: "Semanal", value: "weekly" },
+                                { label: "Quincenal", value: "biweekly" },
+                                { label: "Mensual", value: "monthly" },
+                            ]}
+                            style={pickerSelectStyles}
+                            useNativeAndroidPickerStyle={false}
+                            Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                        />
+
+                        {/* Proyecto */}
+                        <Text style={styles.label}>Proyecto</Text>
+                        <RNPickerSelect
+                            value={form.project_id}
+                            onValueChange={(value) => handleInputChange('project_id', value)}
+                            items={projectItems}
+                            placeholder={{ label: "Seleccionar proyecto", value: null, color: '#94A3B8' }}
+                            style={pickerSelectStyles}
+                            useNativeAndroidPickerStyle={false}
+                            Icon={() => {
+                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                            }}
+                        />
+
+                        {/* Etiqueta */}
+                        <Text style={styles.label}>Etiqueta *</Text>
+                        <View style={styles.radioGroup}>
+                            {/* Opción: Personal */}
+                            <TouchableOpacity
+                                style={[
+                                    styles.radioOption,
+                                    form.scope === 'personal' && styles.radioOptionSelected
+                                ]}
+                                onPress={() => handleInputChange('scope', 'personal')}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[
+                                    styles.radioCircle,
+                                    form.scope === 'personal' && styles.radioCircleSelected
+                                ]}>
+                                    {form.scope === 'personal' && <View style={styles.radioInnerCircle} />}
                                 </View>
-                                <View style={styles.col}>
-                                    <Text style={styles.label}>Frecuencia</Text>
-                                    <RNPickerSelect
-                                        value={form.frequency}
-                                        onValueChange={(value) => handleInputChange('frequency', value)}
-                                        items={[
-                                            { label: "Una vez", value: "one-time" },
-                                            { label: "Semanal", value: "weekly" },
-                                            { label: "Quincenal", value: "biweekly" },
-                                            { label: "Mensual", value: "monthly" },
-                                        ]}
-                                        style={pickerSelectStyles}
-                                        useNativeAndroidPickerStyle={false}
-                                        Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
-                                    />
-                                </View>
-                            </View>
-
-                            {/* Fecha */}
-                            <Text style={styles.label}>Fecha</Text>
-                            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                                <Text style={styles.datePickerText}>{form.date.toLocaleDateString()}</Text>
-                                <Lucide name="calendar" size={20} color="#64748B" />
+                                <Text style={[
+                                    styles.radioText,
+                                    form.scope === 'personal' && styles.radioTextSelected
+                                ]}>Personal</Text>
                             </TouchableOpacity>
-                            {showDatePicker && (
-                                <DateTimePicker
-                                    testID="dateTimePicker"
-                                    value={form.date}
-                                    mode="date"
-                                    display="default"
-                                    onChange={handleDateChange}
-                                />
-                            )}
-                        </ScrollView>
-                    </KeyboardAvoidingView>
+
+
+
+                            {/* Opción: Negocio */}
+                            <TouchableOpacity
+                                style={[
+                                    styles.radioOption,
+                                    form.scope === 'business' && styles.radioOptionSelected
+                                ]}
+                                onPress={() => handleInputChange('scope', 'business')}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[
+                                    styles.radioCircle,
+                                    form.scope === 'business' && styles.radioCircleSelected
+                                ]}>
+                                    {form.scope === 'business' && <View style={styles.radioInnerCircle} />}
+                                </View>
+                                <Text style={[
+                                    styles.radioText,
+                                    form.scope === 'business' && styles.radioTextSelected
+                                ]}>Negocio</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {errors.scope && (
+                            <Text style={styles.errorText}>{errors.scope[0]}</Text>
+                        )}
+
+                        {/* Fecha */}
+                        <Text style={styles.label}>Fecha</Text>
+                        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
+                            <Text style={styles.datePickerText}>{form.date.toLocaleDateString()}</Text>
+                            <Lucide name="calendar" size={20} color="#64748B" />
+                        </TouchableOpacity>
+                        {showDatePicker && (
+                            <DateTimePicker
+                                testID="dateTimePicker"
+                                value={form.date}
+                                mode="date"
+                                display="default"
+                                onChange={handleDateChange}
+                            />
+                        )}
+                    </ScrollView>
+
                     {/* Footer */}
                     <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
                         <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
@@ -236,7 +344,7 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                         <Text style={styles.saveButtonText}>Guardar Ingreso</Text>
                     </TouchableOpacity> */}
                 </View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };
@@ -348,6 +456,53 @@ const styles = StyleSheet.create({
         fontSize: 11,
         marginTop: 2,
         fontFamily: 'Inter_400Regular',
+    },
+    radioGroup: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    radioOption: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+    },
+    radioOptionSelected: {
+        backgroundColor: '#EEF2FF',
+        borderColor: '#4F46E5',
+    },
+    radioCircle: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: '#94A3B8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 10,
+    },
+    radioCircleSelected: {
+        borderColor: '#4F46E5',
+    },
+    radioInnerCircle: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#4F46E5',
+    },
+    radioText: {
+        fontSize: 14,
+        color: '#64748B',
+        fontFamily: 'Inter_500Medium',
+    },
+    radioTextSelected: {
+        color: '#1E293B',
+        fontFamily: 'Inter_700Bold',
     },
 });
 

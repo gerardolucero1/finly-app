@@ -1,7 +1,10 @@
 export interface Transaction {
     id: number;
     amount: number;
+    scope: string;
+    frequency: string;
     account_id: number | null;
+    project_id: number | null;
     name: string;
     type: string;
     ticket_image_url: string;
