@@ -36,6 +36,10 @@ api.interceptors.response.use(
             SecureStore.deleteItemAsync('userToken');
             router.replace('/auth/login');
         }
+
+        if (error.response?.status === 403) {
+            console.log('No autorizado:', error.response.data.message);
+        }
         return Promise.reject(error);
     }
 );

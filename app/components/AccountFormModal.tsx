@@ -5,7 +5,6 @@ import { Lucide } from '@react-native-vector-icons/lucide';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -118,9 +117,6 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                 console.log('Data:', error.response.data);
                 console.log('Errors:', error.response.data.errors);
                 setErrors(error.response.data.errors);
-            } else {
-                console.log('Error sin respuesta:', error.message);
-                Alert.alert("Error", "Ocurrió un error inesperado.");
             }
         } finally {
             setLoading(false);

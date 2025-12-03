@@ -31,37 +31,62 @@ const SIDECARD_SPACING = (screenWidth - CARD_WIDTH) / 2;
 // Mock de datos
 const PLANS = [
     {
-        name: 'Básico',
-        price: '10',
-        period: '/Mes',
-        description: 'Ideal para iniciar tu control.',
-        features: ['Gastos ilimitados', 'Dashboard básico', 'Soporte email'],
-        icon: 'rocket',
-        accentColor: '#4F46E5',
-        recommended: false,
-        price_id: 'price_1SLR9U6dZB8Inoh7jLDAgJIu',
+        name: 'Gratis',
+        price: '0',
+        period: '/siempre',
+        desc: 'Para probar y organizar gastos básicos.',
+        features: [
+            'Registro Manual (Sin WhatsApp)',
+            'Dashboard de Finanzas',
+            'Límite: 1 Cuenta y 1 Presupuesto',
+        ],
+        cta: 'Empezar Gratis',
+        popular: false,
+        color: 'border-gray-200 dark:border-gray-700',
+        // Compatibility fields
+        price_id: 'free_tier',
+        accentColor: '#64748B', // Slate 500
+        icon: 'box',
     },
     {
-        name: 'Premium',
-        price: '25',
-        period: '/Mes',
-        description: 'Control total y avanzado.',
-        features: ['Todo lo de Básico', 'Reportes PDF', 'IA Análisis', 'Soporte 24/7'],
-        icon: 'star',
-        accentColor: '#7C3AED',
-        recommended: true,
+        name: 'Plus',
+        price: '49',
+        period: '/mes',
+        desc: 'La comodidad del Chatbot a precio de un café.',
+        features: [
+            'Todo lo del plan Gratis',
+            'WhatsApp Bot: Registro Ilimitado (Texto)',
+            'Cuentas y Presupuestos Ilimitados',
+            'Alertas de Gastos en tiempo real',
+            '1 Estrategia de Deuda con IA',
+        ],
+        cta: 'Activar Plus',
+        popular: false,
+        color: 'border-blue-200 dark:border-blue-900',
+        // Compatibility fields
         price_id: 'price_1SLREL6dZB8Inoh7YDQn09BA',
+        accentColor: '#3B82F6', // Blue 500
+        icon: 'message-circle',
     },
     {
-        name: 'VIP',
-        price: '60',
-        period: '/Mes',
-        description: 'Optimización financiera total.',
-        features: ['Todo lo de Premium', 'Asesor personal', 'Estrategias IA', 'Chat VIP'],
-        icon: 'crown',
-        accentColor: '#DB2777',
-        recommended: false,
+        name: 'Pro Freelancer',
+        price: '149',
+        period: '/mes',
+        desc: 'Control total para tu negocio y vida personal.',
+        features: [
+            'Todo lo del plan Plus',
+            'Modo Freelancer (Separa Negocio/Personal)',
+            'IA: Lectura de Tickets (desde la App/Web)',
+            'Estrategias de Deuda Ilimitadas',
+            'Carga de PDF Bancarios (BBVA / Beta)',
+        ],
+        cta: 'Obtener Pro',
+        popular: true,
+        color: 'border-indigo-500 ring-2 ring-indigo-500 shadow-2xl',
+        // Compatibility fields
         price_id: 'price_1SVEmr6dZB8Inoh78F9Cojsm',
+        accentColor: '#6366F1', // Indigo 500
+        icon: 'briefcase',
     },
 ];
 
@@ -81,12 +106,11 @@ interface StatusSectionProps {
 // Agregamos prop 'isLoading' para feedback visual
 const PlanCard = ({ item, isCurrent, isLoading, onPress }: { item: any, isCurrent: boolean, isLoading: boolean, onPress: () => void }) => {
     let iconName = 'box';
-    if (item.icon === 'rocket') iconName = 'rocket';
-    if (item.icon === 'star') iconName = 'star';
-    if (item.icon === 'crown') iconName = 'crown';
+    if (item.icon === 'message-circle') iconName = 'message-circle';
+    if (item.icon === 'briefcase') iconName = 'briefcase';
 
     // Determinamos el texto del botón
-    let buttonText = 'Seleccionar Plan';
+    let buttonText = item.cta;
     if (isCurrent) buttonText = 'Plan Actual';
     if (isLoading) buttonText = 'Procesando...';
 
@@ -99,7 +123,7 @@ const PlanCard = ({ item, isCurrent, isLoading, onPress }: { item: any, isCurren
                 <View style={styles.cardHeader}>
                     <View>
                         <Text style={styles.cardType}>{item.name}</Text>
-                        {item.recommended && (
+                        {item.popular && (
                             <View style={styles.recommendedBadge}>
                                 <Text style={styles.recommendedText}>Recomendado</Text>
                             </View>
@@ -109,7 +133,7 @@ const PlanCard = ({ item, isCurrent, isLoading, onPress }: { item: any, isCurren
                 </View>
 
                 <View style={styles.cardBody}>
-                    <Text style={styles.cardDescription}>{item.description}</Text>
+                    <Text style={styles.cardDescription}>{item.desc}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 10 }}>
                         <Text style={styles.cardBalance}>${item.price}</Text>
                         <Text style={styles.cardPeriod}>{item.period}</Text>
@@ -119,8 +143,8 @@ const PlanCard = ({ item, isCurrent, isLoading, onPress }: { item: any, isCurren
                 <View style={styles.cardFooter}>
                     {item.features.map((feature: string, index: number) => (
                         <View key={index} style={styles.featureRow}>
-                            <Lucide name="check" size={16} color="#A5B4FC" />
-                            <Text style={styles.featureText} numberOfLines={1}>{feature}</Text>
+                            <Lucide name="check" size={16} color="#A5B4FC" style={{ marginTop: 2 }} />
+                            <Text style={styles.featureText}>{feature}</Text>
                         </View>
                     ))}
                 </View>
@@ -585,7 +609,7 @@ const styles = StyleSheet.create({
     },
     card: {
         width: CARD_WIDTH,
-        height: 420,
+        height: 520,
         borderRadius: 24,
         marginHorizontal: SPACING / 2,
         padding: 24,
@@ -664,7 +688,7 @@ const styles = StyleSheet.create({
     },
     featureRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: 8,
     },
     featureText: {
@@ -672,6 +696,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         marginLeft: 10,
         fontFamily: 'Inter_500Medium',
+        flex: 1,
     },
     selectButton: {
         backgroundColor: '#FFF',
