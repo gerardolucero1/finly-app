@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
@@ -10,6 +9,7 @@ import { useProfileStore } from '../store';
 interface AuthContextType {
     isAuthenticated: boolean;
     token: string | null;
+    isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
     register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>;
     logout: () => Promise<void>;
@@ -19,6 +19,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [token, setToken] = useState<string | null>(null);
     const setProfile = useProfileStore((state) => state.setProfile);
     const clearProfile = useProfileStore((state) => state.logout);
@@ -45,10 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const data = await response.data;
 
                 setProfile(data);
-                router.replace('/dashboard');
             }
         } catch (error) {
             console.error('Error loading token:', error);
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -74,8 +76,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 setProfile(data.user);
             }
-
-            router.replace('/dashboard');
         } catch (error) {
             console.error('Login error:', error);
             throw error;
@@ -104,8 +104,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 setProfile(data.user);
             }
-
-            router.replace('/dashboard');
         } catch (error) {
             console.error('Register error:', error);
             throw error;
@@ -124,14 +122,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setToken(null);
             setIsAuthenticated(false);
             clearProfile();
-            router.replace('/auth/login');
         } catch (error: any) {
             console.log('Logout error:', error.response.data);
         }
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, token, login, logout, register }}>
+        <AuthContext.Provider value={{ isAuthenticated, isLoading, token, login, logout, register }}>
             {children}
         </AuthContext.Provider>
     );

@@ -1,21 +1,20 @@
 import { Inter_400Regular, Inter_500Medium, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useEffect } from 'react';
-import { Platform, TextInput } from 'react-native';
+import { ActivityIndicator, TextInput, View } from 'react-native';
 import { SheetProvider, registerSheet } from 'react-native-actions-sheet';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import '../css/global.css';
 import { ImagePickerSheet } from './components/ImagePickerSheet';
-import { AuthProvider } from './context/auth';
+import { AuthProvider, useAuth } from './context/auth';
 
 registerSheet('image-picker', ImagePickerSheet);
 
 function RootLayoutNav() {
     const segments = useSegments();
     const router = useRouter();
+    const { isAuthenticated, isLoading } = useAuth();
 
     const [loaded] = useFonts({
         Inter_400Regular,
@@ -41,31 +40,24 @@ function RootLayoutNav() {
         // @ts-ignore
         TextInput.defaultProps.style = { fontFamily: 'Inter_400Regular' };
 
-        const checkAuth = async () => {
-            try {
-                let token;
-                if (Platform.OS === 'web') {
-                    token = await AsyncStorage.getItem('userToken');
-                } else {
-                    token = await SecureStore.getItemAsync('userToken');
-                }
+        const inAuthGroup = segments[0] === 'auth';
 
-                const inAuthGroup = segments[0] === 'auth';
+        if (isLoading) return;
 
-                if (!token && !inAuthGroup) {
-                    router.replace('/auth/login');
-                } else if (token && inAuthGroup) {
-                    router.replace('/dashboard');
-                }
-            } catch (e) {
-                router.replace('/auth/login');
-            }
-        };
+        if (!isAuthenticated && !inAuthGroup) {
+            router.replace('/auth/login');
+        } else if (isAuthenticated && inAuthGroup) {
+            router.replace('/dashboard');
+        }
+    }, [segments, loaded, isLoading, isAuthenticated]);
 
-        checkAuth();
-    }, [segments, loaded]);
-
-    if (!loaded) return null; // <-- el return va al FINAL de los hooks
+    if (!loaded || isLoading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#0000ff" />
+            </View>
+        );
+    }
 
     return (
         <Stack>
