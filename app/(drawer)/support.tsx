@@ -1,17 +1,42 @@
+import { SupportService } from '@/services/support';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Stack } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCustomAlert } from '../components/CustomAlert';
+
 
 export default function SupportScreen() {
+    const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
     const [message, setMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const headerHeight = useHeaderHeight();
 
-    const handleSend = () => {
-        if (!message.trim()) return;
-        Alert.alert("Mensaje enviado", "Gracias por contactarnos. Te responderemos pronto.");
-        setMessage('');
+    const handleSend = async () => {
+        if (!message.trim() || isLoading) return;
+
+        setIsLoading(true);
+        try {
+            let response = await SupportService.createTicket({ message });
+            showAlert({
+                icon: "send",
+                title: "Mensaje enviado",
+                message: "Gracias por contactarnos. Te responderemos pronto.",
+                type: "success",
+            })
+            setMessage('');
+        } catch (error: any) {
+            console.log(error);
+            showAlert({
+                icon: "mail-x",
+                title: "Error",
+                message: error.response.data.error,
+                type: "danger",
+            })
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -51,24 +76,38 @@ export default function SupportScreen() {
                         onChangeText={setMessage}
                     />
 
-                    <TouchableOpacity style={styles.button} onPress={handleSend}>
-                        <Text style={styles.buttonText}>Enviar Mensaje</Text>
-                        <Lucide name="send" size={18} color="#FFF" />
+                    <TouchableOpacity
+                        style={[styles.button, isLoading && styles.buttonDisabled]}
+                        onPress={handleSend}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <>
+                                <ActivityIndicator size="small" color="#FFF" />
+                                <Text style={styles.buttonText}>Enviando...</Text>
+                            </>
+                        ) : (
+                            <>
+                                <Text style={styles.buttonText}>Enviar Mensaje</Text>
+                                <Lucide name="send" size={18} color="#FFF" />
+                            </>
+                        )}
                     </TouchableOpacity>
 
                     <View style={styles.contactInfo}>
                         <Text style={styles.contactTitle}>Otros medios de contacto</Text>
                         <TouchableOpacity style={styles.contactRow}>
                             <Lucide name="mail" size={18} color="#64748B" />
-                            <Text style={styles.contactText}>soporte@finly.app</Text>
+                            <Text style={styles.contactText}>soporte@holafinly.com</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.contactRow}>
                             <Lucide name="twitter" size={18} color="#64748B" />
-                            <Text style={styles.contactText}>@finlyapp</Text>
+                            <Text style={styles.contactText}>@holafinly</Text>
                         </TouchableOpacity>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+            <AlertComponent />
         </View>
     );
 }
@@ -133,6 +172,10 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 4,
+    },
+    buttonDisabled: {
+        backgroundColor: '#94A3B8',
+        shadowOpacity: 0.1,
     },
     buttonText: {
         color: '#FFF',

@@ -45,7 +45,9 @@ function RootLayoutNav() {
 
         if (isLoading) return;
 
-        if (!isAuthenticated && !inAuthGroup) {
+        // Only redirect if user is in auth group but authenticated
+        // index.tsx handles initial routing
+        if (!isAuthenticated && !inAuthGroup && segments.length > 0) {
             router.replace('/auth/login');
         } else if (isAuthenticated && inAuthGroup) {
             router.replace('/dashboard');

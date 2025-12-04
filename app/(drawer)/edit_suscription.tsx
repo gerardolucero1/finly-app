@@ -64,7 +64,7 @@ const PLANS = [
         popular: false,
         color: 'border-blue-200 dark:border-blue-900',
         // Compatibility fields
-        price_id: 'price_1SLREL6dZB8Inoh7YDQn09BA',
+        price_id: 'price_1SaKZD6dZB8Inoh78spRuotC',
         accentColor: '#3B82F6', // Blue 500
         icon: 'message-circle',
     },
@@ -84,7 +84,7 @@ const PLANS = [
         popular: true,
         color: 'border-indigo-500 ring-2 ring-indigo-500 shadow-2xl',
         // Compatibility fields
-        price_id: 'price_1SVEmr6dZB8Inoh78F9Cojsm',
+        price_id: 'price_1SaKZP6dZB8Inoh7hnph9Hdk',
         accentColor: '#6366F1', // Indigo 500
         icon: 'briefcase',
     },
@@ -305,7 +305,7 @@ export default function ManageSubscriptionScreen() {
 
             // B. Inicializar Payment Sheet
             const { error: initError } = await initPaymentSheet({
-                merchantDisplayName: "Tu App de Finanzas",
+                merchantDisplayName: "Finly",
                 customerId: customer,
                 customerEphemeralKeySecret: ephemeralKey,
                 paymentIntentClientSecret: paymentIntent,
