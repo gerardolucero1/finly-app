@@ -8,6 +8,7 @@ import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-
 import '../css/global.css';
 import { ImagePickerSheet } from './components/ImagePickerSheet';
 import { AuthProvider, useAuth } from './context/auth';
+import { ThemeProvider } from './context/theme';
 
 registerSheet('image-picker', ImagePickerSheet);
 
@@ -89,9 +90,11 @@ function RootLayoutInner() {
         >
             <SheetProvider>
                 <AuthProvider>
-                    <StripeProvider publishableKey="pk_test_51SLR5b6dZB8Inoh7iIyYyPFmtzg8yVMCPzyLH6iBfFETyyaae2uXosMLs6zd4xJOKJsrzUcfyp0Z574qJXa2LAVy00FTClFY6S">
-                        <RootLayoutNav />
-                    </StripeProvider>
+                    <ThemeProvider>
+                        <StripeProvider publishableKey="pk_test_51SLR5b6dZB8Inoh7iIyYyPFmtzg8yVMCPzyLH6iBfFETyyaae2uXosMLs6zd4xJOKJsrzUcfyp0Z574qJXa2LAVy00FTClFY6S">
+                            <RootLayoutNav />
+                        </StripeProvider>
+                    </ThemeProvider>
                 </AuthProvider>
             </SheetProvider>
         </SafeAreaView>

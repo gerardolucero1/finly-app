@@ -8,51 +8,56 @@ import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/auth';
+import { useTheme } from '../context/theme';
 import { useProfileStore } from '../store';
 import { useCustomAlert } from './CustomAlert';
 
 // Componente auxiliar para los items del menú
-const MenuItem = ({ icon, label, onPress, isDestructive = false, showChevron = true }: any) => (
-    <TouchableOpacity
-        style={[styles.menuItem, isDestructive && styles.menuItemDestructive]}
-        onPress={onPress}
-        activeOpacity={0.7}
-    >
-        <View style={styles.menuItemContent}>
-            <Lucide
-                name={icon}
-                size={20}
-                color={isDestructive ? "#EF4444" : "#64748B"}
-            />
-            <Text style={[styles.menuItemText, isDestructive && styles.menuItemTextDestructive]}>
-                {label}
-            </Text>
-        </View>
-        {showChevron && !isDestructive && (
-            <Lucide name="chevron-right" size={16} color="#CBD5E1" />
-        )}
-    </TouchableOpacity>
-);
+const MenuItem = ({ icon, label, onPress, isDestructive = false, showChevron = true }: any) => {
+    const { colors } = useTheme();
+    return (
+        <TouchableOpacity
+            style={[styles.menuItem, isDestructive && { backgroundColor: colors.danger + '10' }]}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
+            <View style={styles.menuItemContent}>
+                <Lucide
+                    name={icon}
+                    size={20}
+                    color={isDestructive ? colors.danger : colors.textSecondary}
+                />
+                <Text style={[
+                    styles.menuItemText,
+                    { color: colors.text },
+                    isDestructive && { color: colors.danger, fontFamily: 'Inter_700Bold' }
+                ]}>
+                    {label}
+                </Text>
+            </View>
+            {showChevron && !isDestructive && (
+                <Lucide name="chevron-right" size={16} color={colors.border} />
+            )}
+        </TouchableOpacity>
+    );
+};
 
 // Separador de secciones con título opcional
-const SectionSeparator = ({ title }: { title?: string }) => (
-    <View style={styles.sectionSeparator}>
-        {title && <Text style={styles.sectionTitle}>{title}</Text>}
-    </View>
-);
+const SectionSeparator = ({ title }: { title?: string }) => {
+    const { colors } = useTheme();
+    return (
+        <View style={styles.sectionSeparator}>
+            {title && <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{title}</Text>}
+        </View>
+    );
+};
 
 export function CustomDrawerContent(props: any) {
     const insets = useSafeAreaInsets();
     const { profile } = useProfileStore();
     const { logout } = useAuth();
-    const { showAlert, hideAlert, AlertComponent } = useCustomAlert(); // Asumiendo que ya tienes tu hook
-
-    // Funciones Mock
-    const handleAction = (action: string) => {
-        // Aquí iría tu lógica de navegación real
-        console.log(`Navegando a: ${action}`);
-        props.navigation.closeDrawer();
-    };
+    const { showAlert, hideAlert, AlertComponent } = useCustomAlert();
+    const { colors } = useTheme();
 
     const handleLogout = () => {
         props.navigation.closeDrawer();
@@ -67,7 +72,7 @@ export function CustomDrawerContent(props: any) {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             {/* 1. ScrollView Principal */}
             <DrawerContentScrollView
                 {...props}
@@ -75,7 +80,7 @@ export function CustomDrawerContent(props: any) {
                 showsVerticalScrollIndicator={false}
             >
                 {/* A. Encabezado del Perfil */}
-                <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
+                <View style={[styles.header, { paddingTop: insets.top + 20, backgroundColor: colors.card, borderBottomColor: colors.border }]}>
                     <View style={styles.avatarContainer}>
                         <Image
                             source={{
@@ -84,13 +89,13 @@ export function CustomDrawerContent(props: any) {
                             style={styles.avatar}
                         />
                         {/* Badge opcional "Pro" */}
-                        <View style={styles.proBadge}>
+                        <View style={[styles.proBadge, { backgroundColor: colors.primary }]}>
                             <Text style={styles.proText}>PRO</Text>
                         </View>
                     </View>
                     <View style={styles.userInfo}>
-                        <Text style={styles.userName} numberOfLines={1}>{profile?.name || 'Usuario'}</Text>
-                        <Text style={styles.userEmail} numberOfLines={1}>{profile?.email || 'correo@ejemplo.com'}</Text>
+                        <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>{profile?.name || 'Usuario'}</Text>
+                        <Text style={[styles.userEmail, { color: colors.textSecondary }]} numberOfLines={1}>{profile?.email || 'correo@ejemplo.com'}</Text>
                     </View>
                 </View>
 
@@ -145,7 +150,7 @@ export function CustomDrawerContent(props: any) {
 
             {/* 2. Footer (Logout) */}
             <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
-                <View style={styles.footerDivider} />
+                <View style={[styles.footerDivider, { backgroundColor: colors.border }]} />
                 <MenuItem
                     icon="log-out"
                     label="Cerrar Sesión"
@@ -153,7 +158,7 @@ export function CustomDrawerContent(props: any) {
                     isDestructive
                     showChevron={false}
                 />
-                <Text style={styles.versionText}>Versión 1.0.0</Text>
+                <Text style={[styles.versionText, { color: colors.textSecondary }]}>Versión 1.0.0</Text>
             </View>
             <AlertComponent />
         </View>
@@ -163,15 +168,12 @@ export function CustomDrawerContent(props: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     // --- HEADER ---
     header: {
         paddingHorizontal: 24,
         paddingBottom: 24,
-        backgroundColor: '#F8FAFC', // Slate 50
         borderBottomWidth: 1,
-        borderBottomColor: '#F1F5F9',
     },
     avatarContainer: {
         flexDirection: 'row',
@@ -189,7 +191,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: -4,
         left: 40,
-        backgroundColor: '#4F46E5',
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 6,
@@ -207,20 +208,16 @@ const styles = StyleSheet.create({
     userName: {
         fontSize: 20,
         fontFamily: 'Inter_700Bold',
-        color: '#1E293B',
     },
     userEmail: {
         fontSize: 14,
         fontFamily: 'Inter_400Regular',
-        color: '#64748B',
     },
 
     // --- MAIN NAV ---
     mainNavContainer: {
         marginTop: 12,
         paddingHorizontal: 12,
-        // Aquí puedes sobreescribir estilos del DrawerItemList nativo si fuera necesario
-        // mediante props en el Navigator, pero este contenedor ayuda al espaciado.
     },
 
     // --- SEPARATORS ---
@@ -232,7 +229,6 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 11,
         fontFamily: 'Inter_700Bold',
-        color: '#94A3B8', // Slate 400
         letterSpacing: 1,
         textTransform: 'uppercase',
     },
@@ -249,9 +245,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         borderRadius: 12,
     },
-    menuItemDestructive: {
-        backgroundColor: '#FEF2F2', // Red 50
-    },
     menuItemContent: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -260,11 +253,6 @@ const styles = StyleSheet.create({
     menuItemText: {
         fontSize: 15,
         fontFamily: 'Inter_400Regular',
-        color: '#334155', // Slate 700
-    },
-    menuItemTextDestructive: {
-        color: '#EF4444', // Red 500
-        fontFamily: 'Inter_700Bold',
     },
 
     // --- FOOTER ---
@@ -273,13 +261,11 @@ const styles = StyleSheet.create({
     },
     footerDivider: {
         height: 1,
-        backgroundColor: '#F1F5F9',
         marginBottom: 12,
     },
     versionText: {
         textAlign: 'center',
         fontSize: 11,
-        color: '#CBD5E1', // Slate 300
         fontFamily: 'Inter_400Regular',
         marginTop: 12,
     },

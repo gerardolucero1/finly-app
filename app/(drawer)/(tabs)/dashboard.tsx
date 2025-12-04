@@ -1,4 +1,5 @@
 import { Strategy, StrategyInfoCard } from '@/app/components/StrategyInfoCard';
+import { useTheme } from '@/app/context/theme';
 import { useUserFeatures } from '@/hooks/useUserFeatures';
 import { DashboardService } from '@/services/dashboard';
 import { Lucide } from '@react-native-vector-icons/lucide';
@@ -328,6 +329,7 @@ export default function DashboardScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const router = useRouter();
     const { hasFeature } = useUserFeatures();
+    const { colors } = useTheme();
 
     const handleNavigate = (section: string) => Alert.alert("Próximamente", `Módulo: ${section}`);
     const handleQuickAction = (action: string) => Alert.alert("Nuevo", `Crear ${action}`);

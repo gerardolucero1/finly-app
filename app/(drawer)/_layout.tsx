@@ -4,20 +4,21 @@ import { useNavigation } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { TouchableOpacity, View } from 'react-native';
 import { CustomDrawerContent } from '../components/CustomDrawerContent';
+import { useTheme } from '../context/theme';
 
 
 // --- Componente para el Botón de Menú a la Derecha ---
 // Es una buena práctica crear un pequeño componente para esto
 function HeaderMenuButton() {
     const navigation = useNavigation();
+    const { colors } = useTheme();
     const openDrawer = () => {
-        // Usamos DrawerActions para despachar la acción de abrir el drawer
         navigation.dispatch(DrawerActions.openDrawer());
     };
 
     return (
         <TouchableOpacity onPress={openDrawer} style={{ marginRight: 15 }}>
-            <Lucide name="menu" size={28} color="#1E293B" />
+            <Lucide name="menu" size={28} color={colors.text} />
         </TouchableOpacity>
     );
 }
@@ -25,15 +26,18 @@ function HeaderMenuButton() {
 // --- Componente para el Botón de Volver a la Izquierda ---
 function HeaderBackButton() {
     const navigation = useNavigation();
+    const { colors } = useTheme();
     return (
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginLeft: 15 }}>
-            <Lucide name="chevron-left" size={28} color="#1E293B" />
+            <Lucide name="chevron-left" size={28} color={colors.text} />
         </TouchableOpacity>
     );
 }
 
 
 export default function DrawerLayout() {
+    const { colors, isDark } = useTheme();
+
     return (
         <Drawer
             // Aquí está la magia: usamos nuestro componente personalizado
@@ -50,21 +54,24 @@ export default function DrawerLayout() {
                 headerBackground: () => (
                     <View style={{
                         flex: 1,
-                        backgroundColor: 'rgba(248, 250, 252, 0.85)', // Un blanco translúcido
+                        backgroundColor: isDark
+                            ? 'rgba(15, 23, 42, 0.85)'
+                            : 'rgba(248, 250, 252, 0.85)',
                     }} />
                 ),
-                headerBlurEffect: 'light',
+                headerBlurEffect: isDark ? 'dark' : 'light',
 
                 headerRight: () => <HeaderMenuButton />,
                 headerLeft: () => navigation.canGoBack() ? <HeaderBackButton /> : null,
 
                 // --- ESTILOS DEL DRAWER ---
                 drawerStyle: {
-                    width: '80%', // Un ancho más generoso
+                    width: '80%',
+                    backgroundColor: colors.background,
                 },
-                drawerActiveTintColor: '#4F46E5', // Color para el ícono y texto activo (Indigo)
-                drawerInactiveTintColor: '#64748B', // Color para el ícono y texto inactivo (Slate)
-                drawerActiveBackgroundColor: '#EEF2FF', // Fondo para el ítem activo (Indigo-100)
+                drawerActiveTintColor: colors.primary,
+                drawerInactiveTintColor: colors.textSecondary,
+                drawerActiveBackgroundColor: colors.primary + '15',
 
                 drawerLabelStyle: {
                     fontSize: 16, // Ajuste para alinear con el ícono
