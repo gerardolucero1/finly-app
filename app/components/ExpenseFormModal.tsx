@@ -1,4 +1,5 @@
 import { useInput } from '@/hooks/useInput';
+import { useUserFeatures } from '@/hooks/useUserFeatures';
 import { Account } from '@/models/account';
 import { Category } from '@/models/category';
 import { Project } from '@/models/project';
@@ -9,6 +10,7 @@ import { ProjectsService } from '@/services/projects';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -27,6 +29,7 @@ import {
 import { SheetManager } from 'react-native-actions-sheet';
 import RNPickerSelect from 'react-native-picker-select';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePlanLimitModal } from './PlanLimitModal';
 
 interface FormState {
     name: string;
@@ -95,6 +98,9 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
     const [projects, setProjects] = useState<Project[]>([]);
     const all_subcategories = useInput<SubCategory[]>([]);
     const insets = useSafeAreaInsets();
+    const { hasFeature, getFeatureLimit } = useUserFeatures();
+    const { showPlanLimit, PlanLimitComponent, hidePlanLimit } = usePlanLimitModal();
+    const router = useRouter();
 
     useEffect(() => {
         if (visible) {
@@ -171,6 +177,22 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
     };
 
     const handlePickImage = () => {
+        if (!hasFeature('freelancer_mode')) {
+            showPlanLimit({
+                type: 'feature_unavailable',
+                message: 'La funcionalidad de adjuntar imágenes no está disponible en tu plan actual.',
+                currentCount: 1,
+                limit: 1,
+                onUpgrade: () => {
+                    hidePlanLimit();
+                    // Navegar a planes
+                    router.push('/edit_suscription')
+                },
+            });
+
+            return;
+        }
+
         SheetManager.show('image-picker', {
             payload: {
                 onSelect: (asset: ImagePicker.ImagePickerAsset) => {
@@ -367,6 +389,7 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                         <Text style={styles.label}>Proyecto</Text>
                         <RNPickerSelect
                             value={form.project_id}
+                            disabled={!hasFeature('freelancer_mode')}
                             onValueChange={(value) => handleInputChange('project_id', value)}
                             items={projectItems}
                             placeholder={{ label: "Seleccionar proyecto", value: null, color: '#94A3B8' }}
@@ -441,6 +464,7 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                                     styles.radioOption,
                                     form.scope === 'business' && styles.radioOptionSelected
                                 ]}
+                                disabled={!hasFeature('freelancer_mode')}
                                 onPress={() => handleInputChange('scope', 'business')}
                                 activeOpacity={0.7}
                             >
@@ -539,6 +563,7 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                     </View>
                 </View>
             </KeyboardAvoidingView>
+            <PlanLimitComponent />
         </Modal>
     );
 };

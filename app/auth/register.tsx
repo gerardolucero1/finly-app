@@ -56,8 +56,11 @@ export default function RegisterPage() {
     return (
         <View style={styles.mainContainer}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                style={styles.flexEnd}
+                // En Android dentro de un Modal, a veces el cálculo del teclado se desfasa.
+                // Si sientes que sube demasiado o muy poco, ajusta este número (-100, 0, 30, etc.)
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -150}
             >
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <ScrollView
@@ -198,6 +201,7 @@ export default function RegisterPage() {
 }
 
 const styles = StyleSheet.create({
+    flexEnd: { flex: 1, justifyContent: 'flex-end' },
     mainContainer: {
         flex: 1,
         backgroundColor: '#FFFFFF',

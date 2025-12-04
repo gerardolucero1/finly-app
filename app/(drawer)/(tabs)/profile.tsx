@@ -69,7 +69,7 @@ export default function ProfileScreen() {
 
     const handleEditProfile = () => router.push({ pathname: '/edit_profile', params: { profile: JSON.stringify(profile) } })
     const handleChangePassword = () => router.push('/edit_password')
-    const handleEditSuscription = () => router.push({ pathname: '/edit_suscription', params: { profile: JSON.stringify(profile) } })
+    const handleEditSuscription = () => router.push('/edit_suscription')
     const handleNotifications = () => router.push('/edit_notifications')
     const handleAppearance = () => Alert.alert("Navegar", "Ir a la pantalla de apariencia (tema oscuro/claro).");
 

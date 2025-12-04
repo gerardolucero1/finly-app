@@ -46,7 +46,7 @@ export const StrategyInfoCard = ({ strategy, onPress, onCreate }: StrategyProps)
                 </View>
                 <View>
                     <Text style={styles.emptyTitle}>Sin estrategia</Text>
-                    <Text style={styles.emptySubtitle}>Activala desde la plataforma</Text>
+                    <Text style={styles.emptySubtitle}>Configúrala en holafinly.com</Text>
                 </View>
                 {/* <Lucide name="chevron-right" size={20} color="#CBD5E1" style={{ marginLeft: 'auto' }} /> */}
             </TouchableOpacity>

@@ -1,10 +1,10 @@
 import { Account } from '@/models/account';
 import { SubaccountsService } from '@/services/subaccounts';
 import { Lucide } from '@react-native-vector-icons/lucide';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -17,6 +17,7 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePlanLimitModal } from './PlanLimitModal';
 
 interface SubaccountFormModalProps {
     visible: boolean;
@@ -46,6 +47,8 @@ export const SubaccountFormModal = ({ visible, onClose, onSave, accountToEdit }:
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
     const insets = useSafeAreaInsets();
+    const { showPlanLimit, PlanLimitComponent, hidePlanLimit } = usePlanLimitModal();
+    const router = useRouter();
 
     useEffect(() => {
         if (visible) {
@@ -118,8 +121,20 @@ export const SubaccountFormModal = ({ visible, onClose, onSave, accountToEdit }:
             console.error(error.response.data);
             if (error.response?.data?.errors) {
                 setErrors(error.response.data.errors);
-            } else {
-                Alert.alert("Error", "Ocurrió un error al guardar el apartado.");
+            }
+
+            if (error.response?.status === 403) {
+                showPlanLimit({
+                    type: 'limit_reached',
+                    message: 'Has alcanzado el límite de cuentas del plan gratuito.',
+                    currentCount: 0,
+                    limit: 0,
+                    onUpgrade: () => {
+                        hidePlanLimit();
+                        // Navegar a planes
+                        router.push('/edit_suscription')
+                    },
+                });
             }
         } finally {
             setLoading(false);
@@ -220,6 +235,7 @@ export const SubaccountFormModal = ({ visible, onClose, onSave, accountToEdit }:
                     </KeyboardAvoidingView>
                 </View>
             </View>
+            <PlanLimitComponent />
         </Modal>
     );
 };

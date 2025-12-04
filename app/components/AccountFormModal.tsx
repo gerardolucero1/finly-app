@@ -1,7 +1,9 @@
+import { useUserFeatures } from '@/hooks/useUserFeatures';
 import { Account } from '@/models/account';
 import { AccountsService } from '@/services/accounts';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Lucide } from '@react-native-vector-icons/lucide';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -18,6 +20,8 @@ import {
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCustomAlert } from './CustomAlert';
+import { usePlanLimitModal } from './PlanLimitModal';
 
 interface FormState {
     type: 'credit' | 'debit' | 'cash';
@@ -78,10 +82,14 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
     const [form, setForm] = useState<FormState>(
         editingAccount ? mapAccountToFormState(editingAccount) : initialFormState
     );
+    const router = useRouter();
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
     const [showDatePicker, setShowDatePicker] = useState<keyof FormState | null>(null);
+    const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
+    const { showPlanLimit, PlanLimitComponent, hidePlanLimit } = usePlanLimitModal();
     const [loading, setLoading] = useState(false);
     const insets = useSafeAreaInsets();
+    const { hasFeature, getFeatureLimit } = useUserFeatures();
 
     useEffect(() => {
         setForm(editingAccount ? mapAccountToFormState(editingAccount) : initialFormState);
@@ -117,6 +125,20 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                 console.log('Data:', error.response.data);
                 console.log('Errors:', error.response.data.errors);
                 setErrors(error.response.data.errors);
+            }
+
+            if (error.response?.status === 403) {
+                showPlanLimit({
+                    type: 'limit_reached',
+                    message: 'Has alcanzado el límite de cuentas del plan gratuito.',
+                    currentCount: 1,
+                    limit: 1,
+                    onUpgrade: () => {
+                        hidePlanLimit();
+                        // Navegar a planes
+                        router.push('/edit_suscription')
+                    },
+                });
             }
         } finally {
             setLoading(false);
@@ -406,6 +428,9 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                     {renderDatePicker()}
                 </View>
             </KeyboardAvoidingView>
+
+            <AlertComponent />
+            <PlanLimitComponent />
         </Modal>
     );
 };

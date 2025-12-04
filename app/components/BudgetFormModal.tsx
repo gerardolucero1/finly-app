@@ -5,6 +5,7 @@ import { BudgetsService } from '@/services/budgets';
 import { CategoriesService } from '@/services/categories';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Lucide } from '@react-native-vector-icons/lucide';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -22,6 +23,7 @@ import {
 import RNPickerSelect from 'react-native-picker-select';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCustomAlert } from './CustomAlert';
+import { usePlanLimitModal } from './PlanLimitModal';
 
 interface BudgetFormState {
     name: string;
@@ -76,6 +78,8 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
     const [filteredSubcategories, setFilteredSubcategories] = useState<SubCategory[]>([]);
     const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
     const insets = useSafeAreaInsets();
+    const { showPlanLimit, PlanLimitComponent, hidePlanLimit } = usePlanLimitModal();
+    const router = useRouter();
 
     useEffect(() => {
         if (visible) {
@@ -152,12 +156,20 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
                 console.log(error.response.data.errors);
 
                 setErrors(error.response.data.errors);
-            } else {
-                showAlert({
-                    title: 'Error',
-                    message: 'Ocurrió un error al guardar el presupuesto.',
-                    type: 'danger'
-                })
+            }
+
+            if (error.response?.status === 403) {
+                showPlanLimit({
+                    type: 'limit_reached',
+                    message: 'Has alcanzado el límite de presupuestos del plan gratuito.',
+                    currentCount: 1,
+                    limit: 1,
+                    onUpgrade: () => {
+                        hidePlanLimit();
+                        // Navegar a planes
+                        router.push('/edit_suscription')
+                    },
+                });
             }
         } finally {
             setLoading(false);
@@ -370,6 +382,7 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
             </View>
 
             <AlertComponent />
+            <PlanLimitComponent />
         </Modal>
     );
 };

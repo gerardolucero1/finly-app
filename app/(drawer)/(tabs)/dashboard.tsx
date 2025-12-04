@@ -1,4 +1,5 @@
 import { Strategy, StrategyInfoCard } from '@/app/components/StrategyInfoCard';
+import { useUserFeatures } from '@/hooks/useUserFeatures';
 import { DashboardService } from '@/services/dashboard';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
@@ -18,8 +19,6 @@ import {
 } from 'react-native';
 
 const { width } = Dimensions.get("window");
-
-// ... (MISMAS INTERFACES DE TIPOS QUE ANTES) ...
 
 interface TrendData { value: number; trend: 'up' | 'down' | 'neutral'; percentage: number; }
 interface UpcomingPayment { id: number; type: 'expense' | 'debt'; name: string; amount: number; next_payment_date: string; }
@@ -295,12 +294,40 @@ const ActiveDebtItem = ({ name, amount, date }: { name: string, amount: number, 
     );
 };
 
+const FreelancerModeLockedCard = () => {
+    const router = useRouter();
+    return (
+        <View style={styles.lockedCard}>
+            <View style={styles.lockedContent}>
+                <View style={styles.lockedIconBg}>
+                    <Lucide name="lock" size={20} color="#64748B" />
+                </View>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.lockedTitle}>Modo Freelancer</Text>
+                    <Text style={styles.lockedSubtitle}>
+                        Separa tus finanzas personales de las de tu negocio y conoce tu utilidad real.
+                    </Text>
+                </View>
+            </View>
+            <TouchableOpacity
+                style={styles.upgradeButton}
+                onPress={() => router.push('/edit_suscription')}
+                activeOpacity={0.8}
+            >
+                <Text style={styles.upgradeButtonText}>Obtener Pro</Text>
+                <Lucide name="sparkles" size={16} color="#FFF" />
+            </TouchableOpacity>
+        </View>
+    );
+};
+
 export default function DashboardScreen() {
     const headerHeight = useHeaderHeight();
     const [data, setData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const router = useRouter();
+    const { hasFeature } = useUserFeatures();
 
     const handleNavigate = (section: string) => Alert.alert("Próximamente", `Módulo: ${section}`);
     const handleQuickAction = (action: string) => Alert.alert("Nuevo", `Crear ${action}`);
@@ -377,12 +404,18 @@ export default function DashboardScreen() {
                 </View> */}
 
                 {/* NUEVOS WIDGETS: Pastel de la Realidad y Salud Real */}
-                {data.expensesByScope && data.expensesByScope.length > 0 && (
-                    <ExpensesByScopeChart data={data.expensesByScope} />
-                )}
+                {hasFeature('freelancer_mode') ? (
+                    <>
+                        {data.expensesByScope && data.expensesByScope.length > 0 && (
+                            <ExpensesByScopeChart data={data.expensesByScope} />
+                        )}
 
-                {data.realHealth && (
-                    <RealHealthCard data={data.realHealth} />
+                        {data.realHealth && (
+                            <RealHealthCard data={data.realHealth} />
+                        )}
+                    </>
+                ) : (
+                    <FreelancerModeLockedCard />
                 )}
 
                 <Text style={styles.sectionHeaderTitle}>Gestión</Text>
@@ -699,5 +732,56 @@ const styles = StyleSheet.create({
         height: '100%',
         backgroundColor: '#10b981',
         borderRadius: 2,
+    },
+
+    // LOCKED CARD
+    lockedCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 16,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderStyle: 'dashed',
+    },
+    lockedContent: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 16,
+        alignItems: 'center',
+    },
+    lockedIconBg: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    lockedTitle: {
+        fontSize: 14,
+        fontFamily: 'Inter_700Bold',
+        color: '#1E293B',
+        marginBottom: 4,
+    },
+    lockedSubtitle: {
+        fontSize: 12,
+        fontFamily: 'Inter_400Regular',
+        color: '#64748B',
+        lineHeight: 18,
+    },
+    upgradeButton: {
+        backgroundColor: '#1E293B',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 10,
+        borderRadius: 12,
+        gap: 8,
+    },
+    upgradeButtonText: {
+        color: '#FFFFFF',
+        fontSize: 13,
+        fontFamily: 'Inter_500Medium',
     },
 });

@@ -2,6 +2,7 @@ import { Debt } from '@/models/debt';
 import { DebtsService } from '@/services/debts';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Lucide } from '@react-native-vector-icons/lucide';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -19,6 +20,7 @@ import {
 import RNPickerSelect from 'react-native-picker-select';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCustomAlert } from './CustomAlert';
+import { usePlanLimitModal } from './PlanLimitModal';
 
 interface DebtFormState {
     name: string;
@@ -77,6 +79,8 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
     const [loading, setLoading] = useState(false);
     const insets = useSafeAreaInsets();
     const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
+    const { showPlanLimit, PlanLimitComponent, hidePlanLimit } = usePlanLimitModal();
+    const router = useRouter();
 
     // Efecto para cargar datos si es edición o limpiar si es nuevo
     useEffect(() => {
@@ -134,6 +138,20 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                 console.log(data.errors);
                 setErrors(data.errors);
                 return;
+            }
+
+            if (status === 403) {
+                showPlanLimit({
+                    type: 'limit_reached',
+                    message: 'Has alcanzado el límite de deudas del plan gratuito.',
+                    currentCount: 1,
+                    limit: 1,
+                    onUpgrade: () => {
+                        hidePlanLimit();
+                        // Navegar a planes
+                        router.push('/edit_suscription')
+                    },
+                });
             }
 
             // Mensaje genérico
@@ -382,6 +400,7 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
 
                         {renderDatePicker()}
                         <AlertComponent />
+                        <PlanLimitComponent />
                     </KeyboardAvoidingView>
                 </View>
             </View>

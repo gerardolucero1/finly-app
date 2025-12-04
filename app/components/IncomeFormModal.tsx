@@ -1,3 +1,4 @@
+import { useUserFeatures } from '@/hooks/useUserFeatures';
 import { Account } from '@/models/account';
 import { Project } from '@/models/project';
 import { IncomesService } from '@/services/incomes';
@@ -66,6 +67,7 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
     const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
     const insets = useSafeAreaInsets();
     const [projects, setProjects] = useState<Project[]>([]);
+    const { hasFeature, getFeatureLimit } = useUserFeatures();
 
     useEffect(() => {
         if (visible) {
@@ -244,6 +246,7 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                         <Text style={styles.label}>Proyecto</Text>
                         <RNPickerSelect
                             value={form.project_id}
+                            disabled={!hasFeature('freelancer_mode')}
                             onValueChange={(value) => handleInputChange('project_id', value)}
                             items={projectItems}
                             placeholder={{ label: "Seleccionar proyecto", value: null, color: '#94A3B8' }}
@@ -286,6 +289,7 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                                     styles.radioOption,
                                     form.scope === 'business' && styles.radioOptionSelected
                                 ]}
+                                disabled={!hasFeature('freelancer_mode')}
                                 onPress={() => handleInputChange('scope', 'business')}
                                 activeOpacity={0.7}
                             >

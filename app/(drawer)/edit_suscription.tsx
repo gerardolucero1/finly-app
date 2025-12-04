@@ -5,8 +5,8 @@ import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
 // 1. Importamos el hook de Stripe
 import { useStripe } from '@stripe/stripe-react-native';
-import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
+
 import {
     ActivityIndicator,
     Alert,
@@ -249,7 +249,6 @@ const StatusSection = ({ subscription, onCancel, onResume, isLoading }: StatusSe
 // --- PANTALLA PRINCIPAL ---
 
 export default function ManageSubscriptionScreen() {
-    const params = useLocalSearchParams();
     const headerHeight = useHeaderHeight();
     const [statusLoading, setStatusLoading] = useState(false);
     const { initPaymentSheet, presentPaymentSheet } = useStripe();

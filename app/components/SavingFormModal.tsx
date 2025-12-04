@@ -2,6 +2,7 @@ import { Account } from '@/models/account';
 import { SavingsService } from '@/services/savings';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Lucide } from '@react-native-vector-icons/lucide';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -19,6 +20,7 @@ import {
 import RNPickerSelect from 'react-native-picker-select';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCustomAlert } from './CustomAlert';
+import { usePlanLimitModal } from './PlanLimitModal';
 
 interface SavingFormState {
     name: string;
@@ -72,6 +74,8 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
     const { showAlert, AlertComponent } = useCustomAlert();
+    const { showPlanLimit, PlanLimitComponent, hidePlanLimit } = usePlanLimitModal();
+    const router = useRouter();
     const insets = useSafeAreaInsets();
 
     useEffect(() => {
@@ -120,11 +124,19 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
 
             if (error.response?.status === 422) {
                 setErrors(error.response.data.errors);
-            } else {
-                showAlert({
-                    title: 'Error',
-                    message: 'Ocurrió un error al guardar la cuenta.',
-                    type: 'danger'
+            }
+
+            if (error.response?.status === 403) {
+                showPlanLimit({
+                    type: 'limit_reached',
+                    message: 'Has alcanzado el límite de cuentas del plan gratuito.',
+                    currentCount: 1,
+                    limit: 1,
+                    onUpgrade: () => {
+                        hidePlanLimit();
+                        // Navegar a planes
+                        router.push('/edit_suscription')
+                    },
                 });
             }
         } finally {
@@ -346,6 +358,7 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                 </View>
             </View>
             <AlertComponent />
+            <PlanLimitComponent />
         </Modal>
     );
 };

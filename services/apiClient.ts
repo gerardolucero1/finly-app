@@ -37,9 +37,6 @@ api.interceptors.response.use(
             router.replace('/auth/login');
         }
 
-        if (error.response?.status === 403) {
-            console.log('No autorizado:', error.response.data.message);
-        }
         return Promise.reject(error);
     }
 );
