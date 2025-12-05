@@ -397,7 +397,7 @@ export default function ManageSubscriptionScreen() {
 
     const handleSelectPlan = async (plan: any) => {
         if (plan.price_id === 'free_tier') return
-        Linking.openURL(`http://192.168.1.92:80/subscription/checkout/mobile/${plan.price_id}?email=${encodeURIComponent(profile?.email)}`);
+        Linking.openURL(`https://holafinly.com/subscription/checkout/mobile/${plan.price_id}?email=${encodeURIComponent(profile?.email)}`);
     }
 
     const handleCancel = () => {
