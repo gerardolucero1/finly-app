@@ -7,11 +7,13 @@ import { useHeaderHeight } from '@react-navigation/elements';
 import { useStripe } from '@stripe/stripe-react-native';
 import React, { useState } from 'react';
 
+
 import {
     ActivityIndicator,
     Alert,
     Dimensions,
     FlatList,
+    Linking,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -40,7 +42,7 @@ const PLANS = [
             'Dashboard de Finanzas',
             'Límite: 1 Cuenta y 1 Presupuesto',
         ],
-        cta: 'Empezar Gratis',
+        cta: 'Gratis',
         popular: false,
         color: 'border-gray-200 dark:border-gray-700',
         // Compatibility fields
@@ -60,7 +62,7 @@ const PLANS = [
             'Alertas de Gastos en tiempo real',
             '1 Estrategia de Deuda con IA',
         ],
-        cta: 'Activar Plus',
+        cta: 'Obtener Plus',
         popular: false,
         color: 'border-blue-200 dark:border-blue-900',
         // Compatibility fields
@@ -277,7 +279,7 @@ export default function ManageSubscriptionScreen() {
     };
 
     // 3. Lógica de Pago Nativa (Payment Sheet)
-    const handleSelectPlan = async (plan: any) => {
+    const handleSelectPlanLegacy = async (plan: any) => {
         setLoadingPlanId(plan.price_id);
 
         try {
@@ -392,6 +394,11 @@ export default function ManageSubscriptionScreen() {
             setLoadingPlanId(null);
         }
     };
+
+    const handleSelectPlan = async (plan: any) => {
+        if (plan.price_id === 'free_tier') return
+        Linking.openURL(`http://192.168.1.92:80/subscription/checkout/mobile/${plan.price_id}?email=${encodeURIComponent(profile?.email)}`);
+    }
 
     const handleCancel = () => {
         showAlert({
@@ -513,7 +520,7 @@ export default function ManageSubscriptionScreen() {
                 contentContainerStyle={{ paddingBottom: 40 }}
             >
                 <View style={styles.headerContainer}>
-                    <Text style={styles.pageTitle}>Suscripción</Text>
+                    <Text style={styles.pageTitle}>Gestionar cuenta</Text>
                     <Text style={styles.pageSubtitle}>Elige el plan perfecto para tus finanzas</Text>
                 </View>
 

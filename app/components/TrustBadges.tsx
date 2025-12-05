@@ -29,7 +29,7 @@ export const TrustBadges = () => {
             <View style={styles.badgesWrapper}>
                 <Badge
                     icon="shield-check"
-                    text="Pagos seguros vía Stripe (SSL)"
+                    text="Pagos 100% Seguros y Encriptados (SSL)"
                     color="#059669" // Green 600
                     bgColor="#ECFDF5" // Green 50
                 />

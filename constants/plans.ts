@@ -10,6 +10,7 @@ export interface PlanFeatures {
     read_pdf: boolean;
     freelancer_mode: boolean;
     priority_support: boolean;
+    plan_name: string;
 }
 
 export const PLANS: Record<string, PlanFeatures> = {
@@ -25,6 +26,7 @@ export const PLANS: Record<string, PlanFeatures> = {
         'read_pdf': false,
         'freelancer_mode': false,
         'priority_support': false,
+        'plan_name': 'Free',
     },
 
     'price_1SaKZD6dZB8Inoh78spRuotC': {
@@ -39,6 +41,7 @@ export const PLANS: Record<string, PlanFeatures> = {
         'read_pdf': false,
         'freelancer_mode': false,
         'priority_support': false,
+        'plan_name': 'Plus',
     },
 
     'price_1SaKZP6dZB8Inoh7hnph9Hdk': {
@@ -53,6 +56,7 @@ export const PLANS: Record<string, PlanFeatures> = {
         'read_pdf': true,
         'freelancer_mode': true,
         'priority_support': true,
+        'plan_name': 'Pro',
     },
 };
 

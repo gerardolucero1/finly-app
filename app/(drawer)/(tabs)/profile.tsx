@@ -175,7 +175,7 @@ export default function ProfileScreen() {
             {/* --- Sección de Suscripción --- */}
             {profile && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Suscripción</Text>
+                    <Text style={styles.sectionTitle}>Plan</Text>
                     <View style={styles.subscriptionCard}>
                         <View>
                             <Text style={styles.subscriptionPlan}>{currentPlan ? `Plan ${currentPlan.name}` : 'Sin plan activo'}</Text>
@@ -183,7 +183,7 @@ export default function ProfileScreen() {
                         </View>
                         <Lucide name="gem" size={32} color="#4F46E5" />
                     </View>
-                    <ProfileOption icon="credit-card" label="Administrar Suscripción" onPress={handleEditSuscription} />
+                    <ProfileOption icon="settings" label="Gestionar Cuenta" onPress={handleEditSuscription} />
                 </View>
             )}
 

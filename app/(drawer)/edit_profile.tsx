@@ -1,5 +1,6 @@
 import { useCustomAlert } from '@/app/components/CustomAlert';
 import { FormField } from '@/app/components/FormField';
+import { useProfileStore } from '@/app/store';
 import { Profile } from '@/models/profile';
 import { ProfileService } from '@/services/profile';
 import { Lucide } from '@react-native-vector-icons/lucide';
@@ -32,10 +33,13 @@ const COUNTRY_CODES = [
 
 export default function EditProfileScreen() {
     const params = useLocalSearchParams();
+    const profileFromStore = useProfileStore((state) => state.profile);
+    const setProfileInStore = useProfileStore((state) => state.setProfile);
+
     const profile = useMemo(() => {
-        if (!params.profile) return null;
+        if (!params.profile) return profileFromStore;
         return JSON.parse(params.profile as string) as Profile;
-    }, [params.profile]);
+    }, [params.profile, profileFromStore]);
 
     if (!profile) {
         return <Text>Cargando...</Text>;
@@ -133,6 +137,12 @@ export default function EditProfileScreen() {
                 contentContainerStyle={[styles.contentContainer, { paddingTop: headerHeight, paddingBottom: 40 }]}
                 keyboardShouldPersistTaps="handled"
             >
+                {loading && (
+                    <View style={styles.refreshingContainer}>
+                        <ActivityIndicator size="small" color="#4F46E5" />
+                        <Text style={styles.refreshingText}>Actualizando perfil...</Text>
+                    </View>
+                )}
                 <View style={styles.header}>
                     <Text style={styles.title}>Editar Perfil</Text>
                     <Text style={styles.subtitle}>Actualiza tu información personal aquí.</Text>
@@ -431,6 +441,21 @@ const styles = StyleSheet.create({
         color: '#94A3B8',
         marginTop: 6,
         fontFamily: 'Inter_400Regular',
+    },
+    refreshingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#EEF2FF',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 16,
+        gap: 8,
+    },
+    refreshingText: {
+        fontSize: 14,
+        color: '#4F46E5',
+        fontFamily: 'Inter_500Medium',
     },
 });
 

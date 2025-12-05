@@ -1,3 +1,4 @@
+import { PLANS } from '@/constants/plans';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import {
     DrawerContentScrollView,
@@ -52,6 +53,8 @@ const SectionSeparator = ({ title }: { title?: string }) => {
     );
 };
 
+
+
 export function CustomDrawerContent(props: any) {
     const insets = useSafeAreaInsets();
     const { profile } = useProfileStore();
@@ -69,6 +72,15 @@ export function CustomDrawerContent(props: any) {
                 { text: "Salir", style: "danger", onPress: () => logout() }
             ]
         });
+    };
+
+    // Get plan name from subscription or default to 'Free'
+    const getPlanName = () => {
+        const stripePrice = profile?.subscription?.stripe_price;
+        if (!stripePrice) return 'Free';
+
+        const plan = PLANS[stripePrice];
+        return plan?.plan_name || 'Free';
     };
 
     return (
@@ -90,7 +102,7 @@ export function CustomDrawerContent(props: any) {
                         />
                         {/* Badge opcional "Pro" */}
                         <View style={[styles.proBadge, { backgroundColor: colors.primary }]}>
-                            <Text style={styles.proText}>PRO</Text>
+                            <Text style={styles.proText}>{getPlanName().toUpperCase()}</Text>
                         </View>
                     </View>
                     <View style={styles.userInfo}>
