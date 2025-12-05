@@ -3,6 +3,7 @@ import { useCustomAlert } from '@/app/components/CustomAlert';
 import { ProfileOption } from '@/app/components/ProfileOption'; // Importa el componente que creamos
 import { useAuth } from '@/app/context/auth';
 import { useProfileStore } from '@/app/store';
+import { PLANS } from '@/constants/plans';
 import { ProfileService } from '@/services/profile';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
@@ -19,30 +20,6 @@ import {
     View
 } from 'react-native';
 import { SheetManager } from 'react-native-actions-sheet';
-
-const PLANS = [
-    {
-        name: 'Básico',
-        price: '10',
-        period: '/Mes',
-        description: 'Ideal para iniciar tu control.',
-        price_id: 'price_1SLR9U6dZB8Inoh7jLDAgJIu',
-    },
-    {
-        name: 'Premium',
-        price: '25',
-        period: '/Mes',
-        description: 'Control total y avanzado.',
-        price_id: 'price_1SLREL6dZB8Inoh7YDQn09BA',
-    },
-    {
-        name: 'VIP',
-        price: '60',
-        period: '/Mes',
-        description: 'Optimización financiera total.',
-        price_id: 'price_1SVEmr6dZB8Inoh78F9Cojsm',
-    },
-];
 
 function getAvatarUrl(url: string | null | undefined): string {
     if (!url) {
@@ -75,7 +52,10 @@ export default function ProfileScreen() {
 
     useEffect(() => {
         if (profile) {
-            let plan = PLANS.find((plan) => plan.price_id === profile.subscription?.stripe_price);
+
+            const stripePrice = profile?.subscription?.stripe_price;
+            if (!stripePrice) return;
+            const plan = PLANS[stripePrice];
             setCurrentPlan(plan);
         }
     }, [profile])
@@ -143,6 +123,15 @@ export default function ProfileScreen() {
         }
     };
 
+    // Get plan name from subscription or default to 'Free'
+    const getPlanName = () => {
+        const stripePrice = profile?.subscription?.stripe_price;
+        if (!stripePrice) return 'Free';
+
+        const plan = PLANS[stripePrice];
+        return plan?.plan_name || 'Free';
+    };
+
     return (
         <ScrollView
             style={styles.container}
@@ -178,7 +167,7 @@ export default function ProfileScreen() {
                     <Text style={styles.sectionTitle}>Plan</Text>
                     <View style={styles.subscriptionCard}>
                         <View>
-                            <Text style={styles.subscriptionPlan}>{currentPlan ? `Plan ${currentPlan.name}` : 'Sin plan activo'}</Text>
+                            <Text style={styles.subscriptionPlan}>{getPlanName().toUpperCase()}</Text>
                             <Text style={styles.subscriptionStatus}>{profile.subscription?.stripe_status === 'active' ? 'Activa' : 'Inactiva'}</Text>
                         </View>
                         <Lucide name="gem" size={32} color="#4F46E5" />

@@ -5,7 +5,16 @@ export function useUserFeatures() {
     const profile = useProfileStore((state) => state.profile);
 
     const getPlanId = (): string => {
-        return profile?.subscription?.stripe_price || 'free';
+        const subscription = profile?.subscription;
+
+        const isActive = subscription?.stripe_status === 'active'
+            || subscription?.stripe_status === 'trialing';
+
+        if (subscription?.stripe_price && isActive) {
+            return subscription.stripe_price;
+        }
+
+        return 'free';
     };
 
     const getPlanFeatures = (): PlanFeatures => {

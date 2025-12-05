@@ -30,7 +30,7 @@ export const SubscriptionStatusCard: React.FC<SubscriptionStatusCardProps> = ({ 
             </View>
         );
     }
-    
+
     return (
         // Usamos un color de fondo sólido en lugar del gradiente
         <View style={[styles.card, { backgroundColor: '#EEF2FF' }]}>
@@ -62,12 +62,12 @@ export const SubscriptionStatusCard: React.FC<SubscriptionStatusCardProps> = ({ 
                 {subscription.isOnGracePeriod ? (
                     <TouchableOpacity style={[styles.actionButton, styles.resumeButton]} onPress={onResume}>
                         <Lucide name="refresh-cw" size={20} color="#16A34A" />
-                        <Text style={[styles.actionButtonText, {color: '#16A34A'}]}>Reanudar</Text>
+                        <Text style={[styles.actionButtonText, { color: '#16A34A' }]}>Reanudar</Text>
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity style={[styles.actionButton, styles.cancelButton]} onPress={onCancel}>
                         <Lucide name="x" size={20} color="#DC2626" />
-                        <Text style={[styles.actionButtonText, {color: '#DC2626'}]}>Cancelar</Text>
+                        <Text style={[styles.actionButtonText, { color: '#DC2626' }]}>Cancelar</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -104,84 +104,84 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    icon: { 
-        fontSize: 32 
+    icon: {
+        fontSize: 32
     },
-    textContainer: { 
-        flex: 1, 
-        marginLeft: 16 
+    textContainer: {
+        flex: 1,
+        marginLeft: 16
     },
-    planName: { 
-        fontSize: 20, 
-        fontFamily: 'Inter_700Bold', 
-        color: '#1E293B' 
+    planName: {
+        fontSize: 20,
+        fontFamily: 'Inter_700Bold',
+        color: '#1E293B'
     },
-    description: { 
-        fontSize: 14, 
-        color: '#64748B', 
+    description: {
+        fontSize: 14,
+        color: '#64748B',
         marginTop: 4,
         fontFamily: 'Inter_400Regular',
     },
-    statusBadge: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        paddingVertical: 4, 
-        paddingHorizontal: 8, 
-        borderRadius: 20, 
-        marginTop: 8, 
-        alignSelf: 'flex-start' 
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 20,
+        marginTop: 8,
+        alignSelf: 'flex-start'
     },
-    statusDot: { 
-        width: 8, 
-        height: 8, 
-        borderRadius: 4, 
-        marginRight: 6 
+    statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: 6
     },
-    statusText: { 
-        fontSize: 12, 
+    statusText: {
+        fontSize: 12,
         fontFamily: 'Inter_500Medium',
     },
-    activeBadge: { 
-        backgroundColor: '#DCFCE7' 
+    activeBadge: {
+        backgroundColor: '#DCFCE7'
     },
-    activeDot: { 
-        backgroundColor: '#22C55E' 
+    activeDot: {
+        backgroundColor: '#22C55E'
     },
-    activeText: { 
+    activeText: {
         color: '#166534',
     },
-    graceBadge: { 
-        backgroundColor: '#FEF9C3' 
+    graceBadge: {
+        backgroundColor: '#FEF9C3'
     },
-    graceDot: { 
-        backgroundColor: '#F59E0B' 
+    graceDot: {
+        backgroundColor: '#F59E0B'
     },
-    graceText: { 
-        color: '#854D0E' 
+    graceText: {
+        color: '#854D0E'
     },
-    actionsContainer: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-around', 
-        paddingTop: 16, 
-        borderTopWidth: 1, 
-        borderTopColor: '#E2E8F0' 
+    actionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#E2E8F0'
     },
-    actionButton: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        padding: 8, 
-        borderRadius: 8, 
-        gap: 8 
+    actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 8,
+        borderRadius: 8,
+        gap: 8
     },
-    actionButtonText: { 
-        fontSize: 14, 
-        fontFamily: 'Inter_500Medium', 
-        color: '#475569' 
+    actionButtonText: {
+        fontSize: 14,
+        fontFamily: 'Inter_500Medium',
+        color: '#475569'
     },
-    cancelButton: { 
-        backgroundColor: '#FEE2E2' 
+    cancelButton: {
+        backgroundColor: '#FEE2E2'
     },
-    resumeButton: { 
-        backgroundColor: '#DCFCE7' 
+    resumeButton: {
+        backgroundColor: '#DCFCE7'
     },
 });

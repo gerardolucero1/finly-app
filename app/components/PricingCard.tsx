@@ -12,7 +12,7 @@ interface Plan {
     description: string;
     features: string[];
     icon: string;
-    accentColor: string; 
+    accentColor: string;
     recommended: boolean;
     price_id: string;
 }
@@ -33,7 +33,7 @@ export const PricingCard: React.FC<PricingCardProps> = ({ plan, isCurrentPlan, i
                     <Text style={styles.recommendedText}>Más Popular</Text>
                 </View>
             )}
-            
+
             <View style={styles.header}>
                 {/* El ícono ahora usa un color de fondo sólido */}
                 <View style={[styles.iconContainer, { backgroundColor: plan.accentColor }]}>
@@ -58,17 +58,18 @@ export const PricingCard: React.FC<PricingCardProps> = ({ plan, isCurrentPlan, i
                     </View>
                 ))}
             </View>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
                 style={[
-                    styles.ctaButton, 
-                    isCurrentPlan 
-                        ? styles.ctaDisabled 
+                    styles.ctaButton,
+                    isCurrentPlan
+                        ? styles.ctaDisabled
                         : { backgroundColor: plan.recommended ? plan.accentColor : '#1E293B' }
-                ]} 
+                ]}
                 disabled={isCurrentPlan}
                 onPress={() => onSelectPlan(plan)}
             >
+
                 <Text style={[styles.ctaText, isCurrentPlan && styles.ctaTextDisabled]}>
                     {isCurrentPlan ? 'Tu Plan Actual' : (isSubscribed ? `Cambiar a ${plan.name}` : `Comenzar con ${plan.name}`)}
                 </Text>
@@ -124,14 +125,14 @@ const styles = StyleSheet.create({
     },
     icon: { fontSize: 32 },
     titleContainer: { flex: 1, marginLeft: 16 },
-    planName: { 
-        fontSize: 22, 
+    planName: {
+        fontSize: 22,
         fontFamily: 'Inter_700Bold',
-        color: '#1E293B' 
+        color: '#1E293B'
     },
-    description: { 
-        fontSize: 14, 
-        color: '#64748B', 
+    description: {
+        fontSize: 14,
+        color: '#64748B',
         marginTop: 4,
         fontFamily: 'Inter_400Regular',
     },
@@ -140,14 +141,14 @@ const styles = StyleSheet.create({
         alignItems: 'baseline',
         marginBottom: 24,
     },
-    price: { 
-        fontSize: 48, 
+    price: {
+        fontSize: 48,
         fontFamily: 'Inter_700Bold',
-        color: '#1E293B' 
+        color: '#1E293B'
     },
-    period: { 
-        fontSize: 16, 
-        color: '#64748B', 
+    period: {
+        fontSize: 16,
+        color: '#64748B',
         marginLeft: 4,
         fontFamily: 'Inter_400Regular',
     },
@@ -173,12 +174,12 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
     },
-    ctaDisabled: { 
-        backgroundColor: '#E2E8F0' 
+    ctaDisabled: {
+        backgroundColor: '#E2E8F0'
     },
-    ctaText: { 
-        color: '#FFFFFF', 
-        fontSize: 16, 
+    ctaText: {
+        color: '#FFFFFF',
+        fontSize: 16,
         fontFamily: 'Inter_700Bold',
     },
     ctaTextDisabled: { color: '#94A3B8' },

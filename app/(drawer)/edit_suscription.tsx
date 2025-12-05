@@ -10,7 +10,6 @@ import React, { useState } from 'react';
 
 import {
     ActivityIndicator,
-    Alert,
     Dimensions,
     FlatList,
     Linking,
@@ -106,18 +105,37 @@ interface StatusSectionProps {
 // --- COMPONENTES VISUALES LOCALES ---
 
 // Agregamos prop 'isLoading' para feedback visual
-const PlanCard = ({ item, isCurrent, isLoading, onPress }: { item: any, isCurrent: boolean, isLoading: boolean, onPress: () => void }) => {
+const PlanCard = ({ item, isCurrent, isLoading, isSubscribed, onPress }: { item: any, isCurrent: boolean, isSubscribed: boolean, isLoading: boolean, onPress: () => void }) => {
     let iconName = 'box';
     if (item.icon === 'message-circle') iconName = 'message-circle';
     if (item.icon === 'briefcase') iconName = 'briefcase';
 
+    // LÓGICA CLAVE:
+    // Solo consideramos que es el "Plan Actual" real si coincide el ID Y la suscripción es válida.
+    // Si isCurrent es true pero isSubscribed es false, significa que es su "último plan" pero ya venció,
+    // por lo tanto debe poder darle clic para renovar.
+    const isActiveCurrentPlan = isCurrent && isSubscribed;
+
     // Determinamos el texto del botón
-    let buttonText = item.cta;
-    if (isCurrent) buttonText = 'Plan Actual';
+    let buttonText = item.cta; // Por defecto (ej: "Suscribirse" o "Actualizar")
+
+    if (isActiveCurrentPlan) {
+        buttonText = 'Plan Actual';
+    }
+
+    // El loading tiene prioridad visual sobre todo
     if (isLoading) buttonText = 'Procesando...';
 
+    // Determinar si el botón debe estar deshabilitado
+    // Se deshabilita si está cargando O si ya tiene este plan activo y vigente.
+    // Si isCurrent es true pero !isSubscribed, NO se deshabilita (permite renovar).
+    const isDisabled = isLoading || isActiveCurrentPlan;
+
     return (
-        <Pressable onPress={isLoading || isCurrent ? undefined : onPress} style={[styles.cardShadow]}>
+        <Pressable
+            onPress={isDisabled ? undefined : onPress}
+            style={[styles.cardShadow]}
+        >
             <View style={[styles.card, { backgroundColor: item.accentColor }]}>
                 <View style={styles.cardDecoration1} />
                 <View style={styles.cardDecoration2} />
@@ -131,6 +149,7 @@ const PlanCard = ({ item, isCurrent, isLoading, onPress }: { item: any, isCurren
                             </View>
                         )}
                     </View>
+                    {/* Asumo que Lucide es tu componente de iconos */}
                     <Lucide name={iconName} size={32} color="rgba(255,255,255,0.6)" />
                 </View>
 
@@ -154,16 +173,20 @@ const PlanCard = ({ item, isCurrent, isLoading, onPress }: { item: any, isCurren
                 <TouchableOpacity
                     style={[
                         styles.selectButton,
-                        isCurrent && styles.currentButton,
+                        // Solo aplicamos el estilo de "botón gris/actual" si realmente está activo y vigente
+                        isActiveCurrentPlan && styles.currentButton,
                         isLoading && { opacity: 0.8 }
                     ]}
                     onPress={onPress}
-                    disabled={isCurrent || isLoading}
+                    disabled={isDisabled}
                 >
                     {isLoading ? (
                         <ActivityIndicator color={item.accentColor} size="small" />
                     ) : (
-                        <Text style={[styles.selectButtonText, isCurrent && styles.currentButtonText]}>
+                        <Text style={[
+                            styles.selectButtonText,
+                            isActiveCurrentPlan && styles.currentButtonText
+                        ]}>
                             {buttonText}
                         </Text>
                     )}
@@ -215,16 +238,16 @@ const StatusSection = ({ subscription, onCancel, onResume, isLoading }: StatusSe
                 {subscription.isOnGracePeriod ? (
                     // Estado: Cancelado -> Mostrar REANUDAR
                     <TouchableOpacity
-                        style={[styles.actionBtn, styles.resumeBtn]}
+                        style={[styles.actionBtn, styles.cancelBtn]}
                         onPress={onResume}
                         disabled={isLoading}
                     >
                         {isLoading ? (
-                            <ActivityIndicator size="small" color="#FFF" />
+                            <ActivityIndicator size="small" color="#EF4444" />
                         ) : (
                             <>
-                                <Lucide name="refresh-ccw" size={18} color="#FFF" />
-                                <Text style={styles.resumeBtnText}>Reanudar Suscripción</Text>
+                                {/* <ActivityIndicator size="small" color="#EF4444" /> */}
+                                <Text style={styles.cancelBtnText}>Ver Facturación</Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -238,7 +261,7 @@ const StatusSection = ({ subscription, onCancel, onResume, isLoading }: StatusSe
                         {isLoading ? (
                             <ActivityIndicator size="small" color="#EF4444" />
                         ) : (
-                            <Text style={styles.cancelBtnText}>Cancelar Suscripción</Text>
+                            <Text style={styles.cancelBtnText} className='text-gray-600'>Ver Facturación</Text>
                         )}
                     </TouchableOpacity>
                 )}
@@ -258,7 +281,7 @@ export default function ManageSubscriptionScreen() {
     const [activeIndex, setActiveIndex] = useState(0);
     const profile = useProfileStore((state) => state.profile);
     const setProfile = useProfileStore((state) => state.setProfile);
-    const { showAlert, AlertComponent } = useCustomAlert();
+    const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
 
     if (!profile) {
         return (
@@ -397,7 +420,7 @@ export default function ManageSubscriptionScreen() {
 
     const handleSelectPlan = async (plan: any) => {
         if (plan.price_id === 'free_tier') return
-        Linking.openURL(`https://holafinly.com/subscription/checkout/mobile/${plan.price_id}?email=${encodeURIComponent(profile?.email)}`);
+        Linking.openURL(`http://192.168.1.135:8000/subscription/checkout/mobile/${plan.price_id}?email=${encodeURIComponent(profile?.email)}`);
     }
 
     const handleCancel = () => {
@@ -425,7 +448,7 @@ export default function ManageSubscriptionScreen() {
                     onPress: async () => {
                         setStatusLoading(true);
                         try {
-                            await SubscriptionService.cancelSubscription(); // Tu llamada a API
+                            await SubscriptionService.cancelSubscription();
                             showAlert({
                                 icon: 'check',
                                 title: 'Suscripción cancelada',
@@ -500,7 +523,7 @@ export default function ManageSubscriptionScreen() {
     };
 
     const handleManageBilling = async () => {
-        Alert.alert("Gestionar", "Aquí podrías abrir el Customer Portal de Stripe en un WebView o navegador.");
+        Linking.openURL(`http://192.168.1.135:8000/subscription/mobile/portal?email=${encodeURIComponent(profile?.email)}`);
     };
 
     const subscription = profile.subscription;
@@ -533,8 +556,8 @@ export default function ManageSubscriptionScreen() {
                                 endsAt: subscription?.ends_at ? new Date(subscription.ends_at).toLocaleDateString() : null
                             }}
                             // Pasamos las nuevas funciones y estado
-                            onCancel={handleCancel}
-                            onResume={handleResume}
+                            onCancel={handleManageBilling}
+                            onResume={handleManageBilling}
                             isLoading={statusLoading}
                         />
                     </View>
@@ -548,6 +571,7 @@ export default function ManageSubscriptionScreen() {
                         renderItem={({ item }) => (
                             <PlanCard
                                 item={item}
+                                isSubscribed={isSubscribed}
                                 isCurrent={item.price_id === currentPlanPriceId}
                                 isLoading={loadingPlanId === item.price_id} // Estado de carga individual
                                 onPress={() => handleSelectPlan(item)}
@@ -815,9 +839,9 @@ const styles = StyleSheet.create({
         borderColor: '#E2E8F0',
     },
     cancelBtnText: {
-        color: '#EF4444', // Rojo alerta
         fontFamily: 'Inter_700Bold',
         fontSize: 14,
+        color: '#64748B',
     },
 
 });
