@@ -29,7 +29,7 @@ export const PLANS: Record<string, PlanFeatures> = {
         'plan_name': 'Free',
     },
 
-    'price_1SaKZD6dZB8Inoh78spRuotC': {
+    'price_1Sf35C8U1HKbfQrJCupdRvXA': {
         'accounts_limit': -1,
         'budgets_limit': -1,
         'debts_limit': -1,
@@ -44,7 +44,7 @@ export const PLANS: Record<string, PlanFeatures> = {
         'plan_name': 'Plus',
     },
 
-    'price_1SaKZP6dZB8Inoh7hnph9Hdk': {
+    'price_1Sf3578U1HKbfQrJNno8yuQa': {
         'accounts_limit': -1,
         'budgets_limit': -1,
         'debts_limit': -1,
