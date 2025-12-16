@@ -4,10 +4,12 @@ import { SubscriptionService } from '@/services/subscription';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
 // 1. Importamos el hook de Stripe
+import { WEB_BASE_URL } from '@/constants/api';
 import { useStripe } from '@stripe/stripe-react-native';
 import React, { useState } from 'react';
 
 
+import { PLANS_ARRAY } from '@/constants/plans';
 import {
     ActivityIndicator,
     Dimensions,
@@ -29,67 +31,6 @@ const CARD_WIDTH = screenWidth * 0.80;
 const SPACING = 15;
 const SIDECARD_SPACING = (screenWidth - CARD_WIDTH) / 2;
 
-// Mock de datos
-const PLANS = [
-    {
-        name: 'Gratis',
-        price: '0',
-        period: '/siempre',
-        desc: 'Para probar y organizar gastos básicos.',
-        features: [
-            'Registro Manual (Sin WhatsApp)',
-            'Dashboard de Finanzas',
-            'Límite: 1 Cuenta y 1 Presupuesto',
-        ],
-        cta: 'Gratis',
-        popular: false,
-        color: 'border-gray-200 dark:border-gray-700',
-        // Compatibility fields
-        price_id: 'free_tier',
-        accentColor: '#64748B', // Slate 500
-        icon: 'box',
-    },
-    {
-        name: 'Plus',
-        price: '49',
-        period: '/mes',
-        desc: 'La comodidad del Chatbot a precio de un café.',
-        features: [
-            'Todo lo del plan Gratis',
-            'WhatsApp Bot: Registro Ilimitado (Texto)',
-            'Cuentas y Presupuestos Ilimitados',
-            'Alertas de Gastos en tiempo real',
-            '1 Estrategia de Deuda con IA',
-        ],
-        cta: 'Obtener Plus',
-        popular: false,
-        color: 'border-blue-200 dark:border-blue-900',
-        // Compatibility fields
-        price_id: 'price_1SaKZD6dZB8Inoh78spRuotC',
-        accentColor: '#3B82F6', // Blue 500
-        icon: 'message-circle',
-    },
-    {
-        name: 'Pro Freelancer',
-        price: '149',
-        period: '/mes',
-        desc: 'Control total para tu negocio y vida personal.',
-        features: [
-            'Todo lo del plan Plus',
-            'Modo Freelancer (Separa Negocio/Personal)',
-            'IA: Lectura de Tickets (desde la App/Web)',
-            'Estrategias de Deuda Ilimitadas',
-            'Carga de PDF Bancarios (BBVA / Beta)',
-        ],
-        cta: 'Obtener Pro',
-        popular: true,
-        color: 'border-indigo-500 ring-2 ring-indigo-500 shadow-2xl',
-        // Compatibility fields
-        price_id: 'price_1SaKZP6dZB8Inoh7hnph9Hdk',
-        accentColor: '#6366F1', // Indigo 500
-        icon: 'briefcase',
-    },
-];
 
 interface StatusSectionProps {
     subscription: {
@@ -150,7 +91,7 @@ const PlanCard = ({ item, isCurrent, isLoading, isSubscribed, onPress }: { item:
                         )}
                     </View>
                     {/* Asumo que Lucide es tu componente de iconos */}
-                    <Lucide name={iconName} size={32} color="rgba(255,255,255,0.6)" />
+                    <Lucide name={iconName as any} size={32} color="rgba(255,255,255,0.6)" />
                 </View>
 
                 <View style={styles.cardBody}>
@@ -294,6 +235,7 @@ export default function ManageSubscriptionScreen() {
     const fetchUserProfile = async () => {
         try {
             const response = await ProfileService.get();
+            console.log('User profile:', response);
             setProfile(response);
 
         } catch (error) {
@@ -420,7 +362,7 @@ export default function ManageSubscriptionScreen() {
 
     const handleSelectPlan = async (plan: any) => {
         if (plan.price_id === 'free_tier') return
-        Linking.openURL(`http://192.168.1.135:8000/subscription/checkout/mobile/${plan.price_id}?email=${encodeURIComponent(profile?.email)}`);
+        Linking.openURL(`${WEB_BASE_URL}/subscription/checkout/mobile/${plan.price_id}?email=${encodeURIComponent(profile?.email)}`);
     }
 
     const handleCancel = () => {
@@ -523,13 +465,13 @@ export default function ManageSubscriptionScreen() {
     };
 
     const handleManageBilling = async () => {
-        Linking.openURL(`http://192.168.1.135:8000/subscription/mobile/portal?email=${encodeURIComponent(profile?.email)}`);
+        Linking.openURL(`${WEB_BASE_URL}/subscription/mobile/portal?email=${encodeURIComponent(profile?.email)}`);
     };
 
     const subscription = profile.subscription;
     const isSubscribed = subscription?.stripe_status === 'active' || subscription?.stripe_status === 'trialing';
     const currentPlanPriceId = subscription?.stripe_price;
-    const currentPlanObj = PLANS.find(p => p.price_id === currentPlanPriceId);
+    const currentPlanObj = PLANS_ARRAY.find(p => p.price_id === currentPlanPriceId);
 
     const onScroll = (event: any) => {
         const index = Math.round(event.nativeEvent.contentOffset.x / (CARD_WIDTH + SPACING));
@@ -566,7 +508,7 @@ export default function ManageSubscriptionScreen() {
                 <View>
                     <FlatList
                         horizontal
-                        data={PLANS}
+                        data={PLANS_ARRAY}
                         keyExtractor={(item) => item.price_id}
                         renderItem={({ item }) => (
                             <PlanCard
