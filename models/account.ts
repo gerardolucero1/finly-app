@@ -1,6 +1,7 @@
 export interface Account {
     id: number;
     user_id: number;
+    display_order: number;
     type: string;
     color: string;
     name: string;

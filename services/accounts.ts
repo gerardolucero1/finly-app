@@ -27,4 +27,9 @@ export const AccountsService = {
         const { data } = await api.post(`${API_ENDPOINTS.ACCOUNTS}/${id}/transfer`, transfer);
         return data;
     },
+
+    async reorder(accounts: Partial<any>) {
+        const { data } = await api.post(API_ENDPOINTS.REORDER_ACCOUNTS, accounts);
+        return data;
+    },
 };

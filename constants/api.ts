@@ -10,6 +10,7 @@ export const API_ENDPOINTS = {
     ME: '/me',
     DASHBOARD: '/dashboard',
     ACCOUNTS: '/accounts',
+    REORDER_ACCOUNTS: '/accounts/reorder',
     SAVINGS: '/savings',
     SUBACCOUNTS: '/sub-accounts',
     CATEGORIES: '/expenses/categories',

@@ -21,12 +21,14 @@ import {
     ActivityIndicator,
     Dimensions,
     FlatList,
+    Modal,
     Pressable,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { RefreshControl } from 'react-native-gesture-handler';
 
 // --- COMPONENTES VISUALES ---
@@ -82,7 +84,7 @@ const TransactionItem: React.FC<{ item: Transaction }> = ({ item }) => {
     );
 };
 
-// Componente de Tarjeta del Carrusel
+// Componente de Tarjeta del Carrusel (sin drag)
 const AccountCard = ({ item, isAddCard, onPressAccount }: { item: Account | { id: 'add' }, isAddCard: boolean, onPressAccount: () => void }) => {
     if (isAddCard) {
         return (
@@ -126,6 +128,29 @@ const AccountCard = ({ item, isAddCard, onPressAccount }: { item: Account | { id
     );
 };
 
+// Componente de Item para reordenar (lista vertical)
+const ReorderItem = ({ item, drag, isActive }: { item: Account, drag: () => void, isActive: boolean }) => {
+    return (
+        <ScaleDecorator>
+            <TouchableOpacity
+                onLongPress={drag}
+                disabled={isActive}
+                style={[
+                    styles.reorderItem,
+                    { backgroundColor: item.color || '#4F46E5' },
+                    isActive && styles.reorderItemActive
+                ]}
+            >
+                <View style={styles.reorderItemContent}>
+                    <Lucide name="grip-vertical" size={20} color="rgba(255,255,255,0.7)" />
+                    <Text style={styles.reorderItemText}>{item.name}</Text>
+                </View>
+                <Text style={styles.reorderItemBalance}>{formatCurrency(item.available_balance)}</Text>
+            </TouchableOpacity>
+        </ScaleDecorator>
+    );
+};
+
 // Componente de Botón de Acción
 const ActionButton = ({ icon, label, onPress }: { icon: any, label: string, onPress: () => void }) => (
     <TouchableOpacity style={styles.actionButton} onPress={onPress}>
@@ -151,6 +176,7 @@ export default function AccountsScreen() {
     const isTransferModalVisible = useInput(false);
     const isIncomeModalVisible = useInput(false);
     const isAccountModalVisible = useInput(false);
+    const [isReorderModalVisible, setIsReorderModalVisible] = useState(false);
     const headerHeight = useHeaderHeight();
     const [activeIndex, setActiveIndex] = useState(0);
 
@@ -169,7 +195,9 @@ export default function AccountsScreen() {
                 SubaccountsService.getAll()
             ]);
 
-            accounts.setValue(accountsRes.data);
+            // Sort accounts by display_order
+            const sortedAccounts = accountsRes.data.sort((a: Account, b: Account) => a.display_order - b.display_order);
+            accounts.setValue(sortedAccounts);
 
             // Combine for transfer modal
             // @ts-ignore
@@ -177,7 +205,7 @@ export default function AccountsScreen() {
             // @ts-ignore
             const subs = Array.isArray(subaccountsRes) ? subaccountsRes : (subaccountsRes.data || []);
 
-            setTransferAccounts([...accountsRes.data, ...savings, ...subs]);
+            setTransferAccounts([...sortedAccounts, ...savings, ...subs]);
 
         } catch (error) {
             console.log(error);
@@ -265,14 +293,39 @@ export default function AccountsScreen() {
         fetchAccounts();
     };
 
+    const handleReorderDragEnd = async ({ data }: { data: Account[] }) => {
+        accounts.setValue(data);
+
+        // Prepare data for API call
+        const reorderData = data.map((account, index) => ({
+            id: account.id,
+            display_order: index
+        }));
+
+        try {
+            await AccountsService.reorder({ accounts: reorderData });
+        } catch (error) {
+            console.error('Failed to reorder accounts:', error);
+            // Revert to original order on error
+            fetchAccounts();
+        }
+    };
+
     const carouselData = useMemo(() => {
         return [...accounts.value, { id: 'add' }];
     }, [accounts.value]);
 
     const onScroll = (event: any) => {
-        const index = Math.round(event.nativeEvent.contentOffset.x / (CARD_WIDTH + SPACING));
-        if (index !== activeIndex) {
-            setActiveIndex(index);
+        if (!accounts.value || accounts.value.length === 0) return;
+
+        const offsetX = event.nativeEvent.contentOffset.x;
+        const index = Math.round(offsetX / (CARD_WIDTH + SPACING));
+        // Don't select the "add" card
+        const maxIndex = accounts.value.length - 1;
+        const newIndex = Math.min(index, maxIndex);
+
+        if (newIndex !== activeIndex && newIndex >= 0) {
+            setActiveIndex(newIndex);
         }
     };
 
@@ -285,20 +338,25 @@ export default function AccountsScreen() {
 
             {/* SECCION 1: CARDS Y TITULO (1/3 de pantalla) */}
             <View style={styles.sectionContainer}>
-                {/* <Text style={styles.screenTitle}>Mis Cuentas</Text> */}
+                <View style={styles.carouselHeader}>
+                    <TouchableOpacity onPress={() => setIsReorderModalVisible(true)} style={styles.reorderButton}>
+                        <Lucide name="arrow-up-down" size={20} color="#4F46E5" />
+                    </TouchableOpacity>
+                </View>
                 <View style={styles.carouselContainer}>
                     <FlatList
+                        ref={flatListRef}
                         horizontal
                         data={carouselData}
                         keyExtractor={(item) => item.id.toString()}
-                        renderItem={({ item, index }) => (
+                        renderItem={({ item }) => (
                             <AccountCard item={item} isAddCard={item.id === 'add'} onPressAccount={openAccountModal} />
                         )}
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={{ paddingHorizontal: SIDECARD_SPACING }}
                         snapToInterval={CARD_WIDTH + SPACING}
                         decelerationRate="fast"
-                        onScroll={onScroll}
+                        onMomentumScrollEnd={onScroll}
                         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4F46E5']} />}
                         scrollEventThrottle={16}
                     />
@@ -338,7 +396,6 @@ export default function AccountsScreen() {
                     <ActivityIndicator style={{ marginTop: 20 }} color="#4F46E5" />
                 ) : (
                     <FlatList
-                        ref={flatListRef}
                         data={transactions}
                         keyExtractor={item => item.id.toString()}
                         renderItem={({ item }) => <TransactionItem item={item} />}
@@ -350,6 +407,35 @@ export default function AccountsScreen() {
             </View>
 
             {/* --- MODALES --- */}
+
+            {/* Modal de Reordenar Cuentas */}
+            <Modal
+                visible={isReorderModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setIsReorderModalVisible(false)}
+            >
+                <View style={styles.reorderModalOverlay}>
+                    <View style={styles.reorderModalContent}>
+                        <View style={styles.reorderModalHeader}>
+                            <Text style={styles.reorderModalTitle}>Reordenar Cuentas</Text>
+                            <TouchableOpacity onPress={() => setIsReorderModalVisible(false)}>
+                                <Lucide name="x" size={24} color="#1E293B" />
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.reorderModalSubtitle}>Mantén presionado y arrastra para reordenar</Text>
+                        <DraggableFlatList
+                            data={accounts.value}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={({ item, drag, isActive }: RenderItemParams<Account>) => (
+                                <ReorderItem item={item} drag={drag} isActive={isActive} />
+                            )}
+                            onDragEnd={handleReorderDragEnd}
+                            contentContainerStyle={{ paddingBottom: 20 }}
+                        />
+                    </View>
+                </View>
+            </Modal>
 
             {/* Modal de Cuenta */}
             <AccountFormModal
@@ -403,14 +489,22 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#F8FAFC',
     },
-    // Estilo genérico para dividir en 3 partes iguales
     sectionContainer: {
-        flex: 1, // Ocupa 1/3 del espacio disponible
+        flex: 1,
         justifyContent: 'center',
         width: '100%',
     },
-
-    // Estilos Sección 1 (Cards)
+    carouselHeader: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        paddingHorizontal: 20,
+        marginBottom: 5,
+    },
+    reorderButton: {
+        padding: 8,
+        backgroundColor: '#E0E7FF',
+        borderRadius: 8,
+    },
     screenTitle: {
         fontFamily: 'Inter_700Bold',
         fontSize: 24,
@@ -419,7 +513,7 @@ const styles = StyleSheet.create({
         color: '#1E293B'
     },
     carouselContainer: {
-        height: 200, // Altura fija para el contenedor de la tarjeta
+        height: 200,
     },
     card: {
         width: CARD_WIDTH,
@@ -489,8 +583,6 @@ const styles = StyleSheet.create({
         letterSpacing: 2,
         fontFamily: 'Inter_500Medium',
     },
-
-    // Estilos Sección 2 (Botones)
     actionsContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
@@ -501,7 +593,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     actionButtonIconContainer: {
-        width: 70, // Un poco más grandes para llenar mejor el espacio central
+        width: 70,
         height: 70,
         backgroundColor: '#FFF',
         borderRadius: 35,
@@ -520,21 +612,18 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         fontFamily: 'Inter_400Regular',
     },
-
-    // Estilos Sección 3 (Transacciones)
     transactionsContainer: {
         backgroundColor: '#FFF',
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
         paddingHorizontal: 20,
         paddingTop: 20,
-        // Sombra suave para separar de la sección media
         shadowColor: "#000",
         shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.05,
         shadowRadius: 10,
         elevation: 5,
-        justifyContent: 'flex-start', // Alineación superior para la lista
+        justifyContent: 'flex-start',
     },
     transactionHeader: {
         marginBottom: 10,
@@ -595,5 +684,63 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter_700Bold',
         minWidth: 80,
         textAlign: 'right',
+    },
+    reorderModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    reorderModalContent: {
+        backgroundColor: '#FFF',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 40,
+        maxHeight: '70%',
+    },
+    reorderModalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    reorderModalTitle: {
+        fontSize: 20,
+        fontFamily: 'Inter_700Bold',
+        color: '#1E293B',
+    },
+    reorderModalSubtitle: {
+        fontSize: 14,
+        fontFamily: 'Inter_400Regular',
+        color: '#64748B',
+        marginBottom: 20,
+    },
+    reorderItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 10,
+    },
+    reorderItemActive: {
+        opacity: 0.8,
+        transform: [{ scale: 1.02 }],
+    },
+    reorderItemContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    reorderItemText: {
+        fontSize: 16,
+        fontFamily: 'Inter_600SemiBold',
+        color: '#FFF',
+    },
+    reorderItemBalance: {
+        fontSize: 14,
+        fontFamily: 'Inter_500Medium',
+        color: 'rgba(255,255,255,0.8)',
     },
 });
