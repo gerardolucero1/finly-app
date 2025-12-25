@@ -91,7 +91,7 @@ export const PLANS_ARRAY: PlanUIConfig[] = [
         period: '/siempre',
         desc: 'Para probar y organizar gastos básicos.',
         features: [
-            'Registro Manual (Sin WhatsApp)',
+            'WhatsApp Bot: 20 Mensajes/mes',
             'Dashboard de Finanzas',
             'Límite: 1 Cuenta y 1 Presupuesto',
         ],
@@ -129,7 +129,7 @@ export const PLANS_ARRAY: PlanUIConfig[] = [
         features: [
             'Todo lo del plan Plus',
             'Modo Freelancer (Separa Negocio/Personal)',
-            'IA: Lectura de Tickets (desde la App/Web)',
+            'IA: Lectura de Tickets',
             'Estrategias de Deuda Ilimitadas',
             'Carga de PDF Bancarios (BBVA / Beta)',
         ],
