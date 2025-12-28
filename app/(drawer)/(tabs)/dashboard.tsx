@@ -24,6 +24,19 @@ const { width } = Dimensions.get("window");
 interface TrendData { value: number; trend: 'up' | 'down' | 'neutral'; percentage: number; }
 interface UpcomingPayment { id: number; type: 'expense' | 'debt'; name: string; amount: number; next_payment_date: string; }
 interface SpendingChartData { labels: string[]; datasets: { data: number[]; backgroundColor: string[]; }[]; }
+interface StreakData {
+    streak_count: number;
+    max_streak: number;
+    last_expense_date: null;
+    is_at_risk: boolean;
+    is_lost: boolean;
+    logged_today: boolean;
+    next_milestone: number;
+    current_milestone: null;
+    days_to_next_milestone: number;
+    message: string;
+    milestones: number[];
+}
 interface ExpensesByScope {
     scope: string;
     total: number;
@@ -50,6 +63,7 @@ interface DashboardData {
     activeStrategy: Strategy | null;
     expensesByScope: ExpensesByScope[];
     realHealth: RealHealth;
+    streakData: StreakData;
 }
 
 const formatCurrency = (value: any = 0) => {
@@ -237,6 +251,92 @@ const RealHealthCard = ({ data }: { data: RealHealth }) => {
     );
 };
 
+// --- NUEVO COMPONENTE: RACHA DE REGISTRO (ESTILO WEB) ---
+const StreakCard = ({ streakData }: { streakData: StreakData }) => {
+    // Determinar colores según el estado
+    let gradientColors = ['#f97316', '#ea580c']; // Orange gradient por defecto
+    let emoji = '🔥';
+
+    if (streakData.is_lost) {
+        gradientColors = ['#6b7280', '#4b5563']; // Gray gradient
+        // emoji = '💤';
+    } else if (streakData.is_at_risk) {
+        gradientColors = ['#fbbf24', '#f59e0b']; // Amber gradient
+        // emoji = '⚠️';
+    } else if (streakData.logged_today) {
+        gradientColors = ['#10b981', '#059669']; // Green gradient
+        // emoji = '✅';
+    }
+
+    // Calcular progreso hacia el siguiente milestone
+    const getPreviousMilestone = (next: number) => {
+        const milestones = [0, 3, 7, 14, 30, 60, 90, 180, 365];
+        const index = milestones.indexOf(next);
+        return index > 0 ? milestones[index - 1] : 0;
+    };
+
+    const progressPercentage = streakData.next_milestone > 0
+        ? Math.min(100, ((streakData.streak_count - getPreviousMilestone(streakData.next_milestone)) /
+            (streakData.next_milestone - getPreviousMilestone(streakData.next_milestone))) * 100)
+        : 0;
+
+    const displayCount = streakData.is_lost ? 0 : streakData.streak_count;
+
+    return (
+        <View style={[styles.streakCard, { backgroundColor: gradientColors[0] }]}>
+            {/* Gradient overlay effect */}
+            <View style={[styles.streakGradientOverlay, { backgroundColor: gradientColors[1], opacity: 0.6 }]} />
+
+            {/* Main content */}
+            <View style={styles.streakContent}>
+                {/* Fire icon circle */}
+                <View style={styles.streakIconCircle}>
+                    <Text style={styles.streakFireEmoji}>{emoji}</Text>
+                </View>
+
+                {/* Streak info */}
+                <View style={styles.streakInfo}>
+                    <View style={styles.streakCountRow}>
+                        <Text style={styles.streakCountNumber}>{displayCount}</Text>
+                        <Text style={styles.streakCountLabel}>{displayCount === 1 ? 'día' : 'días'}</Text>
+                    </View>
+                    <Text style={styles.streakMessage}>
+                        {streakData.message || 'Registra un gasto para empezar tu racha'}
+                    </Text>
+                </View>
+            </View>
+
+            {/* Progress bar */}
+            {streakData.next_milestone > 0 && !streakData.is_lost && (
+                <View style={styles.streakProgressContainer}>
+                    <View style={styles.streakProgressBarBg}>
+                        <View style={[styles.streakProgressBarFill, { width: `${progressPercentage}%` }]} />
+                    </View>
+                    <Text style={styles.progressLabel}>
+                        {streakData.days_to_next_milestone} días para el hito de {streakData.next_milestone} días
+                    </Text>
+                </View>
+            )}
+
+            {/* Current milestone badge */}
+            {streakData.current_milestone && (
+                <View style={styles.streakBadge}>
+                    <Text style={styles.badgeIcon}>🏆</Text>
+                    <Text style={styles.badgeText}>Hito: {streakData.current_milestone} días</Text>
+                </View>
+            )}
+
+            {/* Logged today status */}
+            {streakData.logged_today && (
+                <View style={styles.streakStatus}>
+                    <Text style={styles.statusIcon}>✅</Text>
+                    <Text style={styles.statusText}>Gasto registrado hoy</Text>
+                </View>
+            )}
+        </View>
+    );
+};
+
 // --- COMPONENTES PREVIOS (QuickAction, SectionCard, DebtItem) ---
 const QuickAction = ({ icon, label, color, onPress }: any) => (
     <TouchableOpacity style={styles.quickActionContainer} onPress={onPress} activeOpacity={0.7}>
@@ -397,6 +497,11 @@ export default function DashboardScreen() {
                     label={data.financialHealthLabel}
                     variation={data.financialHealthVariation}
                 />
+
+                {/* RACHA DE REGISTRO */}
+                {data.streakData && (
+                    <StreakCard streakData={data.streakData} />
+                )}
 
                 {/* 3. ATAJOS RÁPIDOS */}
                 {/* <View style={styles.quickActionsRow}>
@@ -785,5 +890,134 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 13,
         fontFamily: 'Inter_500Medium',
+    },
+
+    // STREAK CARD STYLES (WEB STYLE)
+    streakCard: {
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 16,
+        position: 'relative',
+        overflow: 'hidden',
+        shadowColor: "#f97316",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 8,
+    },
+    streakGradientOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: 16,
+    },
+    streakContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        marginBottom: 16,
+        zIndex: 1,
+    },
+    streakIconCircle: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    streakFireEmoji: {
+        fontSize: 32,
+    },
+    streakInfo: {
+        flex: 1,
+    },
+    streakCountRow: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        gap: 8,
+    },
+    streakCountNumber: {
+        fontSize: 48,
+        fontFamily: 'Inter_700Bold',
+        color: '#FFFFFF',
+        lineHeight: 48,
+    },
+    streakCountLabel: {
+        fontSize: 18,
+        fontFamily: 'Inter_500Medium',
+        color: '#FFFFFF',
+        opacity: 0.9,
+    },
+    streakMessage: {
+        fontSize: 14,
+        fontFamily: 'Inter_400Regular',
+        color: '#FFFFFF',
+        opacity: 0.9,
+        marginTop: 4,
+    },
+    streakProgressContainer: {
+        marginTop: 16,
+        zIndex: 1,
+    },
+    streakProgressBarBg: {
+        height: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    streakProgressBarFill: {
+        height: '100%',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 4,
+    },
+    progressLabel: {
+        fontSize: 12,
+        fontFamily: 'Inter_400Regular',
+        color: '#FFFFFF',
+        opacity: 0.8,
+        marginTop: 6,
+        textAlign: 'center',
+    },
+    streakBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        alignSelf: 'flex-start',
+        marginTop: 12,
+        zIndex: 1,
+    },
+    badgeIcon: {
+        fontSize: 14,
+    },
+    badgeText: {
+        fontSize: 13,
+        fontFamily: 'Inter_500Medium',
+        color: '#FFFFFF',
+    },
+    streakStatus: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
+        marginTop: 12,
+        zIndex: 1,
+    },
+    statusIcon: {
+        fontSize: 14,
+    },
+    statusText: {
+        fontSize: 13,
+        fontFamily: 'Inter_500Medium',
+        color: '#FFFFFF',
     },
 });

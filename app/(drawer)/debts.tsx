@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
         backgroundColor: '#FFF',
-        paddingTop: 20,
+        paddingTop: 50,
     },
     modalHeader: {
         paddingHorizontal: 20,
@@ -496,6 +496,7 @@ const styles = StyleSheet.create({
         color: '#1E293B',
     },
     modalSubtitle: {
+        fontFamily: 'Inter_400Regular',
         fontSize: 14,
         color: '#64748B',
     },

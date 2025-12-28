@@ -120,11 +120,11 @@ export function CustomDrawerContent(props: any) {
                 <SectionSeparator title="PREFERENCIAS" />
 
                 <View style={styles.secondaryMenu}>
-                    <MenuItem
+                    {/* <MenuItem
                         icon="settings"
                         label="Configuración avanzada"
                         onPress={() => router.push('/(drawer)/settings')}
-                    />
+                    /> */}
                     <MenuItem
                         icon="bell"
                         label="Notificaciones"

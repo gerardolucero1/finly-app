@@ -5,9 +5,9 @@ import React from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const tutorials = [
-    { id: '1', title: 'Cómo crear un presupuesto', duration: '2 min', icon: 'pie-chart' },
+    { id: '1', title: 'Cómo crear un presupuesto', duration: '2 min', icon: 'chart-pie' },
     { id: '2', title: 'Gestionando tus ahorros', duration: '3 min', icon: 'piggy-bank' },
-    { id: '3', title: 'Entendiendo tus reportes', duration: '5 min', icon: 'bar-chart-2' },
+    { id: '3', title: 'Entendiendo tus reportes', duration: '5 min', icon: 'chart-column-big' },
     { id: '4', title: 'Conectando cuentas bancarias', duration: '4 min', icon: 'landmark' },
     { id: '5', title: 'Tips para ahorrar más', duration: '3 min', icon: 'trending-up' },
 ];

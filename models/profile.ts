@@ -11,4 +11,7 @@ export interface Profile {
     stripe_id: string;
     profile_photo_url: string;
     subscription: Subscription | null;
+    streak_count: number;
+    max_streak: number;
+    last_expense_date: string;
 }
