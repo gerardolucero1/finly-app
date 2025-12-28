@@ -2,6 +2,7 @@ import { useCustomAlert } from '@/app/components/CustomAlert';
 import { ExpenseFormModal } from '@/app/components/ExpenseFormModal';
 import { FilterModal } from '@/app/components/FilterModal';
 import { SearchBar } from '@/app/components/SearchBar';
+import { useTheme } from '@/app/context/theme';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Transaction } from '@/models/transaction';
 import { TransactionFilters, TransactionsService } from '@/services/transactions';
@@ -39,6 +40,7 @@ interface TransactionItemProps {
 const TransactionItem = React.memo(({ item, onDelete, onEdit }: TransactionItemProps) => {
     // Referencia para controlar el Swipeable
     const swipeableRef = useRef<SwipeableMethods>(null);
+    const { colors, isDark } = useTheme();
 
     const amount = item.amount;
     const isPositive = item.register_type == 'income';
@@ -124,23 +126,23 @@ const TransactionItem = React.memo(({ item, onDelete, onEdit }: TransactionItemP
             leftThreshold={40}
             containerStyle={styles.swipeableContainer}
         >
-            <View style={styles.transactionItem}>
+            <View style={[styles.transactionItem, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
                 <View style={[
                     styles.transactionIconContainer,
-                    { backgroundColor: isPositive ? '#E0F2F1' : '#F1F5F9' }
+                    { backgroundColor: isPositive ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#E0F2F1') : (isDark ? 'rgba(71, 85, 105, 0.2)' : '#F1F5F9') }
                 ]}>
-                    <Lucide name={getIconName()} size={22} color={isPositive ? '#00796B' : '#475569'} />
+                    <Lucide name={getIconName()} size={22} color={isPositive ? '#10B981' : (isDark ? '#94A3B8' : '#475569')} />
                 </View>
 
                 <View style={styles.transactionDetails}>
-                    <Text style={styles.transactionName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={[styles.transactionName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
 
-                    <Text style={styles.transactionCategory} numberOfLines={1}>
+                    <Text style={[styles.transactionCategory, { color: colors.textSecondary }]} numberOfLines={1}>
                         {item.category || 'Sin categoría'}
                         {item.sub_category ? ` · ${item.sub_category}` : ''}
                     </Text>
 
-                    <Text style={styles.transactionDate}>{formattedDate}</Text>
+                    <Text style={[styles.transactionDate, { color: colors.textSecondary }]}>{formattedDate}</Text>
                 </View>
 
                 <Text style={[
@@ -157,6 +159,7 @@ const TransactionItem = React.memo(({ item, onDelete, onEdit }: TransactionItemP
 export default function MovementsScreen() {
     // ... (El resto de tu lógica de MovementsScreen se mantiene igual, no necesita cambios)
     // Solo incluyo las partes necesarias para el contexto
+    const { colors } = useTheme();
     const accounts = useInput<Account[]>([]);
     const headerHeight = useHeaderHeight();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -290,7 +293,7 @@ export default function MovementsScreen() {
 
     const renderFooter = () => {
         if (!loading || transactions.length === 0) return null;
-        return <ActivityIndicator style={{ marginVertical: 20 }} color="#4F46E5" />;
+        return <ActivityIndicator style={{ marginVertical: 20 }} color={colors.primary} />;
     };
 
     const getItemLayout = useCallback((data: any, index: number) => ({
@@ -299,7 +302,7 @@ export default function MovementsScreen() {
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <View style={[styles.container, { paddingTop: headerHeight }]}>
+            <View style={[styles.container, { paddingTop: headerHeight, backgroundColor: colors.background }]}>
                 <SearchBar value={searchQuery} onChangeText={setSearchQuery} onFilterPress={() => setFilterModalVisible(true)} />
                 <FlatList
                     data={transactions}
@@ -309,7 +312,7 @@ export default function MovementsScreen() {
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={renderFooter}
-                    ListEmptyComponent={!loading ? (<View style={styles.emptyContainer}><Lucide name="banknote-x" size={48} color="#CBD5E1" /><Text style={styles.emptyText}>No se encontraron movimientos.</Text><Text style={styles.emptySubText}>Intenta ajustar tu búsqueda o filtros.</Text></View>) : null}
+                    ListEmptyComponent={!loading ? (<View style={styles.emptyContainer}><Lucide name="banknote-x" size={48} color={colors.textSecondary} /><Text style={[styles.emptyText, { color: colors.textSecondary }]}>No se encontraron movimientos.</Text><Text style={[styles.emptySubText, { color: colors.textSecondary }]}>Intenta ajustar tu búsqueda o filtros.</Text></View>) : null}
                     getItemLayout={getItemLayout}
                     initialNumToRender={10}
                     maxToRenderPerBatch={10}

@@ -2,6 +2,7 @@ import { AccountFormModal } from '@/app/components/AccountFormModal';
 import { ExpenseFormModal } from '@/app/components/ExpenseFormModal';
 import { IncomeFormModal } from '@/app/components/IncomeFormModal';
 import { TransferFormModal } from '@/app/components/TransferFormModal';
+import { useTheme } from '@/app/context/theme';
 import { useInput } from '@/hooks/useInput';
 import { Account } from '@/models/account';
 import { Expense } from '@/models/expense';
@@ -29,7 +30,7 @@ import {
     View
 } from 'react-native';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
-import { RefreshControl } from 'react-native-gesture-handler';
+import { GestureHandlerRootView, RefreshControl } from 'react-native-gesture-handler';
 
 // --- COMPONENTES VISUALES ---
 
@@ -42,6 +43,7 @@ const formatCurrency = (value?: string | number): string => {
 
 // Componente de Item de Transacción
 const TransactionItem: React.FC<{ item: Transaction }> = ({ item }) => {
+    const { colors, isDark } = useTheme();
     const amount = item.amount;
     const isPositive = item.type == 'income';
 
@@ -57,21 +59,21 @@ const TransactionItem: React.FC<{ item: Transaction }> = ({ item }) => {
     };
 
     return (
-        <View style={styles.transactionItem}>
+        <View style={[styles.transactionItem, { borderBottomColor: colors.border }]}>
             <View style={[
                 styles.transactionIconContainer,
-                { backgroundColor: isPositive ? '#E0F2F1' : '#F1F5F9' }
+                { backgroundColor: isPositive ? (isDark ? 'rgba(0, 121, 107, 0.15)' : '#E0F2F1') : colors.iconBg }
             ]}>
-                <Lucide name={getIconName()} size={22} color={isPositive ? '#00796B' : '#475569'} />
+                <Lucide name={getIconName()} size={22} color={isPositive ? '#00796B' : colors.textSecondary} />
             </View>
 
             <View style={styles.transactionDetails}>
-                <Text style={styles.transactionName}>{item.name}</Text>
-                <Text style={styles.transactionCategory}>
+                <Text style={[styles.transactionName, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.transactionCategory, { color: colors.textSecondary }]}>
                     {item.category || 'Sin categoría'}
                     {item.sub_category ? ` · ${item.sub_category} ` : ''}
                 </Text>
-                <Text style={styles.transactionDate}>{formattedDate}</Text>
+                <Text style={[styles.transactionDate, { color: colors.textSecondary, opacity: 0.7 }]}>{formattedDate}</Text>
             </View>
 
             <Text style={[
@@ -86,10 +88,21 @@ const TransactionItem: React.FC<{ item: Transaction }> = ({ item }) => {
 
 // Componente de Tarjeta del Carrusel (sin drag)
 const AccountCard = ({ item, isAddCard, onPressAccount }: { item: Account | { id: 'add' }, isAddCard: boolean, onPressAccount: () => void }) => {
+    const { colors, isDark } = useTheme();
     if (isAddCard) {
         return (
-            <TouchableOpacity style={[styles.card, styles.addCard]} onPress={() => onPressAccount()}>
-                <Lucide name="plus" size={40} color="#4F46E5" />
+            <TouchableOpacity
+                style={[
+                    styles.card,
+                    styles.addCard,
+                    {
+                        backgroundColor: isDark ? 'rgba(79, 70, 229, 0.05)' : '#E0E7FF',
+                        borderColor: isDark ? 'rgba(79, 70, 229, 0.2)' : '#C7D2FE'
+                    }
+                ]}
+                onPress={() => onPressAccount()}
+            >
+                <Lucide name="plus" size={40} color={colors.primary} />
             </TouchableOpacity>
         );
     }
@@ -130,6 +143,7 @@ const AccountCard = ({ item, isAddCard, onPressAccount }: { item: Account | { id
 
 // Componente de Item para reordenar (lista vertical)
 const ReorderItem = ({ item, drag, isActive }: { item: Account, drag: () => void, isActive: boolean }) => {
+    const { colors, isDark } = useTheme();
     return (
         <ScaleDecorator>
             <TouchableOpacity
@@ -137,8 +151,8 @@ const ReorderItem = ({ item, drag, isActive }: { item: Account, drag: () => void
                 disabled={isActive}
                 style={[
                     styles.reorderItem,
-                    { backgroundColor: item.color || '#4F46E5' },
-                    isActive && styles.reorderItemActive
+                    { backgroundColor: item.color || colors.primary },
+                    isActive && { opacity: 0.8, transform: [{ scale: 1.02 }] }
                 ]}
             >
                 <View style={styles.reorderItemContent}>
@@ -152,14 +166,17 @@ const ReorderItem = ({ item, drag, isActive }: { item: Account, drag: () => void
 };
 
 // Componente de Botón de Acción
-const ActionButton = ({ icon, label, onPress }: { icon: any, label: string, onPress: () => void }) => (
-    <TouchableOpacity style={styles.actionButton} onPress={onPress}>
-        <View style={styles.actionButtonIconContainer}>
-            <Lucide name={icon} size={24} color="#4F46E5" />
-        </View>
-        <Text style={styles.actionButtonLabel}>{label}</Text>
-    </TouchableOpacity>
-);
+const ActionButton = ({ icon, label, onPress }: { icon: any, label: string, onPress: () => void }) => {
+    const { colors } = useTheme();
+    return (
+        <TouchableOpacity style={styles.actionButton} onPress={onPress}>
+            <View style={[styles.actionButtonIconContainer, { backgroundColor: colors.card }]}>
+                <Lucide name={icon} size={24} color={colors.primary} />
+            </View>
+            <Text style={[styles.actionButtonLabel, { color: colors.textSecondary }]}>{label}</Text>
+        </TouchableOpacity>
+    );
+};
 
 // --- PANTALLA PRINCIPAL ---
 
@@ -169,6 +186,7 @@ const SPACING = 10;
 const SIDECARD_SPACING = (screenWidth - CARD_WIDTH) / 2;
 
 export default function AccountsScreen() {
+    const { colors, isDark } = useTheme();
     const accounts = useInput<Account[]>([]);
     const loading = useInput(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -222,7 +240,7 @@ export default function AccountsScreen() {
 
     // useEffect para cargar las transacciones cuando la tarjeta activa cambia
     useEffect(() => {
-        if (accounts.value.length === 0) return;
+        if (!accounts.value || accounts.value.length === 0) return;
 
         const activeAccount = accounts.value[activeIndex];
         if (!activeAccount) return;
@@ -240,22 +258,22 @@ export default function AccountsScreen() {
                     name: e.name,
                     amount: parseFloat(e.amount),
                     description: e.description,
-                    date: DateTime.fromISO(e.due_date).toJSDate(),
+                    date: e.due_date ? DateTime.fromJSDate(new Date(e.due_date)).toJSDate() : new Date(),
                     category: e.category?.name,
                     sub_category: e.sub_category?.name,
                     type: "expense",
-                }));
+                } as any));
 
                 const incomes: Transaction[] = incomeRes.data.map((i: Income) => ({
                     id: i.id,
                     name: i.source,
                     amount: parseFloat(i.amount),
                     description: i.description,
-                    date: DateTime.fromISO(i.date).toJSDate(),
+                    date: i.date ? DateTime.fromJSDate(new Date(i.date)).toJSDate() : new Date(),
                     category: '',
                     sub_category: '',
                     type: "income",
-                }));
+                } as any));
 
                 // Unimos
                 const merged = [...expenses, ...incomes];
@@ -312,7 +330,7 @@ export default function AccountsScreen() {
     };
 
     const carouselData = useMemo(() => {
-        return [...accounts.value, { id: 'add' }];
+        return [...(accounts.value || []), { id: 'add' }] as (Account | { id: 'add' })[];
     }, [accounts.value]);
 
     const onScroll = (event: any) => {
@@ -330,17 +348,20 @@ export default function AccountsScreen() {
     };
 
     if (loading.value) {
-        return <View style={styles.centered}><ActivityIndicator size="large" color="#4F46E5" /></View>;
+        return <View style={[styles.centered, { backgroundColor: colors.background }]}><ActivityIndicator size="large" color={colors.primary} /></View>;
     }
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight }]}>
+        <View style={[styles.container, { paddingTop: headerHeight, backgroundColor: colors.background }]}>
 
-            {/* SECCION 1: CARDS Y TITULO (1/3 de pantalla) */}
-            <View style={styles.sectionContainer}>
-                <View style={styles.carouselHeader}>
-                    <TouchableOpacity onPress={() => setIsReorderModalVisible(true)} style={styles.reorderButton}>
-                        <Lucide name="arrow-up-down" size={20} color="#4F46E5" />
+            {/* SECCION 1: CARDS Y TITULO (1/3 de pantalla -> ajustado a 1.2) */}
+            <View style={[styles.sectionContainer, { flex: 1.2 }]}>
+                <View style={[styles.carouselHeader, { marginTop: 10 }]}>
+                    <TouchableOpacity
+                        onPress={() => setIsReorderModalVisible(true)}
+                        style={[styles.reorderButton, { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : '#E0E7FF' }]}
+                    >
+                        <Lucide name="arrow-up-down" size={20} color={colors.primary} />
                     </TouchableOpacity>
                 </View>
                 <View style={styles.carouselContainer}>
@@ -357,20 +378,20 @@ export default function AccountsScreen() {
                         snapToInterval={CARD_WIDTH + SPACING}
                         decelerationRate="fast"
                         onMomentumScrollEnd={onScroll}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4F46E5']} />}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
                         scrollEventThrottle={16}
                     />
                 </View>
             </View>
 
-            {/* SECCION 2: BOTONES DE ACCION (1/3 de pantalla) */}
-            <View style={styles.sectionContainer}>
+            {/* SECCION 2: BOTONES DE ACCION (1/3 de pantalla -> ajustado a 0.8) */}
+            <View style={[styles.sectionContainer, { flex: 0.8 }]}>
                 <View style={styles.actionsContainer}>
                     <ActionButton
                         icon="banknote-arrow-up"
-                        label={accounts.value[activeIndex]?.type === 'credit' ? "Pagar" : "Ingreso"}
+                        label={(accounts.value?.[activeIndex]?.type === 'credit') ? "Pagar" : "Ingreso"}
                         onPress={() => {
-                            if (accounts.value[activeIndex]?.type === 'credit') {
+                            if (accounts.value?.[activeIndex]?.type === 'credit') {
                                 setTransferMode('payment');
                                 isTransferModalVisible.setValue(true);
                             } else {
@@ -387,19 +408,19 @@ export default function AccountsScreen() {
             </View>
 
             {/* SECCION 3: ULTIMOS MOVIMIENTOS (1/3 de pantalla) */}
-            <View style={[styles.sectionContainer, styles.transactionsContainer]}>
-                <View style={styles.transactionHeader}>
-                    <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
+            <View style={[styles.sectionContainer, styles.transactionsContainer, { backgroundColor: colors.card }]}>
+                <View style={[styles.transactionHeader, { borderBottomColor: colors.border }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Últimos Movimientos</Text>
                 </View>
 
                 {transactionsLoading ? (
-                    <ActivityIndicator style={{ marginTop: 20 }} color="#4F46E5" />
+                    <ActivityIndicator style={{ marginTop: 20 }} color={colors.primary} />
                 ) : (
                     <FlatList
                         data={transactions}
                         keyExtractor={item => item.id.toString()}
                         renderItem={({ item }) => <TransactionItem item={item} />}
-                        ListEmptyComponent={<Text style={styles.emptyText}>No hay transacciones recientes.</Text>}
+                        ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No hay transacciones recientes.</Text>}
                         showsVerticalScrollIndicator={true}
                         contentContainerStyle={{ paddingBottom: 20 }}
                     />
@@ -415,17 +436,17 @@ export default function AccountsScreen() {
                 transparent={true}
                 onRequestClose={() => setIsReorderModalVisible(false)}
             >
-                <View style={styles.reorderModalOverlay}>
-                    <View style={styles.reorderModalContent}>
+                <GestureHandlerRootView style={styles.reorderModalOverlay}>
+                    <View style={[styles.reorderModalContent, { backgroundColor: colors.card }]}>
                         <View style={styles.reorderModalHeader}>
-                            <Text style={styles.reorderModalTitle}>Reordenar Cuentas</Text>
+                            <Text style={[styles.reorderModalTitle, { color: colors.text }]}>Reordenar Cuentas</Text>
                             <TouchableOpacity onPress={() => setIsReorderModalVisible(false)}>
-                                <Lucide name="x" size={24} color="#1E293B" />
+                                <Lucide name="x" size={24} color={colors.text} />
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.reorderModalSubtitle}>Mantén presionado y arrastra para reordenar</Text>
+                        <Text style={[styles.reorderModalSubtitle, { color: colors.textSecondary }]}>Mantén presionado y arrastra para reordenar</Text>
                         <DraggableFlatList
-                            data={accounts.value}
+                            data={accounts.value || []}
                             keyExtractor={(item) => item.id.toString()}
                             renderItem={({ item, drag, isActive }: RenderItemParams<Account>) => (
                                 <ReorderItem item={item} drag={drag} isActive={isActive} />
@@ -434,42 +455,42 @@ export default function AccountsScreen() {
                             contentContainerStyle={{ paddingBottom: 20 }}
                         />
                     </View>
-                </View>
+                </GestureHandlerRootView>
             </Modal>
 
             {/* Modal de Cuenta */}
             <AccountFormModal
-                visible={isAccountModalVisible.value}
+                visible={!!isAccountModalVisible.value}
                 onClose={closeAccountModal}
                 onSave={fetchAccounts}
-                editingAccount={accounts.value[activeIndex] || null}
+                editingAccount={accounts.value?.[activeIndex] || null}
             />
 
             {/* Modal de Ingreso */}
             <IncomeFormModal
-                visible={isIncomeModalVisible.value}
+                visible={!!isIncomeModalVisible.value}
                 onClose={closeIncomeModal}
                 onSave={fetchAccounts}
-                accounts={accounts.value}
-                selectedAccount={accounts.value[activeIndex] || null}
+                accounts={accounts.value || []}
+                selectedAccount={accounts.value?.[activeIndex] || null}
             />
 
             {/* Modal de Gasto */}
             <ExpenseFormModal
-                visible={isExpenseModalVisible.value}
+                visible={!!isExpenseModalVisible.value}
                 onClose={closeExpenseModal}
                 onSave={fetchAccounts}
-                accounts={accounts.value}
-                selectedAccount={accounts.value[activeIndex] || null}
+                accounts={accounts.value || []}
+                selectedAccount={accounts.value?.[activeIndex] || null}
             />
 
             {/* Modal de Transferencia */}
             <TransferFormModal
-                visible={isTransferModalVisible.value}
+                visible={!!isTransferModalVisible.value}
                 onClose={closeTransferModal}
                 onSave={fetchAccounts}
                 accounts={transferAccounts}
-                selectedAccount={accounts.value[activeIndex] || null}
+                selectedAccount={accounts.value?.[activeIndex] || null}
                 mode={transferMode}
             />
 

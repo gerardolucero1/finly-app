@@ -1,4 +1,5 @@
 import { BudgetFormModal } from '@/app/components/BudgetFormModal';
+import { useTheme } from '@/app/context/theme';
 import { useInput } from '@/hooks/useInput';
 import { Budget } from '@/models/budget';
 import { BudgetsService } from '@/services/budgets';
@@ -24,23 +25,24 @@ const formatCurrency = (value: any) => {
 };
 
 const BudgetCard = ({ budget, onEdit, onDelete }: { budget: Budget, onEdit: (b: Budget) => void, onDelete: (id: number) => void }) => {
+    const { colors, isDark } = useTheme();
     const progress = Math.min((budget.spent / parseFloat(budget.amount)) * 100, 100);
     const isOverBudget = budget.spent > parseFloat(budget.amount);
     const endDate = DateTime.fromISO(budget.end_date.toString()).setLocale('es').toFormat('dd MMM yyyy');
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
             <View style={styles.cardHeader}>
                 <View style={styles.cardIconTitle}>
-                    <View style={styles.iconContainer}>
-                        <Lucide name="chart-pie" size={24} color="#4F46E5" />
+                    <View style={[styles.iconContainer, { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : '#EEF2FF' }]}>
+                        <Lucide name="chart-pie" size={24} color={colors.primary} />
                     </View>
 
                     <View style={styles.textContainer}>
-                        <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
+                        <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
                             {budget.name}
                         </Text>
-                        <Text style={styles.cardSubtitle}>
+                        <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
                             {budget.period === 'monthly' ? 'Mensual' :
                                 budget.period === 'weekly' ? 'Semanal' :
                                     budget.period === 'yearly' ? 'Anual' : 'Único'}
@@ -49,7 +51,7 @@ const BudgetCard = ({ budget, onEdit, onDelete }: { budget: Budget, onEdit: (b: 
                 </View>
                 <View style={styles.headerActions}>
                     <TouchableOpacity onPress={() => onEdit(budget)} style={styles.editButton}>
-                        <Lucide name="pencil" size={18} color="#94A3B8" />
+                        <Lucide name="pencil" size={18} color={colors.textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => onDelete(budget.id)} style={styles.deleteButton}>
                         <Lucide name="trash-2" size={18} color="#EF4444" />
@@ -60,39 +62,39 @@ const BudgetCard = ({ budget, onEdit, onDelete }: { budget: Budget, onEdit: (b: 
             <View style={styles.cardBody}>
                 <View style={styles.amountRow}>
                     <View>
-                        <Text style={styles.amountLabel}>Gastado</Text>
-                        <Text style={[styles.amountValue, isOverBudget && styles.overBudget]}>{formatCurrency(budget.spent)}</Text>
+                        <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>Gastado</Text>
+                        <Text style={[styles.amountValue, { color: colors.text }, isOverBudget && styles.overBudget]}>{formatCurrency(budget.spent)}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={styles.amountLabel}>Límite</Text>
-                        <Text style={styles.limitValue}>{formatCurrency(budget.amount)}</Text>
+                        <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>Límite</Text>
+                        <Text style={[styles.limitValue, { color: colors.textSecondary }]}>{formatCurrency(budget.amount)}</Text>
                     </View>
                 </View>
 
                 <View style={styles.progressSection}>
-                    <View style={styles.progressBarBg}>
+                    <View style={[styles.progressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]}>
                         <View style={[
                             styles.progressBarFill,
                             { width: `${progress}%`, backgroundColor: isOverBudget ? '#EF4444' : '#10B981' }
                         ]} />
                     </View>
                     <View style={styles.progressRow}>
-                        <Text style={styles.progressText}>{progress.toFixed(1)}% usado</Text>
-                        <Text style={styles.remainingText}>
+                        <Text style={[styles.progressText, { color: colors.text }]}>{progress.toFixed(1)}% usado</Text>
+                        <Text style={[styles.remainingText, { color: colors.textSecondary }]}>
                             {isOverBudget ? 'Excedido' : `Quedan ${formatCurrency(parseFloat(budget.amount) - budget.spent)}`}
                         </Text>
                     </View>
                 </View>
             </View>
 
-            <View style={styles.cardFooter}>
+            <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Lucide name="calendar" size={14} color="#64748B" />
-                    <Text style={styles.dateText}> Vence: {endDate}</Text>
+                    <Lucide name="calendar" size={14} color={colors.textSecondary} />
+                    <Text style={[styles.dateText, { color: colors.textSecondary }]}> Vence: {endDate}</Text>
                 </View>
                 {budget.category && (
-                    <View style={styles.categoryTag}>
-                        <Text style={styles.categoryText}>{budget.category.name}</Text>
+                    <View style={[styles.categoryTag, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
+                        <Text style={[styles.categoryText, { color: colors.textSecondary }]}>{budget.category.name}</Text>
                     </View>
                 )}
             </View>
@@ -101,6 +103,7 @@ const BudgetCard = ({ budget, onEdit, onDelete }: { budget: Budget, onEdit: (b: 
 };
 
 export default function BudgetsScreen() {
+    const { colors } = useTheme();
     const params = useLocalSearchParams();
     const headerHeight = useHeaderHeight();
 
@@ -174,10 +177,10 @@ export default function BudgetsScreen() {
     };
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight }]}>
+        <View style={[styles.container, { paddingTop: headerHeight, backgroundColor: colors.background }]}>
             {loading && !refreshing ? (
                 <View style={styles.centerLoading}>
-                    <ActivityIndicator size="large" color="#4F46E5" />
+                    <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             ) : (
                 <>
@@ -186,7 +189,7 @@ export default function BudgetsScreen() {
                         keyExtractor={(item) => item.id.toString()}
                         contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4F46E5']} />}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
                         renderItem={({ item }) => (
                             <BudgetCard
                                 budget={item}
@@ -196,14 +199,14 @@ export default function BudgetsScreen() {
                         )}
                         ListEmptyComponent={
                             <View style={styles.emptyContainer}>
-                                <Lucide name="pie-chart" size={48} color="#CBD5E1" />
-                                <Text style={styles.emptyText}>No tienes presupuestos</Text>
-                                <Text style={styles.emptySubText}>Crea uno para controlar tus gastos.</Text>
+                                <Lucide name="chart-pie" size={48} color={colors.textSecondary} />
+                                <Text style={[styles.emptyText, { color: colors.text }]}>No tienes presupuestos</Text>
+                                <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>Crea uno para controlar tus gastos.</Text>
                             </View>
                         }
                     />
 
-                    <TouchableOpacity style={styles.fab} onPress={handleCreate}>
+                    <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={handleCreate}>
                         <Lucide name="plus" size={24} color="#FFF" />
                     </TouchableOpacity>
                 </>

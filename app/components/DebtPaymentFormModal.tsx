@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Account } from '@/models/account';
 import { DebtPayment } from '@/models/debt_payment';
 import { AccountsService } from '@/services/accounts';
@@ -53,6 +54,22 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
     const [loading, setLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const insets = useSafeAreaInsets();
+    const { colors, isDark } = useTheme();
+
+    const dynamicPickerStyles = {
+        inputIOS: {
+            ...pickerSelectStyles.inputIOS,
+            color: colors.text,
+            backgroundColor: colors.background,
+        },
+        inputAndroid: {
+            ...pickerSelectStyles.inputAndroid,
+            color: colors.text,
+            backgroundColor: colors.background,
+        },
+        iconContainer: pickerSelectStyles.iconContainer,
+        placeholder: { color: colors.textSecondary },
+    };
 
     // Cargar cuentas al abrir
     useEffect(() => {
@@ -128,10 +145,10 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
             <View style={styles.flexEnd}>
                 <TouchableWithoutFeedback onPress={onClose}><View style={styles.overlay} /></TouchableWithoutFeedback>
 
-                <View style={styles.content}>
-                    <View style={styles.header}>
-                        <Text style={styles.title}>{editingPayment ? 'Editar Pago' : 'Registrar Pago'}</Text>
-                        <TouchableOpacity onPress={onClose}><Lucide name="x" size={24} color="#64748B" /></TouchableOpacity>
+                <View style={[styles.content, { backgroundColor: colors.card }]}>
+                    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.title, { color: colors.text }]}>{editingPayment ? 'Editar Pago' : 'Registrar Pago'}</Text>
+                        <TouchableOpacity onPress={onClose}><Lucide name="x" size={24} color={colors.textSecondary} /></TouchableOpacity>
                     </View>
 
                     <KeyboardAvoidingView
@@ -141,12 +158,13 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
                         <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
 
                             {/* Monto */}
-                            <Text style={styles.label}>Monto del Pago <Text style={styles.req}>*</Text></Text>
-                            <View style={styles.moneyInput}>
-                                <Text style={styles.currencySymbol}>$</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Monto del Pago <Text style={styles.req}>*</Text></Text>
+                            <View style={[styles.moneyInput, { backgroundColor: colors.background }]}>
+                                <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                                 <TextInput
-                                    style={styles.inputCurrency}
+                                    style={[styles.inputCurrency, { color: colors.text }]}
                                     placeholder="0.00"
+                                    placeholderTextColor={colors.textSecondary}
                                     keyboardType="decimal-pad"
                                     value={form.amount}
                                     onChangeText={(t) => setForm({ ...form, amount: t })}
@@ -155,48 +173,50 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
                             {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
 
                             {/* Cuenta */}
-                            <Text style={styles.label}>Pagar desde <Text style={styles.req}>*</Text></Text>
-                            <View style={styles.pickerContainer}>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Pagar desde <Text style={styles.req}>*</Text></Text>
+                            <View style={[styles.pickerContainer, { backgroundColor: colors.background }]}>
                                 <RNPickerSelect
                                     onValueChange={(val) => setForm({ ...form, account_id: val })}
                                     items={accountItems}
                                     value={form.account_id}
                                     placeholder={{ label: "Selecciona una cuenta...", value: null }}
-                                    style={pickerSelectStyles}
+                                    style={dynamicPickerStyles}
                                     useNativeAndroidPickerStyle={false}
-                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
                                 />
                             </View>
                             {errors.account_id && <Text style={styles.errorText}>{errors.account_id}</Text>}
 
                             {/* Fecha */}
-                            <Text style={styles.label}>Fecha de Pago</Text>
-                            <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
-                                <Text style={styles.dateText}>{form.paid_at.toLocaleDateString()}</Text>
-                                <Lucide name="calendar" size={20} color="#64748B" />
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha de Pago</Text>
+                            <TouchableOpacity style={[styles.dateBtn, { backgroundColor: colors.background }]} onPress={() => setShowDatePicker(true)}>
+                                <Text style={[styles.dateText, { color: colors.text }]}>{form.paid_at.toLocaleDateString()}</Text>
+                                <Lucide name="calendar" size={20} color={colors.textSecondary} />
                             </TouchableOpacity>
                             {errors.paid_at && <Text style={styles.errorText}>{errors.paid_at}</Text>}
 
                             {/* Switch Extra */}
                             <TouchableOpacity
-                                style={[styles.switchRow, form.is_extra_payment && styles.switchActive]}
+                                style={[styles.switchRow, { borderColor: colors.border }, form.is_extra_payment && { borderColor: colors.primary, backgroundColor: isDark ? 'rgba(79, 70, 229, 0.2)' : '#EEF2FF' }]}
                                 onPress={() => setForm(prev => ({ ...prev, is_extra_payment: !prev.is_extra_payment }))}
                             >
                                 <View style={{ flex: 1 }}>
-                                    <Text style={[styles.switchTitle, form.is_extra_payment && { color: '#4F46E5' }]}>Pago a Capital (Extra)</Text>
-                                    <Text style={styles.switchSub}>Se aplicará directo al capital reduciendo intereses futuros.</Text>
+                                    <Text style={[styles.switchTitle, { color: colors.text }, form.is_extra_payment && { color: colors.primary }]}>Pago a Capital (Extra)</Text>
+                                    <Text style={[styles.switchSub, { color: colors.textSecondary }]}>Se aplicará directo al capital reduciendo intereses futuros.</Text>
                                 </View>
                                 <Lucide
                                     name={form.is_extra_payment ? "check" : "circle"}
                                     size={24}
-                                    color={form.is_extra_payment ? "#4F46E5" : "#CBD5E1"}
+                                    color={form.is_extra_payment ? colors.primary : colors.textSecondary}
                                 />
                             </TouchableOpacity>
 
                             {/* Notas */}
-                            <Text style={styles.label}>Notas</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Notas</Text>
                             <TextInput
-                                style={[styles.input, { height: 60 }]}
+                                style={[styles.input, { height: 60, backgroundColor: colors.background, color: colors.text }]}
+                                placeholder="Notas opcionales..."
+                                placeholderTextColor={colors.textSecondary}
                                 multiline
                                 value={form.notes}
                                 onChangeText={(t) => setForm({ ...form, notes: t })}
@@ -204,11 +224,11 @@ export const DebtPaymentFormModal = ({ visible, onClose, onSave, debtId, editing
 
                         </ScrollView>
 
-                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10, borderTopColor: colors.border }]}>
+                            <TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={onClose} disabled={loading}>
+                                <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancelar</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={loading}>
                                 {loading ? (
                                     <ActivityIndicator color="#FFF" size="small" />
                                 ) : (

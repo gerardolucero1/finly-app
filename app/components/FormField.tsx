@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import React from 'react';
 import { StyleSheet, Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
@@ -10,31 +11,45 @@ interface FormFieldProps extends TextInputProps {
     onRightIconPress?: () => void; // Callback cuando se presiona el botón derecho
 }
 
-export const FormField: React.FC<FormFieldProps> = ({ 
-    label, 
-    icon, 
-    error, 
+export const FormField: React.FC<FormFieldProps> = ({
+    label,
+    icon,
+    error,
     rightIcon,
     onRightIconPress,
-    ...props 
+    ...props
 }) => {
+    const { colors } = useTheme();
+
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>{label}</Text>
-            <View style={[styles.inputContainer, error ? styles.inputError : null]}>
-                <Lucide name={icon} size={20} color={error ? '#DC2626' : '#94A3B8'} style={styles.icon} />
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text>
+            <View style={[
+                styles.inputContainer,
+                {
+                    backgroundColor: colors.card,
+                    borderColor: error ? '#F87171' : colors.border
+                },
+                error ? styles.inputError : null
+            ]}>
+                <Lucide
+                    name={icon}
+                    size={20}
+                    color={error ? '#DC2626' : colors.textSecondary}
+                    style={styles.icon}
+                />
                 <TextInput
-                    style={styles.input}
-                    placeholderTextColor="#94A3B8"
+                    style={[styles.input, { color: colors.text }]}
+                    placeholderTextColor={colors.textSecondary}
                     {...props}
                 />
                 {rightIcon && onRightIconPress && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={onRightIconPress}
                         style={styles.rightButton}
                         activeOpacity={0.6}
                     >
-                        <Lucide name={rightIcon} size={20} color="#94A3B8" />
+                        <Lucide name={rightIcon} size={20} color={colors.textSecondary} />
                     </TouchableOpacity>
                 )}
             </View>
@@ -50,21 +65,17 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#475569',
         marginBottom: 8,
         fontFamily: 'Inter_500Medium',
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F8FAFC',
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
         paddingHorizontal: 16,
     },
     inputError: {
-        borderColor: '#F87171',
         backgroundColor: '#FEF2F2',
     },
     icon: {
@@ -74,7 +85,6 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 50,
         fontSize: 16,
-        color: '#1E293B',
         fontFamily: 'Inter_400Regular',
     },
     rightButton: {

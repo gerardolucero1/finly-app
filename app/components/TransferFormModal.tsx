@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Account } from '@/models/account';
 import { AccountsService } from '@/services/accounts';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -41,11 +42,12 @@ interface TransferFormModalProps {
     onClose: () => void;
     onSave: () => void;
     accounts: Account[];
-    selectedAccount: Account;
+    selectedAccount: Account | null;
     mode?: 'transfer' | 'deposit' | 'payment';
 }
 
 export const TransferFormModal = ({ visible, onClose, onSave, accounts, selectedAccount, mode = 'transfer' }: TransferFormModalProps) => {
+    const { colors, isDark } = useTheme();
     const [form, setForm] = useState<FormState>(initialFormState);
     const [loading, setLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -118,6 +120,16 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                 description: form.description
             };
 
+            if (!selectedAccount) {
+                showAlert({
+                    icon: 'circle-alert',
+                    title: "Error",
+                    message: "Cuenta no seleccionada.",
+                    type: "danger",
+                })
+                return;
+            }
+
             await AccountsService.transfer(selectedAccount.id, transferData);
             showAlert({
                 icon: 'circle-check',
@@ -188,13 +200,13 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                 items.push({
                     label: `--- ${group.toUpperCase()} ---`,
                     value: `HEADER_${group}`,
-                    color: '#64748B',
+                    color: colors.textSecondary,
                     inputLabel: `--- ${group} ---`,
                     key: `header_${group}`
                 });
                 // Add Items
                 grouped[group].forEach(acc => {
-                    items.push({ label: acc.name, value: acc.id, key: acc.id.toString(), color: '#1E293B' });
+                    items.push({ label: acc.name, value: acc.id, key: acc.id.toString(), color: colors.text });
                 });
             }
         });
@@ -207,13 +219,13 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
     // Ensure selected account is present if not already (for edge cases)
     if ((mode === 'deposit' || mode === 'payment') && selectedAccount) {
         if (!toAccountItems.find(item => item.value === selectedAccount.id)) {
-            toAccountItems.unshift({ label: selectedAccount.name, value: selectedAccount.id, color: '#1E293B' });
+            toAccountItems.unshift({ label: selectedAccount.name, value: selectedAccount.id, color: colors.text });
         }
     }
 
     if (mode === 'transfer' && selectedAccount) {
         if (!fromAccountItems.find(item => item.value === selectedAccount.id)) {
-            fromAccountItems.unshift({ label: selectedAccount.name, value: selectedAccount.id, color: '#1E293B' });
+            fromAccountItems.unshift({ label: selectedAccount.name, value: selectedAccount.id, color: colors.text });
         }
     }
 
@@ -231,13 +243,13 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
 
-                <View style={styles.modalContent}>
-                    <View style={styles.header}>
-                        <Text style={styles.headerTitle}>
+                <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.headerTitle, { color: colors.text }]}>
                             {mode === 'payment' ? 'Pagar Tarjeta' : 'Nueva Transferencia'}
                         </Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Lucide name="x" size={24} color="#64748B" />
+                            <Lucide name="x" size={24} color={colors.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -254,12 +266,13 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                             keyboardShouldPersistTaps="handled"
                         >
                             {/* Monto */}
-                            <Text style={styles.label}>Monto *</Text>
-                            <View style={styles.amountContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Monto *</Text>
+                            <View style={[styles.amountContainer, { backgroundColor: colors.iconBg }]}>
+                                <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                                 <TextInput
-                                    style={styles.amountInput}
+                                    style={[styles.amountInput, { color: colors.text }]}
                                     placeholder="0.00"
+                                    placeholderTextColor={colors.textSecondary + '80'}
                                     keyboardType="decimal-pad"
                                     value={form.amount}
                                     onChangeText={(value) => handleInputChange('amount', value)}
@@ -270,7 +283,7 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                             )}
 
                             {/* Cuenta Origen */}
-                            <Text style={styles.label}>Desde la cuenta *</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Desde la cuenta *</Text>
                             <RNPickerSelect
                                 value={form.from_account_id}
                                 onValueChange={(value) => {
@@ -283,11 +296,15 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                                 }}
 
                                 items={fromAccountItems}
-                                placeholder={{ label: "Seleccionar cuenta origen", value: null, color: '#94A3B8' }}
-                                style={pickerSelectStyles}
+                                placeholder={{ label: "Seleccionar cuenta origen", value: null, color: colors.textSecondary }}
+                                style={{
+                                    ...pickerSelectStyles,
+                                    inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                    inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                                }}
                                 useNativeAndroidPickerStyle={false}
                                 Icon={() => {
-                                    return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                    return <Lucide name="chevron-down" size={20} color={colors.textSecondary} />;
                                 }}
                                 disabled={mode === 'transfer'}
                             />
@@ -297,11 +314,11 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
 
                             {/* Ícono de transferencia */}
                             <View style={styles.transferIconContainer}>
-                                <Lucide name="arrow-down" size={24} color="#4F46E5" />
+                                <Lucide name="arrow-down" size={24} color={colors.primary} />
                             </View>
 
                             {/* Cuenta Destino */}
-                            <Text style={styles.label}>Hacia la cuenta *</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Hacia la cuenta *</Text>
                             <RNPickerSelect
                                 value={form.to_account_id}
                                 onValueChange={(value) => {
@@ -309,11 +326,15 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                                     handleInputChange('to_account_id', value);
                                 }}
                                 items={toAccountItems}
-                                placeholder={{ label: "Seleccionar cuenta destino", value: null, color: '#94A3B8' }}
-                                style={pickerSelectStyles}
+                                placeholder={{ label: "Seleccionar cuenta destino", value: null, color: colors.textSecondary }}
+                                style={{
+                                    ...pickerSelectStyles,
+                                    inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                    inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                                }}
                                 useNativeAndroidPickerStyle={false}
                                 Icon={() => {
-                                    return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                    return <Lucide name="chevron-down" size={20} color={colors.textSecondary} />;
                                 }}
                                 disabled={mode === 'deposit' || mode === 'payment' || !form.from_account_id}
                             />
@@ -322,10 +343,10 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                             )}
 
                             {/* Fecha */}
-                            <Text style={styles.label}>Fecha *</Text>
-                            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                                <Text style={styles.datePickerText}>{form.date.toLocaleDateString()}</Text>
-                                <Lucide name="calendar" size={20} color="#64748B" />
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha *</Text>
+                            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.datePickerButton, { backgroundColor: colors.iconBg }]}>
+                                <Text style={[styles.datePickerText, { color: colors.text }]}>{form.date.toLocaleDateString()}</Text>
+                                <Lucide name="calendar" size={20} color={colors.textSecondary} />
                             </TouchableOpacity>
                             {showDatePicker && (
                                 <DateTimePicker
@@ -341,10 +362,11 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                             )}
 
                             {/* Descripción */}
-                            <Text style={styles.label}>Descripción (opcional)</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Descripción (opcional)</Text>
                             <TextInput
-                                style={[styles.input, styles.textArea]}
+                                style={[styles.input, styles.textArea, { backgroundColor: colors.iconBg, color: colors.text }]}
                                 placeholder="Ej: Transferencia para gastos mensuales..."
+                                placeholderTextColor={colors.textSecondary + '80'}
                                 value={form.description}
                                 onChangeText={(value) => handleInputChange('description', value)}
                                 multiline
@@ -357,11 +379,11 @@ export const TransferFormModal = ({ visible, onClose, onSave, accounts, selected
                         </ScrollView>
 
                         {/* Footer */}
-                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10, borderTopColor: colors.border }]}>
+                            <TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={onClose} disabled={loading}>
+                                <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancelar</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={loading}>
                                 {loading ? (
                                     <ActivityIndicator color="#FFF" size="small" />
                                 ) : (

@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { useUserFeatures } from '@/hooks/useUserFeatures';
 import { Account } from '@/models/account';
 import { Project } from '@/models/project';
@@ -61,6 +62,7 @@ interface IncomeFormModalProps {
 }
 
 export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAccount, editingTransaction }: IncomeFormModalProps) => {
+    const { colors, isDark } = useTheme();
     const [form, setForm] = useState<FormState>(initialFormState);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -160,12 +162,12 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                 </TouchableWithoutFeedback>
 
                 <View
-                    style={styles.modalContent}
+                    style={[styles.modalContent, { backgroundColor: colors.card }]}
                 >
-                    <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Nuevo Ingreso</Text>
+                    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.headerTitle, { color: colors.text }]}>Nuevo Ingreso</Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Lucide name="x" size={24} color="#64748B" />
+                            <Lucide name="x" size={24} color={colors.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -174,12 +176,13 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                         keyboardShouldPersistTaps="handled"
                     >
                         {/* Monto */}
-                        <Text style={styles.label}>Monto *</Text>
-                        <View style={styles.amountContainer}>
-                            <Text style={styles.currencySymbol}>$</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Monto *</Text>
+                        <View style={[styles.amountContainer, { backgroundColor: colors.iconBg }]}>
+                            <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                             <TextInput
-                                style={styles.amountInput}
+                                style={[styles.amountInput, { color: colors.text }]}
                                 placeholder="0.00"
+                                placeholderTextColor={colors.textSecondary + '80'}
                                 keyboardType="decimal-pad"
                                 value={form.amount}
                                 onChangeText={(value) => handleInputChange('amount', value)}
@@ -190,31 +193,36 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                         )}
 
                         {/* Fuente */}
-                        <Text style={styles.label}>Fuente de Ingreso <Text style={styles.errorText}>*</Text></Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Fuente de Ingreso <Text style={styles.errorText}>*</Text></Text>
                         <TextInput
-                            style={[styles.input, errors.source && styles.errorText]}
+                            style={[styles.input, { backgroundColor: colors.iconBg, color: colors.text }, errors.source && { borderColor: 'red', borderWidth: 1 }]}
                             placeholder="Ej: Nómina, Venta de Garage..."
+                            placeholderTextColor={colors.textSecondary + '80'}
                             value={form.source}
                             onChangeText={(value) => handleInputChange('source', value)}
                         />
                         {errors.source && <Text style={styles.errorText}>{errors.source[0]}</Text>}
 
                         {/* Cuenta de Origen */}
-                        <Text style={styles.label}>Cuenta *</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Cuenta *</Text>
                         <RNPickerSelect
                             value={form.account_id}
                             onValueChange={(value) => handleInputChange('account_id', value)}
                             items={accountItems}
-                            placeholder={{ label: "Seleccionar cuenta", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
+                            placeholder={{ label: "Seleccionar cuenta", value: null, color: colors.textSecondary }}
+                            style={{
+                                ...pickerSelectStyles,
+                                inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                            }}
                             useNativeAndroidPickerStyle={false}
                             Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                return <Lucide name="chevron-down" size={20} color={colors.textSecondary} />;
                             }}
                         />
 
                         {/* Tipo y Frecuencia */}
-                        <Text style={styles.label}>Tipo</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Tipo</Text>
                         <RNPickerSelect
                             value={form.type}
                             onValueChange={(value) => handleInputChange('type', value)}
@@ -222,12 +230,16 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                                 { label: "Fijo", value: "fixed" },
                                 { label: "Variable", value: "variable" },
                             ]}
-                            style={pickerSelectStyles}
+                            style={{
+                                ...pickerSelectStyles,
+                                inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                            }}
                             useNativeAndroidPickerStyle={false}
-                            Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                            Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
                         />
 
-                        <Text style={styles.label}>Frecuencia</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Frecuencia</Text>
                         <RNPickerSelect
                             value={form.frequency}
                             onValueChange={(value) => handleInputChange('frequency', value)}
@@ -237,57 +249,67 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                                 { label: "Quincenal", value: "biweekly" },
                                 { label: "Mensual", value: "monthly" },
                             ]}
-                            style={pickerSelectStyles}
+                            style={{
+                                ...pickerSelectStyles,
+                                inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                            }}
                             useNativeAndroidPickerStyle={false}
-                            Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                            Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
                         />
 
                         {/* Proyecto */}
-                        <Text style={styles.label}>Proyecto</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Proyecto</Text>
                         <RNPickerSelect
                             value={form.project_id}
                             disabled={!hasFeature('freelancer_mode')}
                             onValueChange={(value) => handleInputChange('project_id', value)}
                             items={projectItems}
-                            placeholder={{ label: "Seleccionar proyecto", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
+                            placeholder={{ label: "Seleccionar proyecto", value: null, color: colors.textSecondary }}
+                            style={{
+                                ...pickerSelectStyles,
+                                inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                            }}
                             useNativeAndroidPickerStyle={false}
                             Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                return <Lucide name="chevron-down" size={20} color={colors.textSecondary} />;
                             }}
                         />
 
                         {/* Etiqueta */}
-                        <Text style={styles.label}>Etiqueta *</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Etiqueta *</Text>
                         <View style={styles.radioGroup}>
                             {/* Opción: Personal */}
                             <TouchableOpacity
                                 style={[
                                     styles.radioOption,
-                                    form.scope === 'personal' && styles.radioOptionSelected
+                                    { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', borderColor: colors.border },
+                                    form.scope === 'personal' && { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.15)' : '#EEF2FF', borderColor: colors.primary }
                                 ]}
                                 onPress={() => handleInputChange('scope', 'personal')}
                                 activeOpacity={0.7}
                             >
                                 <View style={[
                                     styles.radioCircle,
-                                    form.scope === 'personal' && styles.radioCircleSelected
+                                    { borderColor: colors.textSecondary },
+                                    form.scope === 'personal' && { borderColor: colors.primary }
                                 ]}>
-                                    {form.scope === 'personal' && <View style={styles.radioInnerCircle} />}
+                                    {form.scope === 'personal' && <View style={[styles.radioInnerCircle, { backgroundColor: colors.primary }]} />}
                                 </View>
                                 <Text style={[
                                     styles.radioText,
-                                    form.scope === 'personal' && styles.radioTextSelected
+                                    { color: colors.textSecondary },
+                                    form.scope === 'personal' && { color: colors.text, fontFamily: 'Inter_700Bold' }
                                 ]}>Personal</Text>
                             </TouchableOpacity>
-
-
 
                             {/* Opción: Negocio */}
                             <TouchableOpacity
                                 style={[
                                     styles.radioOption,
-                                    form.scope === 'business' && styles.radioOptionSelected
+                                    { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', borderColor: colors.border },
+                                    form.scope === 'business' && { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.15)' : '#EEF2FF', borderColor: colors.primary }
                                 ]}
                                 disabled={!hasFeature('freelancer_mode')}
                                 onPress={() => handleInputChange('scope', 'business')}
@@ -295,13 +317,15 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                             >
                                 <View style={[
                                     styles.radioCircle,
-                                    form.scope === 'business' && styles.radioCircleSelected
+                                    { borderColor: colors.textSecondary },
+                                    form.scope === 'business' && { borderColor: colors.primary }
                                 ]}>
-                                    {form.scope === 'business' && <View style={styles.radioInnerCircle} />}
+                                    {form.scope === 'business' && <View style={[styles.radioInnerCircle, { backgroundColor: colors.primary }]} />}
                                 </View>
                                 <Text style={[
                                     styles.radioText,
-                                    form.scope === 'business' && styles.radioTextSelected
+                                    { color: colors.textSecondary },
+                                    form.scope === 'business' && { color: colors.text, fontFamily: 'Inter_700Bold' }
                                 ]}>Negocio</Text>
                             </TouchableOpacity>
                         </View>
@@ -311,10 +335,10 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                         )}
 
                         {/* Fecha */}
-                        <Text style={styles.label}>Fecha</Text>
-                        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                            <Text style={styles.datePickerText}>{form.date.toLocaleDateString()}</Text>
-                            <Lucide name="calendar" size={20} color="#64748B" />
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha</Text>
+                        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.datePickerButton, { backgroundColor: colors.iconBg }]}>
+                            <Text style={[styles.datePickerText, { color: colors.text }]}>{form.date.toLocaleDateString()}</Text>
+                            <Lucide name="calendar" size={20} color={colors.textSecondary} />
                         </TouchableOpacity>
                         {showDatePicker && (
                             <DateTimePicker
@@ -328,11 +352,11 @@ export const IncomeFormModal = ({ visible, onClose, onSave, accounts, selectedAc
                     </ScrollView>
 
                     {/* Footer */}
-                    <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                    <View style={[styles.footer, { paddingBottom: insets.bottom + 10, borderTopColor: colors.border }]}>
+                        <TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={onClose} disabled={loading}>
+                            <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancelar</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                        <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={loading}>
                             {loading ? (
                                 <ActivityIndicator color="#FFF" size="small" />
                             ) : (

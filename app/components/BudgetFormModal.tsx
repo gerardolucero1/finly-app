@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Budget } from '@/models/budget';
 import { Category } from '@/models/category';
 import { SubCategory } from '@/models/subcategory';
@@ -80,6 +81,22 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
     const insets = useSafeAreaInsets();
     const { showPlanLimit, PlanLimitComponent, hidePlanLimit } = usePlanLimitModal();
     const router = useRouter();
+    const { colors, isDark } = useTheme();
+
+    const dynamicPickerStyles = {
+        inputIOS: {
+            ...pickerSelectStyles.inputIOS,
+            color: colors.text,
+            backgroundColor: colors.background,
+        },
+        inputAndroid: {
+            ...pickerSelectStyles.inputAndroid,
+            color: colors.text,
+            backgroundColor: colors.background,
+        },
+        iconContainer: pickerSelectStyles.iconContainer,
+        placeholder: { color: colors.textSecondary },
+    };
 
     useEffect(() => {
         if (visible) {
@@ -209,13 +226,13 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
 
-                <View style={styles.modalContent}>
-                    <View style={styles.header}>
-                        <Text style={styles.headerTitle}>
+                <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.headerTitle, { color: colors.text }]}>
                             {editingBudget ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}
                         </Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Lucide name="x" size={24} color="#64748B" />
+                            <Lucide name="x" size={24} color={colors.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -233,22 +250,24 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
                         >
 
                             {/* Nombre */}
-                            <Text style={styles.label}>Nombre del presupuesto <Text style={styles.required}>*</Text></Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Nombre del presupuesto <Text style={styles.required}>*</Text></Text>
                             <TextInput
-                                style={[styles.input, errors.name && styles.inputError]}
+                                style={[styles.input, errors.name && styles.inputError, { backgroundColor: colors.background, color: colors.text }]}
                                 placeholder="Ej: Comida, Transporte..."
+                                placeholderTextColor={colors.textSecondary}
                                 value={form.name}
                                 onChangeText={(value) => handleInputChange('name', value)}
                             />
                             {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
                             {/* Monto */}
-                            <Text style={styles.label}>Monto Límite <Text style={styles.required}>*</Text></Text>
-                            <View style={styles.currencyInputContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Monto Límite <Text style={styles.required}>*</Text></Text>
+                            <View style={[styles.currencyInputContainer, { backgroundColor: colors.background }]}>
+                                <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                                 <TextInput
-                                    style={styles.currencyInput}
+                                    style={[styles.currencyInput, { color: colors.text }]}
                                     placeholder="0.00"
+                                    placeholderTextColor={colors.textSecondary}
                                     keyboardType="decimal-pad"
                                     value={form.amount}
                                     onChangeText={(value) => handleInputChange('amount', value)}
@@ -257,16 +276,16 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
                             {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
 
                             {/* Categoría */}
-                            <Text style={styles.label}>Categoría</Text>
-                            <View style={styles.inputContainer}>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Categoría</Text>
+                            <View style={[styles.inputContainer, { backgroundColor: colors.background }]}>
                                 <RNPickerSelect
                                     value={form.category_id}
                                     onValueChange={(value) => handleInputChange('category_id', value)}
                                     items={categories.map(cat => ({ label: cat.name, value: cat.id.toString() }))}
                                     placeholder={{ label: "Seleccionar categoría...", value: null }}
-                                    style={pickerSelectStyles}
+                                    style={dynamicPickerStyles}
                                     useNativeAndroidPickerStyle={false}
-                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
                                 />
                             </View>
                             {errors.sub_category_id && <Text style={styles.errorText}>{errors.sub_category_id}</Text>}
@@ -274,16 +293,16 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
                             {/* Subcategoría */}
                             {filteredSubcategories.length > 0 && (
                                 <>
-                                    <Text style={styles.label}>Subcategoría</Text>
-                                    <View style={styles.inputContainer}>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Subcategoría</Text>
+                                    <View style={[styles.inputContainer, { backgroundColor: colors.background }]}>
                                         <RNPickerSelect
                                             value={form.sub_category_id}
                                             onValueChange={(value) => handleInputChange('sub_category_id', value)}
                                             items={filteredSubcategories.map(sub => ({ label: sub.name, value: sub.id.toString() }))}
                                             placeholder={{ label: "Seleccionar subcategoría...", value: null }}
-                                            style={pickerSelectStyles}
+                                            style={dynamicPickerStyles}
                                             useNativeAndroidPickerStyle={false}
-                                            Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                            Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
                                         />
                                     </View>
                                     {errors.sub_category_id && <Text style={styles.errorText}>{errors.sub_category_id}</Text>}
@@ -291,20 +310,22 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
                             )}
 
                             {/* Periodo */}
-                            <Text style={styles.label}>Periodo</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Periodo</Text>
                             <View style={styles.typeSelectorContainer}>
                                 {periodOptions.map((option) => (
                                     <TouchableOpacity
                                         key={option.value}
                                         style={[
                                             styles.typeButton,
-                                            form.period === option.value && styles.typeButtonSelected
+                                            { backgroundColor: colors.background, borderColor: colors.border },
+                                            form.period === option.value && { borderColor: colors.primary, backgroundColor: isDark ? 'rgba(99, 102, 241, 0.2)' : '#EEF2FF' }
                                         ]}
                                         onPress={() => handleInputChange('period', option.value)}
                                     >
                                         <Text style={[
                                             styles.typeButtonText,
-                                            form.period === option.value && styles.typeButtonTextSelected
+                                            { color: colors.textSecondary },
+                                            form.period === option.value && { color: colors.primary, fontFamily: 'Inter_700Bold' }
                                         ]}>
                                             {option.label}
                                         </Text>
@@ -315,18 +336,18 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
                             {/* Fechas */}
                             <View style={styles.row}>
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Fecha Inicio</Text>
-                                    <TouchableOpacity onPress={() => setShowDatePicker('start_date')} style={styles.datePickerButton}>
-                                        <Text style={styles.datePickerText}>{form.start_date.toLocaleDateString()}</Text>
-                                        <Lucide name="calendar" size={18} color="#64748B" />
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha Inicio</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker('start_date')} style={[styles.datePickerButton, { backgroundColor: colors.background }]}>
+                                        <Text style={[styles.datePickerText, { color: colors.text }]}>{form.start_date.toLocaleDateString()}</Text>
+                                        <Lucide name="calendar" size={18} color={colors.textSecondary} />
                                     </TouchableOpacity>
                                 </View>
                                 {errors.start_date && <Text style={styles.errorText}>{errors.start_date}</Text>}
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Fecha Fin</Text>
-                                    <TouchableOpacity onPress={() => setShowDatePicker('end_date')} style={styles.datePickerButton}>
-                                        <Text style={styles.datePickerText}>{form.end_date.toLocaleDateString()}</Text>
-                                        <Lucide name="calendar" size={18} color="#64748B" />
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha Fin</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker('end_date')} style={[styles.datePickerButton, { backgroundColor: colors.background }]}>
+                                        <Text style={[styles.datePickerText, { color: colors.text }]}>{form.end_date.toLocaleDateString()}</Text>
+                                        <Lucide name="calendar" size={18} color={colors.textSecondary} />
                                     </TouchableOpacity>
                                 </View>
                                 {errors.end_date && <Text style={styles.errorText}>{errors.end_date}</Text>}
@@ -335,10 +356,11 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
                             {/* Alertas */}
                             <View style={styles.row}>
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Alerta al (%)</Text>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Alerta al (%)</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
                                         placeholder="Ej: 80"
+                                        placeholderTextColor={colors.textSecondary}
                                         keyboardType="decimal-pad"
                                         value={form.alert_threshold}
                                         onChangeText={(value) => handleInputChange('alert_threshold', value)}
@@ -349,10 +371,10 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
                                         style={[styles.checkboxContainer, form.alerts_enabled && styles.checkboxActive]}
                                         onPress={() => handleInputChange('alerts_enabled', !form.alerts_enabled)}
                                     >
-                                        <View style={[styles.checkbox, form.alerts_enabled && styles.checkboxChecked]}>
+                                        <View style={[styles.checkbox, { borderColor: colors.border }, form.alerts_enabled && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
                                             {form.alerts_enabled && <Lucide name="check" size={12} color="#FFF" />}
                                         </View>
-                                        <Text style={styles.checkboxLabel}>Activar alertas</Text>
+                                        <Text style={[styles.checkboxLabel, { color: colors.text }]}>Activar alertas</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -360,11 +382,15 @@ export const BudgetFormModal = ({ visible, onClose, onSave, editingBudget }: Bud
                         </ScrollView>
 
                         {/* Footer */}
-                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10, borderTopColor: colors.border }]}>
+                            <TouchableOpacity
+                                style={[styles.cancelButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                onPress={onClose}
+                                disabled={loading}
+                            >
+                                <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancelar</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={loading}>
                                 {loading ? (
                                     <ActivityIndicator color="#FFF" size="small" />
                                 ) : (

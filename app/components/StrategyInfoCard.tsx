@@ -35,18 +35,31 @@ const STATUS_COLORS = {
     'off_track': { main: '#EF4444', bg: '#FEF2F2', label: 'Desviado' }
 };
 
+import { useTheme } from '@/app/context/theme';
+
 export const StrategyInfoCard = ({ strategy, onPress, onCreate }: StrategyProps) => {
+    const { colors, isDark } = useTheme();
 
     // 1. Estado Vacío (Botón Compacto)
     if (!strategy || !strategy.progress_status) {
         return (
-            <TouchableOpacity style={styles.emptyCard} onPress={onCreate} activeOpacity={0.7}>
-                <View style={styles.emptyIcon}>
+            <TouchableOpacity
+                style={[
+                    styles.emptyCard,
+                    {
+                        backgroundColor: isDark ? 'rgba(124, 58, 237, 0.05)' : '#F5F3FF',
+                        borderColor: isDark ? 'rgba(124, 58, 237, 0.2)' : '#DDD6FE'
+                    }
+                ]}
+                onPress={onCreate}
+                activeOpacity={0.7}
+            >
+                <View style={[styles.emptyIcon, { backgroundColor: isDark ? 'rgba(124, 58, 237, 0.1)' : '#EDE9FE' }]}>
                     <Lucide name="dollar-sign" size={20} color="#7C3AED" />
                 </View>
                 <View>
-                    <Text style={styles.emptyTitle}>Sin estrategia</Text>
-                    <Text style={styles.emptySubtitle}>Configúrala en holafinly.com</Text>
+                    <Text style={[styles.emptyTitle, { color: isDark ? '#A78BFA' : '#5B21B6' }]}>Sin estrategia</Text>
+                    <Text style={[styles.emptySubtitle, { color: isDark ? '#8B5CF6' : '#7C3AED' }]}>Configúrala en holafinly.com</Text>
                 </View>
                 {/* <Lucide name="chevron-right" size={20} color="#CBD5E1" style={{ marginLeft: 'auto' }} /> */}
             </TouchableOpacity>
@@ -64,20 +77,20 @@ export const StrategyInfoCard = ({ strategy, onPress, onCreate }: StrategyProps)
 
     return (
         <TouchableOpacity
-            style={[styles.card, { borderLeftColor: config.main }]}
+            style={[styles.card, { backgroundColor: colors.card, borderLeftColor: config.main, borderColor: colors.border }]}
             onPress={() => onPress && onPress(strategy.id)}
             activeOpacity={0.9}
         >
             {/* Header: Nombre y Mes */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <Text style={styles.title} numberOfLines={1}>{strategy.name}</Text>
-                    <Text style={styles.subtitle}>
+                    <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{strategy.name}</Text>
+                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                         Mes {status.month}/{expected_duration_months}
                     </Text>
                 </View>
                 {/* Badge de estado pequeño */}
-                <View style={[styles.badge, { backgroundColor: config.bg }]}>
+                <View style={[styles.badge, { backgroundColor: isDark ? `${config.main}20` : config.bg }]}>
                     <Text style={[styles.badgeText, { color: config.main }]}>{config.label}</Text>
                 </View>
             </View>
@@ -85,18 +98,18 @@ export const StrategyInfoCard = ({ strategy, onPress, onCreate }: StrategyProps)
             {/* Números Grandes: Pagado vs Meta */}
             <View style={styles.numbersRow}>
                 <View>
-                    <Text style={styles.label}>Pagado este mes</Text>
-                    <Text style={styles.amountMain}>{formatCurrency(status.actual_paid)}</Text>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>Pagado este mes</Text>
+                    <Text style={[styles.amountMain, { color: colors.text }]}>{formatCurrency(status.actual_paid)}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.label}>Meta</Text>
-                    <Text style={styles.amountGoal}>/ {formatCurrency(status.planned_amount)}</Text>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>Meta</Text>
+                    <Text style={[styles.amountGoal, { color: colors.textSecondary }]}>/ {formatCurrency(status.planned_amount)}</Text>
                 </View>
             </View>
 
             {/* Barra de Progreso e Info Extra */}
             <View style={styles.footer}>
-                <View style={styles.progressBg}>
+                <View style={[styles.progressBg, { backgroundColor: colors.iconBg }]}>
                     <View style={[styles.progressFill, { width: `${percent}%`, backgroundColor: config.main }]} />
                 </View>
 
@@ -115,7 +128,7 @@ export const StrategyInfoCard = ({ strategy, onPress, onCreate }: StrategyProps)
                             {status.drift > 0 ? '+' : ''}{formatCurrency(status.drift)} vs plan
                         </Text>
                     )}
-                    <Text style={styles.percentText}>{Math.round(percent)}%</Text>
+                    <Text style={[styles.percentText, { color: colors.textSecondary }]}>{Math.round(percent)}%</Text>
                 </View>
             </View>
         </TouchableOpacity>

@@ -1,5 +1,6 @@
 import { SavingFormModal } from '@/app/components/SavingFormModal';
 import { TransferFormModal } from '@/app/components/TransferFormModal';
+import { useTheme } from '@/app/context/theme';
 import { useInput } from '@/hooks/useInput';
 import { Account } from '@/models/account';
 import { AccountsService } from '@/services/accounts';
@@ -32,30 +33,33 @@ const SavingCard = ({ account, onEdit, onDelete, onToggleCompound, onDeposit, on
     onDeposit: (a: Account) => void,
     onWithdraw: (a: Account) => void
 }) => {
+    const { colors, isDark } = useTheme();
     const isInvestment = account.type === 'investment';
     const iconName = isInvestment ? 'trending-up' : 'piggy-bank';
-    const iconColor = isInvestment ? '#8B5CF6' : '#10B981';
-    const bgColor = isInvestment ? '#F3E8FF' : '#ECFDF5';
+    const iconColor = isInvestment ? '#8B5CF6' : (isDark ? '#10B981' : '#10B981'); // Ajustar si se quiere otro color en dark
+    const bgColor = isInvestment
+        ? (isDark ? 'rgba(139, 92, 246, 0.1)' : '#F3E8FF')
+        : (isDark ? 'rgba(16, 185, 129, 0.1)' : '#ECFDF5');
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
             <View style={styles.cardHeader}>
                 <View style={styles.cardIconTitle}>
                     <View style={[styles.iconContainer, { backgroundColor: bgColor }]}>
                         <Lucide name={iconName} size={24} color={iconColor} />
                     </View>
                     <View style={styles.textContainer}>
-                        <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
+                        <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
                             {account.name}
                         </Text>
-                        <Text style={styles.cardSubtitle}>
+                        <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
                             {account.bank} • {isInvestment ? 'Inversión' : 'Ahorro'}
                         </Text>
                     </View>
                 </View>
                 <View style={styles.headerActions}>
                     <TouchableOpacity onPress={() => onEdit(account)} style={styles.editButton}>
-                        <Lucide name="pencil" size={18} color="#94A3B8" />
+                        <Lucide name="pencil" size={18} color={colors.textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => onDelete(account.id)} style={styles.deleteButton}>
                         <Lucide name="trash-2" size={18} color="#EF4444" />
@@ -64,21 +68,21 @@ const SavingCard = ({ account, onEdit, onDelete, onToggleCompound, onDeposit, on
             </View>
 
             <View style={styles.cardBody}>
-                <Text style={styles.balanceLabel}>Saldo Actual</Text>
-                <Text style={styles.balanceValue}>{formatCurrency(account.current_balance)}</Text>
+                <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Saldo Actual</Text>
+                <Text style={[styles.balanceValue, { color: colors.text }]}>{formatCurrency(account.current_balance)}</Text>
 
                 {account.interest_enabled && (
-                    <View style={styles.interestInfo}>
+                    <View style={[styles.interestInfo, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC' }]}>
                         <View style={styles.interestRow}>
-                            <Text style={styles.interestLabel}>Rendimiento:</Text>
-                            <Text style={styles.interestValue}>{account.yield_rate}% {account.yield_period === 'yearly' ? 'Anual' : account.yield_period === 'monthly' ? 'Mensual' : 'Diario'}</Text>
+                            <Text style={[styles.interestLabel, { color: colors.textSecondary }]}>Rendimiento:</Text>
+                            <Text style={[styles.interestValue, { color: colors.text }]}>{account.yield_rate}% {account.yield_period === 'yearly' ? 'Anual' : account.yield_period === 'monthly' ? 'Mensual' : 'Diario'}</Text>
                         </View>
                         <View style={styles.compoundRow}>
-                            <Text style={styles.interestLabel}>Interés Diario</Text>
+                            <Text style={[styles.interestLabel, { color: colors.textSecondary }]}>Interés Diario</Text>
                             <Switch
-                                trackColor={{ false: "#E2E8F0", true: "#C7D2FE" }}
-                                thumbColor={account.auto_compound_daily ? "#4F46E5" : "#f4f3f4"}
-                                ios_backgroundColor="#E2E8F0"
+                                trackColor={{ false: isDark ? '#334155' : "#E2E8F0", true: "#C7D2FE" }}
+                                thumbColor={account.auto_compound_daily ? (isDark ? "#818CF8" : "#4F46E5") : "#f4f3f4"}
+                                ios_backgroundColor={isDark ? '#334155' : "#E2E8F0"}
                                 onValueChange={() => onToggleCompound(account.id)}
                                 value={account.auto_compound_daily}
                                 style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
@@ -88,8 +92,8 @@ const SavingCard = ({ account, onEdit, onDelete, onToggleCompound, onDeposit, on
                 )}
 
                 {account.goal_amount && (
-                    <View style={styles.goalSection}>
-                        <Text style={styles.goalText}>
+                    <View style={[styles.goalSection, { borderTopColor: colors.border }]}>
+                        <Text style={[styles.goalText, { color: colors.textSecondary }]}>
                             Meta: {formatCurrency(account.goal_amount)}
                             {account.goal_due_date && ` • ${new Date(account.goal_due_date).toLocaleDateString()}`}
                         </Text>
@@ -97,17 +101,17 @@ const SavingCard = ({ account, onEdit, onDelete, onToggleCompound, onDeposit, on
                 )}
             </View>
 
-            <View style={styles.cardFooter}>
+            <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
                 <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/savings/${account.id}`)}>
-                    <Lucide name="eye" size={18} color="#64748B" />
-                    <Text style={styles.actionButtonText}>Ver</Text>
+                    <Lucide name="eye" size={18} color={colors.textSecondary} />
+                    <Text style={[styles.actionButtonText, { color: colors.textSecondary }]}>Ver</Text>
                 </TouchableOpacity>
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
                 <TouchableOpacity style={styles.actionButton} onPress={() => onDeposit(account)}>
-                    <Lucide name="hand-coins" size={18} color="#4F46E5" />
-                    <Text style={[styles.actionButtonText, { color: '#4F46E5' }]}>Depositar</Text>
+                    <Lucide name="hand-coins" size={18} color={isDark ? '#818CF8' : "#4F46E5"} />
+                    <Text style={[styles.actionButtonText, { color: isDark ? '#818CF8' : '#4F46E5' }]}>Depositar</Text>
                 </TouchableOpacity>
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
                 <TouchableOpacity style={styles.actionButton} onPress={() => onWithdraw(account)}>
                     <Lucide name="arrow-up-right" size={18} color="#EF4444" />
                     <Text style={[styles.actionButtonText, { color: '#EF4444' }]}>Retirar</Text>
@@ -118,6 +122,7 @@ const SavingCard = ({ account, onEdit, onDelete, onToggleCompound, onDeposit, on
 };
 
 export default function SavingsScreen() {
+    const { colors } = useTheme();
     const params = useLocalSearchParams();
     const headerHeight = useHeaderHeight();
     const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
@@ -255,10 +260,10 @@ export default function SavingsScreen() {
     };
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight }]}>
+        <View style={[styles.container, { paddingTop: headerHeight, backgroundColor: colors.background }]}>
             {loading && !refreshing ? (
                 <View style={styles.centerLoading}>
-                    <ActivityIndicator size="large" color="#4F46E5" />
+                    <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             ) : (
                 <>
@@ -267,7 +272,7 @@ export default function SavingsScreen() {
                         keyExtractor={(item) => item.id.toString()}
                         contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4F46E5']} />}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
                         renderItem={({ item }) => (
                             <SavingCard
                                 account={item}
@@ -280,21 +285,21 @@ export default function SavingsScreen() {
                         )}
                         ListEmptyComponent={
                             <View style={styles.emptyContainer}>
-                                <Lucide name="piggy-bank" size={48} color="#CBD5E1" />
-                                <Text style={styles.emptyText}>Sin cuentas de ahorro</Text>
-                                <Text style={styles.emptySubText}>Comienza a ahorrar para tu futuro.</Text>
+                                <Lucide name="piggy-bank" size={48} color={colors.textSecondary} />
+                                <Text style={[styles.emptyText, { color: colors.text }]}>Sin cuentas de ahorro</Text>
+                                <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>Comienza a ahorrar para tu futuro.</Text>
                             </View>
                         }
                     />
 
-                    <TouchableOpacity style={styles.fab} onPress={handleCreate}>
+                    <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={handleCreate}>
                         <Lucide name="plus" size={24} color="#FFF" />
                     </TouchableOpacity>
                 </>
             )}
 
             <SavingFormModal
-                visible={isSavingModalVisible.value}
+                visible={isSavingModalVisible.value || false}
                 onClose={closeSavingModal}
                 onSave={fetchSavings}
                 editingAccount={editingAccount}
@@ -302,11 +307,12 @@ export default function SavingsScreen() {
 
             {selectedAccountForTransfer && (
                 <TransferFormModal
-                    visible={isTransferModalVisible.value}
+                    visible={isTransferModalVisible.value || false}
                     onClose={closeTransferModal}
                     accounts={sourceAccounts} // Pasamos todas las cuentas para que elija origen/destino
                     selectedAccount={selectedAccountForTransfer} // Esta será el destino (deposit) o origen (transfer)
                     mode={transferMode}
+                    onSave={fetchSavings}
                 />
             )}
 

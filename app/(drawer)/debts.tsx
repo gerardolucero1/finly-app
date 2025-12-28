@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { useInput } from '@/hooks/useInput';
 import { Debt } from '@/models/debt'; // Asegúrate de que tu modelo coincida con el JSON
 import { DebtsService } from '@/services/debts';
@@ -25,45 +26,49 @@ const formatCurrency = (value: any) => {
 };
 
 // --- COMPONENTE: MODAL DE TABLA DE AMORTIZACIÓN ---
-const AmortizationModal = ({ visible, onClose, schedule, debtName }: any) => (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-        <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Tabla de Amortización</Text>
-                <Text style={styles.modalSubtitle}>{debtName}</Text>
-                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                    <Lucide name="x" size={24} color="#1E293B" />
-                </TouchableOpacity>
-            </View>
+const AmortizationModal = ({ visible, onClose, schedule, debtName }: any) => {
+    const { colors } = useTheme();
+    return (
+        <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+            <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                    <Text style={[styles.modalTitle, { color: colors.text }]}>Tabla de Amortización</Text>
+                    <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>{debtName}</Text>
+                    <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                        <Lucide name="x" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                </View>
 
-            {/* Encabezados de Tabla */}
-            <View style={styles.tableHeaderRow}>
-                <Text style={[styles.tableHeaderCell, { width: 40 }]}>#</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Pago</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Interés</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Capital</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1, textAlign: 'right' }]}>Balance</Text>
-            </View>
+                {/* Encabezados de Tabla */}
+                <View style={[styles.tableHeaderRow, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+                    <Text style={[styles.tableHeaderCell, { width: 40, color: colors.textSecondary }]}>#</Text>
+                    <Text style={[styles.tableHeaderCell, { flex: 1, color: colors.textSecondary }]}>Pago</Text>
+                    <Text style={[styles.tableHeaderCell, { flex: 1, color: colors.textSecondary }]}>Interés</Text>
+                    <Text style={[styles.tableHeaderCell, { flex: 1, color: colors.textSecondary }]}>Capital</Text>
+                    <Text style={[styles.tableHeaderCell, { flex: 1, textAlign: 'right', color: colors.textSecondary }]}>Balance</Text>
+                </View>
 
-            <FlatList
-                data={schedule}
-                keyExtractor={(item) => item.payment_number.toString()}
-                renderItem={({ item }) => (
-                    <View style={styles.tableRow}>
-                        <Text style={[styles.tableCell, { width: 40, color: '#64748B' }]}>{item.payment_number}</Text>
-                        <Text style={[styles.tableCell, { flex: 1, fontWeight: '600' }]}>{formatCurrency(item.payment)}</Text>
-                        <Text style={[styles.tableCell, { flex: 1, color: '#EF4444' }]}>{formatCurrency(item.interest)}</Text>
-                        <Text style={[styles.tableCell, { flex: 1, color: '#10B981' }]}>{formatCurrency(item.principal)}</Text>
-                        <Text style={[styles.tableCell, { flex: 1, textAlign: 'right', fontWeight: 'bold' }]}>{formatCurrency(item.balance)}</Text>
-                    </View>
-                )}
-            />
-        </View>
-    </Modal>
-);
+                <FlatList
+                    data={schedule}
+                    keyExtractor={(item) => item.payment_number.toString()}
+                    renderItem={({ item }) => (
+                        <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
+                            <Text style={[styles.tableCell, { width: 40, color: colors.textSecondary }]}>{item.payment_number}</Text>
+                            <Text style={[styles.tableCell, { flex: 1, fontWeight: '600', color: colors.text }]}>{formatCurrency(item.payment)}</Text>
+                            <Text style={[styles.tableCell, { flex: 1, color: '#EF4444' }]}>{formatCurrency(item.interest)}</Text>
+                            <Text style={[styles.tableCell, { flex: 1, color: '#10B981' }]}>{formatCurrency(item.principal)}</Text>
+                            <Text style={[styles.tableCell, { flex: 1, textAlign: 'right', fontWeight: 'bold', color: colors.text }]}>{formatCurrency(item.balance)}</Text>
+                        </View>
+                    )}
+                />
+            </View>
+        </Modal>
+    );
+};
 
 // --- COMPONENTE: TARJETA DE DEUDA ---
 const DebtCard = ({ debt, onEdit, onPay, onViewTable }: { debt: Debt, onEdit: (d: Debt) => void, onPay: (d: Debt) => void, onViewTable: (d: Debt) => void }) => {
+    const { colors, isDark } = useTheme();
     // Icono dinámico según nombre o tipo
     const getIcon = () => {
         const lowerName = debt.name.toLowerCase();
@@ -82,61 +87,61 @@ const DebtCard = ({ debt, onEdit, onPay, onViewTable }: { debt: Debt, onEdit: (d
     const isUrgent = daysLeft <= 3;
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
             {/* Header de Tarjeta */}
             <View style={styles.cardHeader}>
                 <View style={styles.cardIconTitle}>
-                    <View style={styles.iconContainer}>
-                        <Lucide name={getIcon()} size={24} color="#EF4444" />
+                    <View style={[styles.iconContainer, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2' }]}>
+                        <Lucide name={getIcon() as any} size={24} color="#EF4444" />
                     </View>
                     <View>
-                        <Text style={styles.cardTitle}>{debt.name}</Text>
-                        <Text style={styles.cardSubtitle}>
+                        <Text style={[styles.cardTitle, { color: colors.text }]}>{debt.name}</Text>
+                        <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
                             {debt.frequency === 'biweekly' ? 'Quincenal' : 'Mensual'}
                         </Text>
                     </View>
                 </View>
                 <TouchableOpacity onPress={() => onEdit(debt)} style={styles.editButton}>
-                    <Lucide name="pencil" size={18} color="#94A3B8" />
+                    <Lucide name="pencil" size={18} color={colors.textSecondary} />
                 </TouchableOpacity>
             </View>
 
             {/* Cuerpo Principal */}
             <View style={styles.cardBody}>
-                <Text style={styles.balanceLabel}>Deuda Restante</Text>
-                <Text style={styles.balanceValue}>{formatCurrency(debt.remaining_amount)}</Text>
+                <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Deuda Restante</Text>
+                <Text style={[styles.balanceValue, { color: colors.text }]}>{formatCurrency(debt.remaining_amount)}</Text>
 
                 {/* Barra de Progreso */}
-                <View style={styles.progressSection}>
+                <View style={[styles.progressSection, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC' }]}>
                     <View style={styles.progressRow}>
-                        <Text style={styles.progressText}>Progreso de pago</Text>
-                        <Text style={styles.progressPercentage}>{progress.toFixed(1)}%</Text>
+                        <Text style={[styles.progressText, { color: colors.textSecondary }]}>Progreso de pago</Text>
+                        <Text style={[styles.progressPercentage, { color: colors.text }]}>{progress.toFixed(1)}%</Text>
                     </View>
-                    <View style={styles.progressBarBg}>
+                    <View style={[styles.progressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]}>
                         <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
                     </View>
-                    <Text style={styles.remainingPayments}>Faltan {debt.remaining_payments} pagos</Text>
+                    <Text style={[styles.remainingPayments, { color: colors.textSecondary }]}>Faltan {debt.remaining_payments} pagos</Text>
                 </View>
             </View>
 
             {/* Footer con Info de Pago y Botones */}
-            <View style={styles.cardFooter}>
+            <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
                 <View style={styles.paymentInfo}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                        <Lucide name="calendar" size={14} color={isUrgent ? '#EF4444' : '#64748B'} />
-                        <Text style={[styles.dateText, isUrgent && styles.urgentText]}> {nextDate}</Text>
+                        <Lucide name="calendar" size={14} color={isUrgent ? '#EF4444' : colors.textSecondary} />
+                        <Text style={[styles.dateText, { color: colors.textSecondary }, isUrgent && styles.urgentText]}> {nextDate}</Text>
                     </View>
-                    <Text style={styles.paymentAmount}>{formatCurrency(debt.debt_payment)}</Text>
+                    <Text style={[styles.paymentAmount, { color: colors.text }]}>{formatCurrency(debt.debt_payment)}</Text>
                 </View>
 
                 <View style={styles.actionButtons}>
-                    <TouchableOpacity style={styles.tableBtn} onPress={() => onViewTable(debt)}>
-                        <Lucide name="table-2" size={20} color="#64748B" />
+                    <TouchableOpacity style={[styles.tableBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]} onPress={() => onViewTable(debt)}>
+                        <Lucide name="table-2" size={20} color={colors.textSecondary} />
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.payBtn} onPress={() => onPay(debt)}>
-                        <Text style={styles.payBtnText}>Pagar</Text>
-                        <Lucide name="arrow-right" size={16} color="#FFF" />
+                    <TouchableOpacity style={[styles.payBtn, { backgroundColor: isDark ? colors.card : '#1E293B', borderWidth: isDark ? 1 : 0, borderColor: colors.border }]} onPress={() => onPay(debt)}>
+                        <Text style={[styles.payBtnText, { color: isDark ? colors.text : '#FFF' }]}>Pagar</Text>
+                        <Lucide name="arrow-right" size={16} color={isDark ? colors.text : '#FFF'} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -146,6 +151,7 @@ const DebtCard = ({ debt, onEdit, onPay, onViewTable }: { debt: Debt, onEdit: (d
 
 // --- PANTALLA PRINCIPAL ---
 export default function DebtsScreen() {
+    const { colors } = useTheme();
     const params = useLocalSearchParams();
     const headerHeight = useHeaderHeight();
 
@@ -220,12 +226,12 @@ export default function DebtsScreen() {
     };
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight }]}>
+        <View style={[styles.container, { paddingTop: headerHeight, backgroundColor: colors.background }]}>
             {/* ... (Misma lógica de loading y FlatList que tenías) */}
 
             {loading && !refreshing ? (
                 <View style={styles.centerLoading}>
-                    <ActivityIndicator size="large" color="#4F46E5" />
+                    <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             ) : (
                 <>
@@ -234,7 +240,7 @@ export default function DebtsScreen() {
                         keyExtractor={(item) => item.id.toString()}
                         contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4F46E5']} />}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
                         renderItem={({ item }) => (
                             <DebtCard
                                 debt={item}
@@ -245,14 +251,14 @@ export default function DebtsScreen() {
                         )}
                         ListEmptyComponent={
                             <View style={styles.emptyContainer}>
-                                <Lucide name="thumbs-up" size={48} color="#CBD5E1" />
-                                <Text style={styles.emptyText}>¡Estás libre de deudas!</Text>
-                                <Text style={styles.emptySubText}>O quizás necesitas registrar una nueva.</Text>
+                                <Lucide name="thumbs-up" size={48} color={colors.textSecondary} />
+                                <Text style={[styles.emptyText, { color: colors.text }]}>¡Estás libre de deudas!</Text>
+                                <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>O quizás necesitas registrar una nueva.</Text>
                             </View>
                         }
                     />
 
-                    <TouchableOpacity style={styles.fab} onPress={handleCreate}>
+                    <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={handleCreate}>
                         <Lucide name="plus" size={24} color="#FFF" />
                     </TouchableOpacity>
                 </>

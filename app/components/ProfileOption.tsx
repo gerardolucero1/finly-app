@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -10,17 +11,28 @@ interface ProfileOptionProps {
 }
 
 export const ProfileOption: React.FC<ProfileOptionProps> = ({ icon, label, onPress, isDestructive = false }) => {
-    const textColor = isDestructive ? '#DC2626' : '#1E293B';
-    const iconColor = isDestructive ? '#DC2626' : '#4F46E5';
+    const { colors, isDark } = useTheme();
+
+    const textColor = isDestructive ? '#DC2626' : colors.text;
+    const iconColor = isDestructive ? '#DC2626' : colors.primary;
+
+    // Adjust background color for icon container based on theme
+    const iconContainerBg = isDestructive
+        ? (isDark ? 'rgba(220, 38, 38, 0.1)' : '#FEE2E2')
+        : (isDark ? 'rgba(79, 70, 229, 0.1)' : '#E0E7FF');
 
     return (
-        <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.6}>
-            <View style={[styles.iconContainer, { backgroundColor: isDestructive ? '#FEE2E2' : '#E0E7FF' }]}>
+        <TouchableOpacity
+            style={[styles.container, { backgroundColor: colors.card }]}
+            onPress={onPress}
+            activeOpacity={0.6}
+        >
+            <View style={[styles.iconContainer, { backgroundColor: iconContainerBg }]}>
                 <Lucide name={icon} size={20} color={iconColor} />
             </View>
             <Text style={[styles.label, { color: textColor }]}>{label}</Text>
             {!isDestructive && (
-                <Lucide name="chevron-right" size={20} color="#94A3B8" />
+                <Lucide name="chevron-right" size={20} color={colors.textSecondary} />
             )}
         </TouchableOpacity>
     );
@@ -30,7 +42,6 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF',
         paddingVertical: 12,
         paddingHorizontal: 16,
         borderRadius: 12,

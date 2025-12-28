@@ -1,5 +1,6 @@
 import { useCustomAlert } from '@/app/components/CustomAlert';
 import { FormField } from '@/app/components/FormField';
+import { useTheme } from '@/app/context/theme';
 import { useProfileStore } from '@/app/store';
 import { Profile } from '@/models/profile';
 import { ProfileService } from '@/services/profile';
@@ -32,6 +33,7 @@ const COUNTRY_CODES = [
 ];
 
 export default function EditProfileScreen() {
+    const { colors, isDark } = useTheme();
     const params = useLocalSearchParams();
     const profileFromStore = useProfileStore((state) => state.profile);
     const setProfileInStore = useProfileStore((state) => state.setProfile);
@@ -42,7 +44,7 @@ export default function EditProfileScreen() {
     }, [params.profile, profileFromStore]);
 
     if (!profile) {
-        return <Text>Cargando...</Text>;
+        return <Text style={{ color: colors.text }}>Cargando...</Text>;
     }
 
     // Parse existing phone number
@@ -127,25 +129,56 @@ export default function EditProfileScreen() {
         }
     };
 
+    // Dynamic styles for picker select
+    const pickerSelectStyles = StyleSheet.create({
+        inputIOS: {
+            fontSize: 16,
+            paddingVertical: 12,
+            paddingHorizontal: 15,
+            backgroundColor: colors.card,
+            borderRadius: 8,
+            color: colors.text,
+            fontFamily: 'Inter_400Regular',
+            paddingRight: 30,
+        },
+        inputAndroid: {
+            fontSize: 16,
+            paddingHorizontal: 15,
+            paddingVertical: 12,
+            backgroundColor: colors.card,
+            borderRadius: 8,
+            color: colors.text,
+            fontFamily: 'Inter_400Regular',
+            paddingRight: 30,
+        },
+        iconContainer: {
+            top: 15,
+            right: 15,
+        },
+    });
+
     return (
         <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <ScrollView
-                style={styles.container}
+                style={[styles.container, { backgroundColor: colors.background }]}
                 contentContainerStyle={[styles.contentContainer, { paddingTop: headerHeight, paddingBottom: 40 }]}
                 keyboardShouldPersistTaps="handled"
             >
                 {loading && (
-                    <View style={styles.refreshingContainer}>
-                        <ActivityIndicator size="small" color="#4F46E5" />
-                        <Text style={styles.refreshingText}>Actualizando perfil...</Text>
+                    <View style={[
+                        styles.refreshingContainer,
+                        { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : '#EEF2FF' }
+                    ]}>
+                        <ActivityIndicator size="small" color={colors.primary} />
+                        <Text style={[styles.refreshingText, { color: colors.primary }]}>Actualizando perfil...</Text>
                     </View>
                 )}
                 <View style={styles.header}>
-                    <Text style={styles.title}>Editar Perfil</Text>
-                    <Text style={styles.subtitle}>Actualiza tu información personal aquí.</Text>
+                    <Text style={[styles.title, { color: colors.text }]}>Editar Perfil</Text>
+                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Actualiza tu información personal aquí.</Text>
                 </View>
 
                 <View style={styles.form}>
@@ -174,9 +207,9 @@ export default function EditProfileScreen() {
 
                     {/* WhatsApp Phone Field */}
                     <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>WhatsApp</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>WhatsApp</Text>
                         <View style={styles.phoneContainer}>
-                            <View style={styles.countryPickerContainer}>
+                            <View style={[styles.countryPickerContainer, { backgroundColor: colors.card }]}>
                                 <RNPickerSelect
                                     value={countryCode}
                                     onValueChange={setCountryCode}
@@ -184,30 +217,31 @@ export default function EditProfileScreen() {
                                     placeholder={{}}
                                     style={pickerSelectStyles}
                                     useNativeAndroidPickerStyle={false}
-                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
+                                    darkTheme={isDark}
                                 />
                             </View>
-                            <View style={styles.phoneNumberContainer}>
+                            <View style={[styles.phoneNumberContainer, { backgroundColor: colors.card }]}>
                                 <TextInput
-                                    style={styles.phoneInput}
+                                    style={[styles.phoneInput, { color: colors.text }]}
                                     value={phoneNumber}
                                     onChangeText={setPhoneNumber}
                                     placeholder="Número"
                                     keyboardType="phone-pad"
-                                    placeholderTextColor="#94A3B8"
+                                    placeholderTextColor={colors.textSecondary}
                                 />
                             </View>
                         </View>
                         {errors.whatsapp_phone && <Text style={styles.errorText}>{errors.whatsapp_phone}</Text>}
-                        <Text style={styles.helperText}>
+                        <Text style={[styles.helperText, { color: colors.textSecondary }]}>
                             Ingresa tu número sin el código de país.
                         </Text>
                     </View>
 
                     {/* Timezone Picker */}
                     <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>Zona Horaria</Text>
-                        <View style={styles.pickerContainer}>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Zona Horaria</Text>
+                        <View style={[styles.pickerContainer, { backgroundColor: colors.card }]}>
                             <RNPickerSelect
                                 value={timezone}
                                 onValueChange={setTimezone}
@@ -227,51 +261,58 @@ export default function EditProfileScreen() {
                                 placeholder={{}}
                                 style={pickerSelectStyles}
                                 useNativeAndroidPickerStyle={false}
-                                Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
+                                darkTheme={isDark}
                             />
                         </View>
                         {errors.timezone && <Text style={styles.errorText}>{errors.timezone}</Text>}
                     </View>
 
                     {/* Preferencias Section */}
-                    <View style={styles.sectionDivider} />
-                    <Text style={styles.sectionTitle}>Preferencias</Text>
+                    <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Preferencias</Text>
 
                     {/* WhatsApp Notifications Toggle */}
-                    <View style={styles.switchContainer}>
+                    <View style={[styles.switchContainer, { backgroundColor: colors.card }]}>
                         <View style={styles.switchLeft}>
-                            <View style={styles.switchIconContainer}>
-                                <Lucide name="message-circle" size={20} color="#64748B" />
+                            <View style={[
+                                styles.switchIconContainer,
+                                { backgroundColor: isDark ? 'rgba(148, 163, 184, 0.1)' : '#F1F5F9' }
+                            ]}>
+                                <Lucide name="message-circle" size={20} color={colors.textSecondary} />
                             </View>
                             <View style={styles.switchTextContainer}>
-                                <Text style={styles.switchLabel}>Notificaciones de WhatsApp</Text>
-                                <Text style={styles.switchDescription}>Recibe alertas por WhatsApp</Text>
+                                <Text style={[styles.switchLabel, { color: colors.text }]}>Notificaciones de WhatsApp</Text>
+                                <Text style={[styles.switchDescription, { color: colors.textSecondary }]}>Recibe alertas por WhatsApp</Text>
                             </View>
                         </View>
                         <Switch
-                            trackColor={{ false: "#E2E8F0", true: "#C7D2FE" }}
-                            thumbColor={whatsappNotifications ? "#4F46E5" : "#f4f3f4"}
-                            ios_backgroundColor="#E2E8F0"
+                            trackColor={{ false: isDark ? "#334155" : "#E2E8F0", true: "#C7D2FE" }}
+                            thumbColor={whatsappNotifications ? colors.primary : "#f4f3f4"}
+                            ios_backgroundColor={isDark ? "#334155" : "#E2E8F0"}
                             onValueChange={setWhatsappNotifications}
                             value={whatsappNotifications}
                         />
                     </View>
 
                     {/* Daily Tips Toggle */}
-                    <View style={styles.switchContainer}>
+                    <View style={[styles.switchContainer, { backgroundColor: colors.card }]}>
                         <View style={styles.switchLeft}>
-                            <View style={styles.switchIconContainer}>
-                                <Lucide name="lightbulb" size={20} color="#64748B" />
+                            <View style={[
+                                styles.switchIconContainer,
+                                { backgroundColor: isDark ? 'rgba(148, 163, 184, 0.1)' : '#F1F5F9' }
+                            ]}>
+                                <Lucide name="lightbulb" size={20} color={colors.textSecondary} />
                             </View>
                             <View style={styles.switchTextContainer}>
-                                <Text style={styles.switchLabel}>Tips Diarios</Text>
-                                <Text style={styles.switchDescription}>Recibe consejos financieros diarios</Text>
+                                <Text style={[styles.switchLabel, { color: colors.text }]}>Tips Diarios</Text>
+                                <Text style={[styles.switchDescription, { color: colors.textSecondary }]}>Recibe consejos financieros diarios</Text>
                             </View>
                         </View>
                         <Switch
-                            trackColor={{ false: "#E2E8F0", true: "#C7D2FE" }}
-                            thumbColor={dailyTips ? "#4F46E5" : "#f4f3f4"}
-                            ios_backgroundColor="#E2E8F0"
+                            trackColor={{ false: isDark ? "#334155" : "#E2E8F0", true: "#C7D2FE" }}
+                            thumbColor={dailyTips ? colors.primary : "#f4f3f4"}
+                            ios_backgroundColor={isDark ? "#334155" : "#E2E8F0"}
                             onValueChange={setDailyTips}
                             value={dailyTips}
                         />
@@ -279,7 +320,11 @@ export default function EditProfileScreen() {
                 </View>
 
                 <TouchableOpacity
-                    style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+                    style={[
+                        styles.saveButton,
+                        { backgroundColor: colors.primary },
+                        loading && styles.saveButtonDisabled
+                    ]}
                     onPress={handleSave}
                     disabled={loading}
                 >
@@ -298,7 +343,6 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
     },
     contentContainer: {
         flexGrow: 1,
@@ -310,11 +354,9 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontFamily: 'Inter_700Bold',
-        color: '#1E293B',
     },
     subtitle: {
         fontSize: 16,
-        color: '#64748B',
         marginTop: 8,
         fontFamily: 'Inter_500Medium',
     },
@@ -327,11 +369,9 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontFamily: 'Inter_500Medium',
-        color: '#475569',
         marginBottom: 8,
     },
     pickerContainer: {
-        backgroundColor: '#F1F5F9',
         borderRadius: 8,
     },
     errorText: {
@@ -348,14 +388,12 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 16,
         fontFamily: 'Inter_500Medium',
-        color: '#1E293B',
         marginBottom: 16,
     },
     switchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 16,
         marginBottom: 12,
@@ -375,7 +413,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 10,
-        backgroundColor: '#F1F5F9',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -385,16 +422,13 @@ const styles = StyleSheet.create({
     switchLabel: {
         fontSize: 16,
         fontFamily: 'Inter_500Medium',
-        color: '#1E293B',
         marginBottom: 2,
     },
     switchDescription: {
         fontSize: 13,
         fontFamily: 'Inter_400Regular',
-        color: '#64748B',
     },
     saveButton: {
-        backgroundColor: '#4F46E5',
         borderRadius: 12,
         paddingVertical: 16,
         alignItems: 'center',
@@ -402,7 +436,7 @@ const styles = StyleSheet.create({
         marginTop: 24,
     },
     saveButtonDisabled: {
-        backgroundColor: '#A5B4FC',
+        opacity: 0.7,
     },
     saveButtonText: {
         color: '#FFFFFF',
@@ -415,13 +449,11 @@ const styles = StyleSheet.create({
     },
     countryPickerContainer: {
         flex: 0.4,
-        backgroundColor: '#F1F5F9',
         borderRadius: 8,
         justifyContent: 'center',
     },
     phoneNumberContainer: {
         flex: 0.6,
-        backgroundColor: '#F1F5F9',
         borderRadius: 8,
         justifyContent: 'center',
     },
@@ -429,7 +461,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         paddingVertical: 12,
         paddingHorizontal: 15,
-        color: '#1E293B',
         fontFamily: 'Inter_400Regular',
     },
     pickerIcon: {
@@ -438,7 +469,6 @@ const styles = StyleSheet.create({
     },
     helperText: {
         fontSize: 12,
-        color: '#94A3B8',
         marginTop: 6,
         fontFamily: 'Inter_400Regular',
     },
@@ -446,7 +476,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#EEF2FF',
         padding: 12,
         borderRadius: 8,
         marginBottom: 16,
@@ -454,34 +483,6 @@ const styles = StyleSheet.create({
     },
     refreshingText: {
         fontSize: 14,
-        color: '#4F46E5',
         fontFamily: 'Inter_500Medium',
-    },
-});
-
-const pickerSelectStyles = StyleSheet.create({
-    inputIOS: {
-        fontSize: 16,
-        paddingVertical: 12,
-        paddingHorizontal: 15,
-        backgroundColor: '#F1F5F9',
-        borderRadius: 8,
-        color: '#1E293B',
-        fontFamily: 'Inter_400Regular',
-        paddingRight: 30,
-    },
-    inputAndroid: {
-        fontSize: 16,
-        paddingHorizontal: 15,
-        paddingVertical: 12,
-        backgroundColor: '#F1F5F9',
-        borderRadius: 8,
-        color: '#1E293B',
-        fontFamily: 'Inter_400Regular',
-        paddingRight: 30,
-    },
-    iconContainer: {
-        top: 15,
-        right: 15,
     },
 });

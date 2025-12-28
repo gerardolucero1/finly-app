@@ -1,6 +1,7 @@
 import { useCustomAlert } from '@/app/components/CustomAlert';
 import { SubaccountFormModal } from '@/app/components/SubaccountFormModal';
 import { TransferFormModal } from '@/app/components/TransferFormModal';
+import { useTheme } from '@/app/context/theme';
 import { Account } from '@/models/account';
 import { AccountsService } from '@/services/accounts';
 import { SubaccountsService } from '@/services/subaccounts';
@@ -19,6 +20,7 @@ import {
 
 // --- COMPONENTE DE TARJETA DE APARTADO ---
 const SubaccountCard = ({ account, onEdit, onDelete, onTransfer }: { account: Account, onEdit: (acc: Account) => void, onDelete: (acc: Account) => void, onTransfer: (acc: Account) => void }) => {
+    const { colors, isDark } = useTheme();
     const formatCurrency = (value: number) => {
         return Number(value).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
     };
@@ -32,14 +34,14 @@ const SubaccountCard = ({ account, onEdit, onDelete, onTransfer }: { account: Ac
         : 0;
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
             <View style={styles.cardHeader}>
-                <View style={styles.iconContainer}>
-                    <Lucide name="wallet-cards" size={24} color="#8B5CF6" />
+                <View style={[styles.iconContainer, { backgroundColor: isDark ? 'rgba(139, 92, 246, 0.1)' : '#F3E8FF' }]}>
+                    <Lucide name="wallet-cards" size={24} color={isDark ? '#A78BFA' : "#8B5CF6"} />
                 </View>
                 <View style={styles.cardActions}>
                     <TouchableOpacity onPress={() => onEdit(account)} style={styles.actionIcon}>
-                        <Lucide name="pencil" size={18} color="#64748B" />
+                        <Lucide name="pencil" size={18} color={colors.textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => onDelete(account)} style={styles.actionIcon}>
                         <Lucide name="trash-2" size={18} color="#EF4444" />
@@ -47,13 +49,13 @@ const SubaccountCard = ({ account, onEdit, onDelete, onTransfer }: { account: Ac
                 </View>
             </View>
 
-            <Text style={styles.accountName}>{account.name}</Text>
-            <Text style={styles.accountBalance}>{formatCurrency(account.current_balance || 0)}</Text>
+            <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
+            <Text style={[styles.accountBalance, { color: colors.text }]}>{formatCurrency(Number(account.current_balance || 0))}</Text>
 
             {account.programmed_amount ? (
                 <View style={styles.goalContainer}>
                     <View style={styles.goalHeader}>
-                        <Text style={styles.goalText}>Cantidad programada: {formatCurrency(account.programmed_amount)}</Text>
+                        <Text style={[styles.goalText, { color: colors.textSecondary }]}>Cantidad programada: {formatCurrency(Number(account.programmed_amount))}</Text>
                         {/* <Text style={styles.goalPercent}>{Math.round(progress)}%</Text> */}
                     </View>
                     {/* <View style={styles.progressBarBg}>
@@ -61,13 +63,13 @@ const SubaccountCard = ({ account, onEdit, onDelete, onTransfer }: { account: Ac
                     </View> */}
                 </View>
             ) : (
-                <Text style={styles.noGoalText}>Sin meta definida</Text>
+                <Text style={[styles.noGoalText, { color: colors.textSecondary }]}>Sin meta definida</Text>
             )}
 
-            <View style={styles.cardFooter}>
+            <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
                 <TouchableOpacity style={styles.transferButton} onPress={() => onTransfer(account)}>
-                    <Lucide name="arrow-right-left" size={16} color="#8B5CF6" />
-                    <Text style={styles.transferButtonText}>Transferir</Text>
+                    <Lucide name="arrow-right-left" size={16} color={isDark ? '#A78BFA' : "#8B5CF6"} />
+                    <Text style={[styles.transferButtonText, { color: isDark ? '#A78BFA' : '#8B5CF6' }]}>Transferir</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -75,6 +77,7 @@ const SubaccountCard = ({ account, onEdit, onDelete, onTransfer }: { account: Ac
 };
 
 export default function SubaccountsScreen() {
+    const { colors } = useTheme();
     const headerHeight = useHeaderHeight();
     const { showAlert, hideAlert, AlertComponent } = useCustomAlert();
 
@@ -185,11 +188,11 @@ export default function SubaccountsScreen() {
     // --- RENDER ---
 
     if (loading && !refreshing) {
-        return <View style={styles.centerLoading}><ActivityIndicator size="large" color="#8B5CF6" /></View>;
+        return <View style={[styles.centerLoading, { paddingTop: headerHeight, backgroundColor: colors.background }]}><ActivityIndicator size="large" color={colors.primary} /></View>;
     }
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight }]}>
+        <View style={[styles.container, { paddingTop: headerHeight, backgroundColor: colors.background }]}>
             <FlatList
                 data={subaccounts}
                 keyExtractor={(item) => item.id.toString()}
@@ -202,18 +205,18 @@ export default function SubaccountsScreen() {
                     />
                 )}
                 contentContainerStyle={[styles.listContent]}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#8B5CF6']} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Lucide name="wallet-cards" size={48} color="#CBD5E1" />
-                        <Text style={styles.emptyText}>No tienes apartados creados.</Text>
-                        <Text style={styles.emptySubText}>Crea uno para organizar tu dinero.</Text>
+                        <Lucide name="wallet-cards" size={48} color={colors.textSecondary} />
+                        <Text style={[styles.emptyText, { color: colors.text }]}>No tienes apartados creados.</Text>
+                        <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>Crea uno para organizar tu dinero.</Text>
                     </View>
                 }
             />
 
             {/* FAB para crear (opcional, ya está en header) */}
-            <TouchableOpacity style={styles.fab} onPress={handleCreate}>
+            <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={handleCreate}>
                 <Lucide name="plus" size={24} color="#FFF" />
             </TouchableOpacity>
 
@@ -232,6 +235,7 @@ export default function SubaccountsScreen() {
                     accounts={destinationAccounts} // Pasamos todas las cuentas posibles destino
                     selectedAccount={selectedAccount} // Cuenta origen (subaccount)
                     mode="transfer" // Modo transferencia normal (Origen -> Destino)
+                    onSave={fetchData}
                 />
             )}
 

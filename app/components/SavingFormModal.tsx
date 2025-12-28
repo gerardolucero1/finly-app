@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Account } from '@/models/account';
 import { SavingsService } from '@/services/savings';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -59,12 +60,12 @@ const mapAccountToFormState = (account: Account): SavingFormState => ({
     name: account.name,
     type: (account.type as 'savings' | 'investment') || 'savings',
     bank: account.bank || '',
-    current_balance: account.current_balance?.toString() || '',
+    current_balance: account.current_balance ? String(account.current_balance) : '',
     interest_enabled: Boolean(account.interest_enabled),
-    yield_rate: account.yield_rate?.toString() || '',
-    yield_period: (account.yield_period as 'daily' | 'monthly' | 'yearly') || 'yearly',
-    interest_type: (account.interest_type as 'compound' | 'simple') || 'compound',
-    goal_amount: account.goal_amount?.toString() || '',
+    yield_rate: account.yield_rate ? String(account.yield_rate) : '',
+    yield_period: (account.yield_period as any) || 'yearly',
+    interest_type: (account.interest_type as any) || 'compound',
+    goal_amount: account.goal_amount ? String(account.goal_amount) : '',
     goal_due_date: account.goal_due_date ? new Date(account.goal_due_date) : null,
 });
 
@@ -77,6 +78,21 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
     const { showPlanLimit, PlanLimitComponent, hidePlanLimit } = usePlanLimitModal();
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { colors, isDark } = useTheme();
+
+    const dynamicPickerStyles = {
+        inputIOS: {
+            ...pickerSelectStyles.inputIOS,
+            color: colors.text,
+            backgroundColor: colors.background,
+        },
+        inputAndroid: {
+            ...pickerSelectStyles.inputAndroid,
+            color: colors.text,
+            backgroundColor: colors.background,
+        },
+        placeholder: { color: colors.textSecondary },
+    };
 
     useEffect(() => {
         if (visible) {
@@ -157,13 +173,13 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
 
-                <View style={styles.modalContent}>
-                    <View style={styles.header}>
-                        <Text style={styles.headerTitle}>
+                <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.headerTitle, { color: colors.text }]}>
                             {editingAccount ? 'Editar Cuenta' : 'Nueva Cuenta'}
                         </Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Lucide name="x" size={24} color="#64748B" />
+                            <Lucide name="x" size={24} color={colors.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -181,10 +197,11 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                         >
 
                             {/* Nombre */}
-                            <Text style={styles.label}>Nombre de la cuenta <Text style={styles.required}>*</Text></Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Nombre de la cuenta <Text style={styles.required}>*</Text></Text>
                             <TextInput
-                                style={[styles.input, errors.name && styles.inputError]}
+                                style={[styles.input, errors.name && styles.inputError, { backgroundColor: colors.background, color: colors.text }]}
                                 placeholder="Ej: Inversión Bolsa"
+                                placeholderTextColor={colors.textSecondary}
                                 value={form.name}
                                 onChangeText={(value) => handleInputChange('name', value)}
                             />
@@ -193,8 +210,8 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                             {/* Tipo y Banco */}
                             <View style={styles.row}>
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Tipo <Text style={styles.required}>*</Text></Text>
-                                    <View style={styles.inputContainer}>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Tipo <Text style={styles.required}>*</Text></Text>
+                                    <View style={[styles.inputContainer, { backgroundColor: colors.background }]}>
                                         <RNPickerSelect
                                             value={form.type}
                                             onValueChange={(value) => handleInputChange('type', value)}
@@ -203,17 +220,18 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                                                 { label: "Inversión", value: "investment" },
                                             ]}
                                             placeholder={{}}
-                                            style={pickerSelectStyles}
+                                            style={dynamicPickerStyles}
                                             useNativeAndroidPickerStyle={false}
-                                            Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                            Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
                                         />
                                     </View>
                                 </View>
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Institución/Banco</Text>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Institución/Banco</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
                                         placeholder="Ej: BBVA, GBM..."
+                                        placeholderTextColor={colors.textSecondary}
                                         value={form.bank}
                                         onChangeText={(value) => handleInputChange('bank', value)}
                                     />
@@ -221,12 +239,13 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                             </View>
 
                             {/* Saldo Actual */}
-                            <Text style={styles.label}>Saldo Actual <Text style={styles.required}>*</Text></Text>
-                            <View style={styles.currencyInputContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Saldo Actual <Text style={styles.required}>*</Text></Text>
+                            <View style={[styles.currencyInputContainer, { backgroundColor: colors.background }]}>
+                                <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                                 <TextInput
-                                    style={styles.currencyInput}
+                                    style={[styles.currencyInput, { color: colors.text }]}
                                     placeholder="0.00"
+                                    placeholderTextColor={colors.textSecondary}
                                     keyboardType="decimal-pad"
                                     value={form.current_balance}
                                     onChangeText={(value) => handleInputChange('current_balance', value)}
@@ -235,33 +254,34 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                             {errors.current_balance && <Text style={styles.errorText}>{errors.current_balance}</Text>}
 
                             {/* Interés Compuesto */}
-                            <View style={styles.sectionDivider} />
+                            <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
                             <TouchableOpacity
                                 style={styles.checkboxContainer}
                                 onPress={() => handleInputChange('interest_enabled', !form.interest_enabled)}
                             >
-                                <View style={[styles.checkbox, form.interest_enabled && styles.checkboxChecked]}>
+                                <View style={[styles.checkbox, { borderColor: colors.border }, form.interest_enabled && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
                                     {form.interest_enabled && <Lucide name="check" size={12} color="#FFF" />}
                                 </View>
-                                <Text style={styles.checkboxLabel}>Habilitar Interés / Rendimientos</Text>
+                                <Text style={[styles.checkboxLabel, { color: colors.text }]}>Habilitar Interés / Rendimientos</Text>
                             </TouchableOpacity>
 
                             {form.interest_enabled && (
-                                <View style={styles.interestSection}>
+                                <View style={[styles.interestSection, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', borderColor: colors.border }]}>
                                     <View style={styles.row}>
                                         <View style={styles.col}>
-                                            <Text style={styles.label}>Tasa (%)</Text>
+                                            <Text style={[styles.label, { color: colors.textSecondary }]}>Tasa (%)</Text>
                                             <TextInput
-                                                style={styles.input}
+                                                style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
                                                 placeholder="Ej: 10.5"
+                                                placeholderTextColor={colors.textSecondary}
                                                 keyboardType="decimal-pad"
                                                 value={form.yield_rate}
                                                 onChangeText={(value) => handleInputChange('yield_rate', value)}
                                             />
                                         </View>
                                         <View style={styles.col}>
-                                            <Text style={styles.label}>Periodo</Text>
-                                            <View style={styles.inputContainer}>
+                                            <Text style={[styles.label, { color: colors.textSecondary }]}>Periodo</Text>
+                                            <View style={[styles.inputContainer, { backgroundColor: colors.background }]}>
                                                 <RNPickerSelect
                                                     value={form.yield_period}
                                                     onValueChange={(value) => handleInputChange('yield_period', value)}
@@ -271,27 +291,29 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                                                         { label: "Anual", value: "yearly" },
                                                     ]}
                                                     placeholder={{}}
-                                                    style={pickerSelectStyles}
+                                                    style={dynamicPickerStyles}
                                                     useNativeAndroidPickerStyle={false}
-                                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                                    Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
                                                 />
                                             </View>
                                         </View>
                                     </View>
-                                    <Text style={styles.label}>Tipo de Interés</Text>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Tipo de Interés</Text>
                                     <View style={styles.typeSelectorContainer}>
                                         {['compound', 'simple'].map((type) => (
                                             <TouchableOpacity
                                                 key={type}
                                                 style={[
                                                     styles.typeButton,
-                                                    form.interest_type === type && styles.typeButtonSelected
+                                                    { backgroundColor: colors.background, borderColor: colors.border },
+                                                    form.interest_type === type && { borderColor: colors.primary, backgroundColor: isDark ? 'rgba(99, 102, 241, 0.2)' : '#EEF2FF' }
                                                 ]}
-                                                onPress={() => handleInputChange('interest_type', type)}
+                                                onPress={() => handleInputChange('interest_type', type as any)}
                                             >
                                                 <Text style={[
                                                     styles.typeButtonText,
-                                                    form.interest_type === type && styles.typeButtonTextSelected
+                                                    { color: colors.textSecondary },
+                                                    form.interest_type === type && { color: colors.primary, fontFamily: 'Inter_700Bold' }
                                                 ]}>
                                                     {type === 'compound' ? 'Compuesto' : 'Simple'}
                                                 </Text>
@@ -302,27 +324,28 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                             )}
 
                             {/* Metas (Opcional) */}
-                            <View style={styles.sectionDivider} />
-                            <Text style={styles.sectionTitle}>Meta de Ahorro (Opcional)</Text>
+                            <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Meta de Ahorro (Opcional)</Text>
 
                             <View style={styles.row}>
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Monto Objetivo</Text>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Monto Objetivo</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
                                         placeholder="0.00"
+                                        placeholderTextColor={colors.textSecondary}
                                         keyboardType="decimal-pad"
                                         value={form.goal_amount}
                                         onChangeText={(value) => handleInputChange('goal_amount', value)}
                                     />
                                 </View>
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Fecha Objetivo</Text>
-                                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                                        <Text style={styles.datePickerText}>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha Objetivo</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.datePickerButton, { backgroundColor: colors.background }]}>
+                                        <Text style={[styles.datePickerText, { color: colors.text }]}>
                                             {form.goal_due_date ? form.goal_due_date.toLocaleDateString() : 'Seleccionar'}
                                         </Text>
-                                        <Lucide name="calendar" size={18} color="#64748B" />
+                                        <Lucide name="calendar" size={18} color={colors.textSecondary} />
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -330,11 +353,15 @@ export const SavingFormModal = ({ visible, onClose, onSave, editingAccount }: Sa
                         </ScrollView>
 
                         {/* Footer */}
-                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10, borderTopColor: colors.border }]}>
+                            <TouchableOpacity
+                                style={[styles.cancelButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                onPress={onClose}
+                                disabled={loading}
+                            >
+                                <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancelar</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={loading}>
                                 {loading ? (
                                     <ActivityIndicator color="#FFF" size="small" />
                                 ) : (

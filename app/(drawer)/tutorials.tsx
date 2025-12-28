@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Stack } from 'expo-router';
@@ -12,34 +13,39 @@ const tutorials = [
     { id: '5', title: 'Tips para ahorrar más', duration: '3 min', icon: 'trending-up' },
 ];
 
-const TutorialItem = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.card}>
-        <View style={styles.iconContainer}>
-            <Lucide name={item.icon as any} size={24} color="#4F46E5" />
-        </View>
-        <View style={styles.textContainer}>
-            <Text style={styles.title}>{item.title}</Text>
-            <View style={styles.metaContainer}>
-                <Lucide name="clock" size={12} color="#94A3B8" />
-                <Text style={styles.duration}>{item.duration}</Text>
+const TutorialItem = ({ item }: { item: any }) => {
+    const { colors, isDark } = useTheme();
+
+    return (
+        <TouchableOpacity style={[styles.card, { backgroundColor: colors.card, shadowOpacity: isDark ? 0.05 : 0.05 }]}>
+            <View style={[styles.iconContainer, { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.2)' : '#EEF2FF' }]}>
+                <Lucide name={item.icon as any} size={24} color="#4F46E5" />
             </View>
-        </View>
-        <Lucide name={"play-circle" as any} size={24} color="#CBD5E1" />
-    </TouchableOpacity>
-);
+            <View style={styles.textContainer}>
+                <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+                <View style={styles.metaContainer}>
+                    <Lucide name="clock" size={12} color={colors.textSecondary} />
+                    <Text style={[styles.duration, { color: colors.textSecondary }]}>{item.duration}</Text>
+                </View>
+            </View>
+            <Lucide name={"play-circle" as any} size={24} color={isDark ? colors.border : "#CBD5E1"} />
+        </TouchableOpacity>
+    );
+};
 
 export default function TutorialsScreen() {
     const headerHeight = useHeaderHeight();
+    const { colors } = useTheme();
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight }]}>
+        <View style={[styles.container, { paddingTop: headerHeight, backgroundColor: colors.background }]}>
             <Stack.Screen options={{
                 headerShown: true,
                 title: 'Tutoriales',
-                headerTitleStyle: { fontFamily: 'Inter_700Bold', color: '#1E293B' },
+                headerTitleStyle: { fontFamily: 'Inter_700Bold', color: colors.text },
                 headerTintColor: '#4F46E5',
                 headerShadowVisible: false,
-                headerStyle: { backgroundColor: '#F8FAFC' },
+                headerStyle: { backgroundColor: colors.background },
             }} />
 
             <FlatList
@@ -48,7 +54,7 @@ export default function TutorialsScreen() {
                 renderItem={({ item }) => <TutorialItem item={item} />}
                 contentContainerStyle={styles.list}
                 ListHeaderComponent={
-                    <Text style={styles.headerText}>
+                    <Text style={[styles.headerText, { color: colors.textSecondary }]}>
                         Aprende a sacar el máximo provecho de Finly con estos videos rápidos.
                     </Text>
                 }
@@ -58,17 +64,15 @@ export default function TutorialsScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F8FAFC' },
+    container: { flex: 1 },
     list: { padding: 20 },
     headerText: {
         fontSize: 14,
         fontFamily: 'Inter_400Regular',
-        color: '#64748B',
         marginBottom: 20,
         lineHeight: 20,
     },
     card: {
-        backgroundColor: '#FFF',
         borderRadius: 16,
         padding: 16,
         marginBottom: 12,
@@ -76,7 +80,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
         shadowRadius: 4,
         elevation: 2,
     },
@@ -95,7 +98,6 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 16,
         fontFamily: 'Inter_500Medium',
-        color: '#1E293B',
         marginBottom: 4,
     },
     metaContainer: {
@@ -106,6 +108,5 @@ const styles = StyleSheet.create({
     duration: {
         fontSize: 12,
         fontFamily: 'Inter_500Medium',
-        color: '#94A3B8',
     },
 });

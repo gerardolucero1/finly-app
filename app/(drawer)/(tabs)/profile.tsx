@@ -2,6 +2,7 @@
 import { useCustomAlert } from '@/app/components/CustomAlert';
 import { ProfileOption } from '@/app/components/ProfileOption'; // Importa el componente que creamos
 import { useAuth } from '@/app/context/auth';
+import { useTheme } from '@/app/context/theme';
 import { useProfileStore } from '@/app/store';
 import { PLANS } from '@/constants/plans';
 import { ProfileService } from '@/services/profile';
@@ -132,9 +133,11 @@ export default function ProfileScreen() {
         return plan?.plan_name || 'Free';
     };
 
+    const { colors, isDark } = useTheme();
+
     return (
         <ScrollView
-            style={styles.container}
+            style={[styles.container, { backgroundColor: colors.background }]}
             contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 40 }}
             showsVerticalScrollIndicator={false}
         >
@@ -143,20 +146,26 @@ export default function ProfileScreen() {
             {profile && (
                 <View style={styles.header}>
                     <View style={styles.avatarContainer}>
-                        <Image source={{ uri: getAvatarUrl(profile.profile_photo_url) }} style={styles.avatar} />
-                        <TouchableOpacity style={styles.editAvatarButton} onPress={() => handlePickImage()}>
+                        <Image
+                            source={{ uri: getAvatarUrl(profile.profile_photo_url) }}
+                            style={[styles.avatar, { borderColor: colors.background }]}
+                        />
+                        <TouchableOpacity
+                            style={[styles.editAvatarButton, { borderColor: colors.background }]}
+                            onPress={() => handlePickImage()}
+                        >
                             <Lucide name="camera" size={16} color="#FFFFFF" />
                         </TouchableOpacity>
                     </View>
-                    <Text style={styles.userName}>{profile.name}</Text>
-                    <Text style={styles.userEmail}>{profile.email}</Text>
+                    <Text style={[styles.userName, { color: colors.text }]}>{profile.name}</Text>
+                    <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{profile.email}</Text>
                 </View>
             )}
 
 
             {/* --- Sección de Información y Configuración --- */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Tu Información</Text>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Tu Información</Text>
                 <ProfileOption icon="user" label="Editar Perfil" onPress={handleEditProfile} />
                 <ProfileOption icon="lock" label="Cambiar Contraseña" onPress={handleChangePassword} />
             </View>
@@ -164,13 +173,26 @@ export default function ProfileScreen() {
             {/* --- Sección de Suscripción --- */}
             {profile && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Plan</Text>
-                    <View style={styles.subscriptionCard}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Plan</Text>
+                    <View style={[
+                        styles.subscriptionCard,
+                        { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : '#E0E7FF' }
+                    ]}>
                         <View>
-                            <Text style={styles.subscriptionPlan}>{getPlanName().toUpperCase()}</Text>
-                            <Text style={styles.subscriptionStatus}>{profile.subscription?.stripe_status === 'active' ? 'Activa' : 'Inactiva'}</Text>
+                            <Text style={[
+                                styles.subscriptionPlan,
+                                { color: isDark ? colors.primary : '#4338CA' }
+                            ]}>
+                                {getPlanName().toUpperCase()}
+                            </Text>
+                            <Text style={[
+                                styles.subscriptionStatus,
+                                { color: colors.primary }
+                            ]}>
+                                {profile.subscription?.stripe_status === 'active' ? 'Activa' : 'Inactiva'}
+                            </Text>
                         </View>
-                        <Lucide name="gem" size={32} color="#4F46E5" />
+                        <Lucide name="gem" size={32} color={colors.primary} />
                     </View>
                     <ProfileOption icon="settings" label="Gestionar Cuenta" onPress={handleEditSuscription} />
                 </View>
@@ -178,7 +200,7 @@ export default function ProfileScreen() {
 
             {/* --- Sección de Preferencias --- */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Preferencias</Text>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Preferencias</Text>
                 <ProfileOption icon="bell" label="Notificaciones" onPress={handleNotifications} />
                 <ProfileOption icon="sun-moon" label="Apariencia" onPress={handleAppearance} />
             </View>
@@ -196,7 +218,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
     },
     header: {
         alignItems: 'center',
@@ -212,7 +233,6 @@ const styles = StyleSheet.create({
         height: 100,
         borderRadius: 50,
         borderWidth: 3,
-        borderColor: '#FFFFFF',
     },
     editAvatarButton: {
         position: 'absolute',
@@ -222,16 +242,13 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         padding: 6,
         borderWidth: 2,
-        borderColor: '#FFFFFF',
     },
     userName: {
         fontSize: 22,
         fontFamily: 'Inter_700Bold',
-        color: '#1E293B',
     },
     userEmail: {
         fontSize: 16,
-        color: '#64748B',
         marginTop: 4,
         fontFamily: 'Inter_400Regular',
     },
@@ -242,7 +259,6 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 14,
         fontFamily: 'Inter_500Medium',
-        color: '#94A3B8',
         textTransform: 'uppercase',
         marginBottom: 12,
         paddingHorizontal: 4,
@@ -251,7 +267,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#E0E7FF',
         padding: 20,
         borderRadius: 16,
         marginBottom: 10,
@@ -259,11 +274,9 @@ const styles = StyleSheet.create({
     subscriptionPlan: {
         fontSize: 18,
         fontFamily: 'Inter_700Bold',
-        color: '#4338CA',
     },
     subscriptionStatus: {
         fontSize: 14,
-        color: '#4F46E5',
         marginTop: 2,
         fontFamily: 'Inter_400Regular',
     },

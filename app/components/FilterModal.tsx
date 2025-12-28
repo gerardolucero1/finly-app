@@ -1,5 +1,6 @@
 // app/components/FilterModal.tsx
 
+import { useTheme } from '@/app/context/theme';
 import { useInput } from '@/hooks/useInput';
 import { Account } from '@/models/account';
 import { Category } from '@/models/category';
@@ -33,6 +34,7 @@ interface FilterModalProps {
 
 export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onApply, currentFilters }) => {
     const [localFilters, setLocalFilters] = useState<TransactionFilters>({});
+    const { colors, isDark } = useTheme();
 
     // Estado para los datos de los selectores
     const [accounts, setAccounts] = useState<{ label: string; value: number }[]>([]);
@@ -146,9 +148,20 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
     };
 
     const pickerSelectStyles = StyleSheet.create({
-        inputIOS: styles.pickerInput,
-        inputAndroid: styles.pickerInput,
+        inputIOS: {
+            ...styles.pickerInput,
+            backgroundColor: colors.background,
+            borderColor: colors.border,
+            color: colors.text,
+        },
+        inputAndroid: {
+            ...styles.pickerInput,
+            backgroundColor: colors.background,
+            borderColor: colors.border,
+            color: colors.text,
+        },
         iconContainer: { top: 18, right: 15 },
+        placeholder: { color: colors.textSecondary },
     });
 
     const categoryItems = all_categories.value.map(acc => ({ label: acc.name, value: acc.id }));
@@ -160,25 +173,32 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
             <TouchableWithoutFeedback onPress={onClose}>
                 <View style={styles.modalContainer}>
                     <TouchableWithoutFeedback>
-                        <View style={styles.modalContent}>
+                        <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
                             <View style={styles.header}>
-                                <Text style={styles.title}>Filtros</Text>
+                                <Text style={[styles.title, { color: colors.text }]}>Filtros</Text>
                                 <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                                    <Lucide name="x" size={24} color="#64748B" />
+                                    <Lucide name="x" size={24} color={colors.textSecondary} />
                                 </TouchableOpacity>
                             </View>
 
                             <ScrollView showsVerticalScrollIndicator={false}>
                                 {/* Selector de Tipo */}
-                                <Text style={styles.label}>Tipo de movimiento</Text>
-                                <View style={styles.segmentContainer}>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Tipo de movimiento</Text>
+                                <View style={[styles.segmentContainer, { backgroundColor: colors.background }]}>
                                     {['income', 'expense'].map((register_type) => (
                                         <TouchableOpacity
                                             key={register_type}
-                                            style={[styles.segmentButton, localFilters.register_type === register_type && styles.segmentActive]}
+                                            style={[
+                                                styles.segmentButton,
+                                                localFilters.register_type === register_type && { backgroundColor: colors.card, shadowColor: isDark ? 'transparent' : '#000' }
+                                            ]}
                                             onPress={() => updateFilter('register_type', localFilters.register_type === register_type ? null : register_type)}
                                         >
-                                            <Text style={[styles.segmentText, localFilters.register_type === register_type && styles.segmentActiveText]}>
+                                            <Text style={[
+                                                styles.segmentText,
+                                                { color: colors.textSecondary },
+                                                localFilters.register_type === register_type && { color: colors.primary }
+                                            ]}>
                                                 {register_type === 'income' ? 'Ingreso' : 'Gasto'}
                                             </Text>
                                         </TouchableOpacity>
@@ -186,7 +206,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                                 </View>
 
                                 {/* Selector de Cuenta */}
-                                <Text style={styles.label}>Cuenta</Text>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Cuenta</Text>
                                 <RNPickerSelect
                                     onValueChange={(value) => updateFilter('account_id', value)}
                                     items={accounts}
@@ -194,7 +214,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                                     placeholder={{ label: 'Todas las cuentas', value: null }}
                                     style={pickerSelectStyles}
                                     useNativeAndroidPickerStyle={false}
-                                    Icon={() => <Lucide name="chevron-down" size={20} color="#94A3B8" />}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
                                 />
 
                                 {/* Selector de Categoría (Solo si es un gasto) */}
@@ -225,15 +245,22 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                                 )}
 
                                 {/* Selector de Scope (Etiqueta) */}
-                                <Text style={styles.label}>Etiqueta</Text>
-                                <View style={styles.segmentContainer}>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Etiqueta</Text>
+                                <View style={[styles.segmentContainer, { backgroundColor: colors.background }]}>
                                     {['personal', 'business'].map((scopeType) => (
                                         <TouchableOpacity
                                             key={scopeType}
-                                            style={[styles.segmentButton, localFilters.scope === scopeType && styles.segmentActive]}
+                                            style={[
+                                                styles.segmentButton,
+                                                localFilters.scope === scopeType && { backgroundColor: colors.card, shadowColor: isDark ? 'transparent' : '#000' }
+                                            ]}
                                             onPress={() => updateFilter('scope', localFilters.scope === scopeType ? null : scopeType)}
                                         >
-                                            <Text style={[styles.segmentText, localFilters.scope === scopeType && styles.segmentActiveText]}>
+                                            <Text style={[
+                                                styles.segmentText,
+                                                { color: colors.textSecondary },
+                                                localFilters.scope === scopeType && { color: colors.primary }
+                                            ]}>
                                                 {scopeType === 'personal' ? 'Personal' : 'Negocio'}
                                             </Text>
                                         </TouchableOpacity>
@@ -253,20 +280,21 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                                 />
 
                                 {/* Selector de Fecha con Toggle */}
-                                <Text style={styles.label}>Filtro de Fechas</Text>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Filtro de Fechas</Text>
 
                                 {/* Toggle para modo de fecha */}
-                                <View style={styles.modeSelector}>
+                                <View style={[styles.modeSelector, { backgroundColor: colors.background }]}>
                                     <TouchableOpacity
                                         style={[
                                             styles.modeButton,
-                                            dateMode === 'single' && styles.modeButtonActive
+                                            dateMode === 'single' && { backgroundColor: colors.card, shadowColor: isDark ? 'transparent' : '#000' }
                                         ]}
                                         onPress={() => handleDateModeChange('single')}
                                     >
                                         <Text style={[
                                             styles.modeButtonText,
-                                            dateMode === 'single' && styles.modeButtonTextActive
+                                            { color: colors.textSecondary },
+                                            dateMode === 'single' && { color: colors.text }
                                         ]}>
                                             Fecha específica
                                         </Text>
@@ -274,13 +302,14 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                                     <TouchableOpacity
                                         style={[
                                             styles.modeButton,
-                                            dateMode === 'range' && styles.modeButtonActive
+                                            dateMode === 'range' && { backgroundColor: colors.card, shadowColor: isDark ? 'transparent' : '#000' }
                                         ]}
                                         onPress={() => handleDateModeChange('range')}
                                     >
                                         <Text style={[
                                             styles.modeButtonText,
-                                            dateMode === 'range' && styles.modeButtonTextActive
+                                            { color: colors.textSecondary },
+                                            dateMode === 'range' && { color: colors.text }
                                         ]}>
                                             Rango de fechas
                                         </Text>
@@ -291,14 +320,14 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                                 {dateMode === 'single' ? (
                                     // Modo fecha única
                                     <TouchableOpacity
-                                        style={styles.singleDateCard}
+                                        style={[styles.singleDateCard, { backgroundColor: colors.card, borderColor: colors.primary }]}
                                         onPress={() => setShowStartDatePicker(true)}
                                     >
                                         <View style={styles.dateCardHeader}>
-                                            <Lucide name="calendar" size={20} color="#3B82F6" />
-                                            <Text style={styles.dateCardLabel}>Fecha seleccionada</Text>
+                                            <Lucide name="calendar" size={20} color={colors.primary} />
+                                            <Text style={[styles.dateCardLabel, { color: colors.textSecondary }]}>Fecha seleccionada</Text>
                                         </View>
-                                        <Text style={styles.dateCardValue}>
+                                        <Text style={[styles.dateCardValue, { color: colors.text }]}>
                                             {formatDateForDisplay(localFilters.start_date)}
                                         </Text>
                                     </TouchableOpacity>
@@ -306,31 +335,31 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                                     // Modo rango de fechas
                                     <View style={styles.dateRangeWrapper}>
                                         <TouchableOpacity
-                                            style={styles.dateCard}
+                                            style={[styles.dateCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                                             onPress={() => setShowStartDatePicker(true)}
                                         >
                                             <View style={styles.dateCardHeader}>
-                                                <Lucide name="calendar" size={18} color="#3B82F6" />
-                                                <Text style={styles.dateCardLabel}>Desde</Text>
+                                                <Lucide name="calendar" size={18} color={colors.primary} />
+                                                <Text style={[styles.dateCardLabel, { color: colors.textSecondary }]}>Desde</Text>
                                             </View>
-                                            <Text style={styles.dateCardValue}>
+                                            <Text style={[styles.dateCardValue, { color: colors.text }]}>
                                                 {formatDateForDisplay(localFilters.start_date)}
                                             </Text>
                                         </TouchableOpacity>
 
-                                        <View style={styles.arrowContainer}>
-                                            <Lucide name="arrow-right" size={20} color="#94A3B8" />
+                                        <View style={[styles.arrowContainer, { backgroundColor: colors.background }]}>
+                                            <Lucide name="arrow-right" size={20} color={colors.textSecondary} />
                                         </View>
 
                                         <TouchableOpacity
-                                            style={styles.dateCard}
+                                            style={[styles.dateCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                                             onPress={() => setShowEndDatePicker(true)}
                                         >
                                             <View style={styles.dateCardHeader}>
-                                                <Lucide name="calendar" size={18} color="#3B82F6" />
-                                                <Text style={styles.dateCardLabel}>Hasta</Text>
+                                                <Lucide name="calendar" size={18} color={colors.primary} />
+                                                <Text style={[styles.dateCardLabel, { color: colors.textSecondary }]}>Hasta</Text>
                                             </View>
-                                            <Text style={styles.dateCardValue}>
+                                            <Text style={[styles.dateCardValue, { color: colors.text }]}>
                                                 {formatDateForDisplay(localFilters.end_date)}
                                             </Text>
                                         </TouchableOpacity>
@@ -339,11 +368,11 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onAp
                             </ScrollView>
 
                             {/* Footer */}
-                            <View style={styles.footer}>
-                                <TouchableOpacity style={styles.cancelButton} onPress={handleClear}>
-                                    <Text style={styles.cancelButtonText}>Limpiar</Text>
+                            <View style={[styles.footer, { borderTopColor: colors.border }]}>
+                                <TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={handleClear}>
+                                    <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Limpiar</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.saveButton} onPress={handleApply}>
+                                <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleApply}>
                                     <Lucide name="save" size={18} color="#FFF" />
                                     <Text style={styles.saveButtonText}>Aplicar</Text>
                                 </TouchableOpacity>

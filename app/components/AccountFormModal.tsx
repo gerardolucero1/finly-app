@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { useUserFeatures } from '@/hooks/useUserFeatures';
 import { Account } from '@/models/account';
 import { AccountsService } from '@/services/accounts';
@@ -63,7 +64,7 @@ interface AccountFormModalProps {
 }
 
 const mapAccountToFormState = (acc: Account): FormState => ({
-    type: acc.type,
+    type: acc.type as any,
     name: acc.name,
     number: acc.number ?? '',
     expiry_date: acc.expiry_date ? new Date(acc.expiry_date) : new Date(),
@@ -79,6 +80,7 @@ const mapAccountToFormState = (acc: Account): FormState => ({
 });
 
 export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: AccountFormModalProps) => {
+    const { colors, isDark } = useTheme();
     const [form, setForm] = useState<FormState>(
         editingAccount ? mapAccountToFormState(editingAccount) : initialFormState
     );
@@ -196,13 +198,13 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
 
-                <View style={styles.modalContent}>
-                    <View style={styles.header}>
-                        <Text style={styles.headerTitle}>
+                <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.headerTitle, { color: colors.text }]}>
                             {editingAccount ? 'Editar Cuenta' : 'Añadir Cuenta'}
                         </Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Lucide name="x" size={24} color="#64748B" />
+                            <Lucide name="x" size={24} color={colors.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -212,19 +214,20 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                         keyboardShouldPersistTaps="handled"
                     >
                         {/* Tipo de cuenta */}
-                        <Text style={styles.label}>Tipo de Cuenta <Text style={styles.required}>*</Text></Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Tipo de Cuenta <Text style={styles.required}>*</Text></Text>
                         <View style={styles.typeSelectorContainer}>
                             {typeOptions.map((option) => (
                                 <TouchableOpacity
                                     key={option.value}
                                     style={[
                                         styles.typeButton,
-                                        form.type === option.value && { borderColor: option.color, backgroundColor: `${option.color}1A` }
+                                        { borderColor: colors.border },
+                                        form.type === option.value && { borderColor: option.color, backgroundColor: isDark ? `${option.color}33` : `${option.color}1A` }
                                     ]}
                                     onPress={() => handleInputChange('type', option.value)}
                                 >
-                                    <Lucide name={option.icon} size={28} color={form.type === option.value ? option.color : '#94A3B8'} />
-                                    <Text style={[styles.typeButtonText, form.type === option.value && { color: option.color, fontWeight: '600' }]}>
+                                    <Lucide name={option.icon} size={28} color={form.type === option.value ? option.color : (isDark ? '#475569' : '#94A3B8')} />
+                                    <Text style={[styles.typeButtonText, { color: colors.textSecondary }, form.type === option.value && { color: option.color, fontWeight: '600' }]}>
                                         {option.label}
                                     </Text>
                                 </TouchableOpacity>
@@ -234,17 +237,18 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
 
 
                         {/* Nombre */}
-                        <Text style={styles.label}>Nombre de la cuenta <Text style={styles.required}>*</Text></Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Nombre de la cuenta <Text style={styles.required}>*</Text></Text>
                         <TextInput
-                            style={[styles.input, errors.name && styles.inputError]}
+                            style={[styles.input, { backgroundColor: colors.iconBg, color: colors.text }, errors.name && styles.inputError]}
                             placeholder="Ej: BBVA Azul, Santander Free..."
+                            placeholderTextColor={colors.textSecondary + '80'}
                             value={form.name}
                             onChangeText={(value) => handleInputChange('name', value)}
                         />
                         {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
                         {/* Color Picker */}
-                        <Text style={styles.label}>Color de la tarjeta</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Color de la tarjeta</Text>
                         <View style={styles.colorPickerContainer}>
                             {colorOptions.map((color) => (
                                 <TouchableOpacity
@@ -252,7 +256,7 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                     style={[
                                         styles.colorOption,
                                         { backgroundColor: color },
-                                        form.color === color && styles.selectedColorOption
+                                        form.color === color && { borderWidth: 2, borderColor: colors.text }
                                     ]}
                                     onPress={() => handleInputChange('color', color)}
                                 >
@@ -267,7 +271,7 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                 <View style={styles.row}>
                                     {/* Banco */}
                                     <View style={styles.col}>
-                                        <Text style={styles.label}>Banco <Text style={styles.required}>*</Text></Text>
+                                        <Text style={[styles.label, { color: colors.textSecondary }]}>Banco <Text style={styles.required}>*</Text></Text>
                                         <RNPickerSelect
                                             value={form.bank}
                                             onValueChange={(value) => handleInputChange('bank', value)}
@@ -279,19 +283,24 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                                 { label: "Nu", value: "Nu" },
                                                 { label: "Otro", value: "Otro" },
                                             ]}
-                                            placeholder={{ label: "Seleccionar...", value: null }}
-                                            style={pickerSelectStyles}
+                                            placeholder={{ label: "Seleccionar...", value: null, color: colors.textSecondary }}
+                                            style={{
+                                                ...pickerSelectStyles,
+                                                inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                                inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                                            }}
                                             useNativeAndroidPickerStyle={false}
-                                            Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                            Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
                                         />
                                         {errors.bank && <Text style={styles.errorText}>{errors.bank}</Text>}
                                     </View>
                                     {/* Últimos 4 dígitos */}
                                     <View style={styles.col}>
-                                        <Text style={styles.label}>4 dígitos <Text style={styles.required}>*</Text></Text>
+                                        <Text style={[styles.label, { color: colors.textSecondary }]}>4 dígitos <Text style={styles.required}>*</Text></Text>
                                         <TextInput
-                                            style={[styles.input, errors.number && styles.inputError]}
+                                            style={[styles.input, { backgroundColor: colors.iconBg, color: colors.text }, errors.number && styles.inputError]}
                                             placeholder="1234"
+                                            placeholderTextColor={colors.textSecondary + '80'}
                                             keyboardType="number-pad"
                                             maxLength={4}
                                             value={String(form.number ?? '')}
@@ -302,10 +311,10 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                 </View>
 
                                 {/* Fecha de vencimiento */}
-                                <Text style={styles.label}>Fecha de Vencimiento</Text>
-                                <TouchableOpacity onPress={() => setShowDatePicker('expiry_date')} style={styles.datePickerButton}>
-                                    <Text style={styles.datePickerText}>{form.expiry_date.toLocaleDateString()}</Text>
-                                    <Lucide name="calendar" size={20} color="#64748B" />
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha de Vencimiento</Text>
+                                <TouchableOpacity onPress={() => setShowDatePicker('expiry_date')} style={[styles.datePickerButton, { backgroundColor: colors.iconBg }]}>
+                                    <Text style={[styles.datePickerText, { color: colors.text }]}>{form.expiry_date.toLocaleDateString()}</Text>
+                                    <Lucide name="calendar" size={20} color={colors.textSecondary} />
                                 </TouchableOpacity>
                                 {errors.expiry_date && <Text style={styles.errorText}>{errors.expiry_date}</Text>}
                             </>
@@ -314,12 +323,13 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                         {/* Campos solo para crédito */}
                         {form.type === 'credit' && (
                             <>
-                                <Text style={styles.label}>Límite de crédito <Text style={styles.required}>*</Text></Text>
-                                <View style={styles.currencyInputContainer}>
-                                    <Text style={styles.currencySymbol}>$</Text>
+                                <Text style={[styles.label, { color: colors.textSecondary }]}>Límite de crédito <Text style={styles.required}>*</Text></Text>
+                                <View style={[styles.currencyInputContainer, { backgroundColor: colors.iconBg }]}>
+                                    <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                                     <TextInput
-                                        style={styles.currencyInput}
+                                        style={[styles.currencyInput, { color: colors.text }]}
                                         placeholder="0.00"
+                                        placeholderTextColor={colors.textSecondary + '80'}
                                         keyboardType="decimal-pad"
                                         value={form.credit_limit}
                                         onChangeText={(value) => handleInputChange('credit_limit', value)}
@@ -328,20 +338,22 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                 {errors.credit_limit && <Text style={styles.errorText}>{errors.credit_limit}</Text>}
                                 <View style={styles.row}>
                                     <View style={styles.col}>
-                                        <Text style={styles.label}>Tasa Anual (%)</Text>
+                                        <Text style={[styles.label, { color: colors.textSecondary }]}>Tasa Anual (%)</Text>
                                         <TextInput
-                                            style={styles.input}
+                                            style={[styles.input, { backgroundColor: colors.iconBg, color: colors.text }]}
                                             placeholder="18.50"
+                                            placeholderTextColor={colors.textSecondary + '80'}
                                             keyboardType="decimal-pad"
                                             value={String(form.interest_rate ?? '')}
                                             onChangeText={(value) => handleInputChange('interest_rate', value)}
                                         />
                                     </View>
                                     <View style={styles.col}>
-                                        <Text style={styles.label}>Pago Mínimo (%)</Text>
+                                        <Text style={[styles.label, { color: colors.textSecondary }]}>Pago Mínimo (%)</Text>
                                         <TextInput
-                                            style={styles.input}
+                                            style={[styles.input, { backgroundColor: colors.iconBg, color: colors.text }]}
                                             placeholder="5.00"
+                                            placeholderTextColor={colors.textSecondary + '80'}
                                             keyboardType="decimal-pad"
                                             value={String(form.min_payment_rate ?? '')}
                                             onChangeText={(value) => handleInputChange('min_payment_rate', value)}
@@ -350,16 +362,16 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                                 </View>
                                 <View style={styles.row}>
                                     <View style={styles.col}>
-                                        <Text style={styles.label}>Fecha de Corte</Text>
-                                        <TouchableOpacity onPress={() => setShowDatePicker('cut_off_date')} style={styles.datePickerButton}>
-                                            <Text style={styles.datePickerText}>{form.cut_off_date.toLocaleDateString()}</Text>
+                                        <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha de Corte</Text>
+                                        <TouchableOpacity onPress={() => setShowDatePicker('cut_off_date')} style={[styles.datePickerButton, { backgroundColor: colors.iconBg }]}>
+                                            <Text style={[styles.datePickerText, { color: colors.text }]}>{form.cut_off_date.toLocaleDateString()}</Text>
                                         </TouchableOpacity>
                                         {errors.cut_off_date && <Text style={styles.errorText}>{errors.cut_off_date}</Text>}
                                     </View>
                                     <View style={styles.col}>
-                                        <Text style={styles.label}>Fecha de Pago</Text>
-                                        <TouchableOpacity onPress={() => setShowDatePicker('payment_due_date')} style={styles.datePickerButton}>
-                                            <Text style={styles.datePickerText}>{form.payment_due_date.toLocaleDateString()}</Text>
+                                        <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha de Pago</Text>
+                                        <TouchableOpacity onPress={() => setShowDatePicker('payment_due_date')} style={[styles.datePickerButton, { backgroundColor: colors.iconBg }]}>
+                                            <Text style={[styles.datePickerText, { color: colors.text }]}>{form.payment_due_date.toLocaleDateString()}</Text>
                                         </TouchableOpacity>
                                         {errors.payment_due_date && <Text style={styles.errorText}>{errors.payment_due_date}</Text>}
                                     </View>
@@ -368,20 +380,21 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                         )}
 
                         {/* Saldo Actual */}
-                        <Text style={styles.label}>Saldo Actual <Text style={styles.required}>*</Text></Text>
-                        <View style={styles.currencyInputContainer}>
-                            <Text style={styles.currencySymbol}>$</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Saldo Actual <Text style={styles.required}>*</Text></Text>
+                        <View style={[styles.currencyInputContainer, { backgroundColor: colors.iconBg }]}>
+                            <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                             <TextInput
-                                style={styles.currencyInput}
+                                style={[styles.currencyInput, { color: colors.text }]}
                                 placeholder="0.00"
+                                placeholderTextColor={colors.textSecondary + '80'}
                                 keyboardType="decimal-pad"
                                 value={form.current_balance}
                                 onChangeText={(value) => handleInputChange('current_balance', value)}
                             />
                             {(form.type === 'debit' || form.type === 'cash') ? (
-                                <Text style={[{ fontFamily: 'Inter_400Regular', fontSize: 9 }]}>El saldo actual en tu cuenta</Text>
+                                <Text style={[{ color: colors.textSecondary, opacity: 0.7, fontFamily: 'Inter_400Regular', fontSize: 9 }]}>El saldo actual en tu cuenta</Text>
                             ) : (
-                                <Text style={[{ fontFamily: 'Inter_400Regular', fontSize: 9 }]}>Deuda actual de tu TDC</Text>
+                                <Text style={[{ color: colors.textSecondary, opacity: 0.7, fontFamily: 'Inter_400Regular', fontSize: 9 }]}>Deuda actual de tu TDC</Text>
                             )}
                         </View>
                         {errors.current_balance && <Text style={styles.errorText}>{errors.current_balance}</Text>}
@@ -410,11 +423,11 @@ export const AccountFormModal = ({ visible, onClose, onSave, editingAccount }: A
                     </ScrollView>
 
                     {/* Footer */}
-                    <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                    <View style={[styles.footer, { paddingBottom: insets.bottom + 10, borderTopColor: colors.border }]}>
+                        <TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={onClose} disabled={loading}>
+                            <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancelar</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                        <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={loading}>
                             {loading ? (
                                 <ActivityIndicator color="#FFF" size="small" />
                             ) : (

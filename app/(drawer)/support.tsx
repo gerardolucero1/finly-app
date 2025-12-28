@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { SupportService } from '@/services/support';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useHeaderHeight } from '@react-navigation/elements';
@@ -12,6 +13,7 @@ export default function SupportScreen() {
     const [message, setMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const headerHeight = useHeaderHeight();
+    const { colors, isDark } = useTheme();
 
     const handleSend = async () => {
         if (!message.trim() || isLoading) return;
@@ -40,14 +42,14 @@ export default function SupportScreen() {
     };
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight }]}>
+        <View style={[styles.container, { paddingTop: headerHeight, backgroundColor: colors.background }]}>
             <Stack.Screen options={{
                 headerShown: true,
                 title: 'Soporte',
-                headerTitleStyle: { fontFamily: 'Inter_700Bold', color: '#1E293B' },
+                headerTitleStyle: { fontFamily: 'Inter_700Bold', color: colors.text },
                 headerTintColor: '#4F46E5',
                 headerShadowVisible: false,
-                headerStyle: { backgroundColor: '#F8FAFC' },
+                headerStyle: { backgroundColor: colors.background },
             }} />
 
             <KeyboardAvoidingView
@@ -56,19 +58,24 @@ export default function SupportScreen() {
             >
                 <ScrollView contentContainerStyle={styles.content}>
                     <View style={styles.card}>
-                        <View style={styles.iconContainer}>
+                        <View style={[styles.iconContainer, { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.2)' : '#EEF2FF' }]}>
                             <Lucide name="life-buoy" size={32} color="#4F46E5" />
                         </View>
-                        <Text style={styles.title}>¿Cómo podemos ayudarte?</Text>
-                        <Text style={styles.subtitle}>
+                        <Text style={[styles.title, { color: colors.text }]}>¿Cómo podemos ayudarte?</Text>
+                        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                             Si tienes problemas o sugerencias, envíanos un mensaje directo.
                         </Text>
                     </View>
 
-                    <Text style={styles.label}>Tu Mensaje</Text>
+                    <Text style={[styles.label, { color: colors.text }]}>Tu Mensaje</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, {
+                            backgroundColor: colors.card,
+                            borderColor: colors.border,
+                            color: colors.text
+                        }]}
                         placeholder="Describe tu problema o sugerencia..."
+                        placeholderTextColor={colors.textSecondary}
                         multiline
                         numberOfLines={6}
                         textAlignVertical="top"
@@ -94,15 +101,15 @@ export default function SupportScreen() {
                         )}
                     </TouchableOpacity>
 
-                    <View style={styles.contactInfo}>
-                        <Text style={styles.contactTitle}>Otros medios de contacto</Text>
+                    <View style={[styles.contactInfo, { borderTopColor: colors.border }]}>
+                        <Text style={[styles.contactTitle, { color: colors.textSecondary }]}>Otros medios de contacto</Text>
                         <TouchableOpacity style={styles.contactRow}>
-                            <Lucide name="mail" size={18} color="#64748B" />
-                            <Text style={styles.contactText}>soporte@holafinly.com</Text>
+                            <Lucide name="mail" size={18} color={colors.textSecondary} />
+                            <Text style={[styles.contactText, { color: colors.textSecondary }]}>soporte@holafinly.com</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.contactRow}>
-                            <Lucide name="twitter" size={18} color="#64748B" />
-                            <Text style={styles.contactText}>@holafinly</Text>
+                            <Lucide name="twitter" size={18} color={colors.textSecondary} />
+                            <Text style={[styles.contactText, { color: colors.textSecondary }]}>@holafinly</Text>
                         </TouchableOpacity>
                     </View>
                 </ScrollView>
@@ -113,7 +120,7 @@ export default function SupportScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F8FAFC' },
+    container: { flex: 1 },
     content: { padding: 20 },
     card: {
         alignItems: 'center',
@@ -131,31 +138,25 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontFamily: 'Inter_700Bold',
-        color: '#1E293B',
         marginBottom: 8,
     },
     subtitle: {
         fontSize: 14,
         fontFamily: 'Inter_400Regular',
-        color: '#64748B',
         textAlign: 'center',
         paddingHorizontal: 20,
     },
     label: {
         fontSize: 14,
         fontFamily: 'Inter_500Medium',
-        color: '#1E293B',
         marginBottom: 8,
     },
     input: {
-        backgroundColor: '#FFF',
         borderRadius: 12,
         padding: 16,
         fontSize: 16,
         fontFamily: 'Inter_400Regular',
-        color: '#1E293B',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
         height: 150,
         marginBottom: 20,
     },
@@ -185,13 +186,11 @@ const styles = StyleSheet.create({
     contactInfo: {
         marginTop: 40,
         borderTopWidth: 1,
-        borderTopColor: '#E2E8F0',
         paddingTop: 20,
     },
     contactTitle: {
         fontSize: 12,
         fontFamily: 'Inter_700Bold',
-        color: '#94A3B8',
         textTransform: 'uppercase',
         marginBottom: 12,
     },
@@ -204,6 +203,5 @@ const styles = StyleSheet.create({
     contactText: {
         fontSize: 14,
         fontFamily: 'Inter_500Medium',
-        color: '#475569',
     },
 });

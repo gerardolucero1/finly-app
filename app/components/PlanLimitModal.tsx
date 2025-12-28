@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import React from 'react';
 import {
@@ -69,10 +70,12 @@ export const PlanLimitModal: React.FC<PlanLimitModalProps> = ({
         : '¡Mejora tu Plan!';
 
     const benefits = [
-        { text: 'Recursos ilimitados', icon: 'circle-check' },
-        { text: 'WhatsApp Bot inteligente', icon: 'circle-check' },
-        { text: 'Estrategias financieras con IA', icon: 'circle-check' },
+        { text: 'Recursos ilimitados', icon: 'circle-check' as const },
+        { text: 'WhatsApp Bot inteligente', icon: 'circle-check' as const },
+        { text: 'Estrategias financieras con IA', icon: 'circle-check' as const },
     ];
+
+    const { colors, isDark } = useTheme();
 
     return (
         <Modal
@@ -89,6 +92,7 @@ export const PlanLimitModal: React.FC<PlanLimitModalProps> = ({
                                 styles.container,
                                 {
                                     transform: [{ scale: scaleAnim }],
+                                    backgroundColor: colors.card,
                                 },
                             ]}
                         >
@@ -101,7 +105,7 @@ export const PlanLimitModal: React.FC<PlanLimitModalProps> = ({
                                 onPress={onClose}
                                 activeOpacity={0.7}
                             >
-                                <Lucide name="x" size={24} color="#9CA3AF" />
+                                <Lucide name="x" size={24} color={colors.textSecondary} />
                             </TouchableOpacity>
 
                             <ScrollView
@@ -116,21 +120,21 @@ export const PlanLimitModal: React.FC<PlanLimitModalProps> = ({
                                 </View>
 
                                 {/* Title */}
-                                <Text style={styles.title}>
+                                <Text style={[styles.title, { color: colors.text }]}>
                                     {title || defaultTitle}
                                 </Text>
 
                                 {/* Description */}
-                                <Text style={styles.description}>
+                                <Text style={[styles.description, { color: colors.textSecondary }]}>
                                     {message}
                                 </Text>
 
                                 {/* Limit Info */}
                                 {type === 'limit_reached' && currentCount !== undefined && limit !== undefined && (
                                     <View style={styles.limitInfoContainer}>
-                                        <View style={styles.limitInfo}>
-                                            <Text style={styles.limitLabel}>Límite actual:</Text>
-                                            <Text style={styles.limitValue}>
+                                        <View style={[styles.limitInfo, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                                            <Text style={[styles.limitLabel, { color: colors.textSecondary }]}>Límite actual:</Text>
+                                            <Text style={[styles.limitValue, { color: colors.text }]}>
                                                 {currentCount} / {limit}
                                             </Text>
                                         </View>
@@ -139,7 +143,7 @@ export const PlanLimitModal: React.FC<PlanLimitModalProps> = ({
 
                                 {/* Benefits */}
                                 <View style={styles.benefitsContainer}>
-                                    <Text style={styles.benefitsTitle}>
+                                    <Text style={[styles.benefitsTitle, { color: colors.textSecondary }]}>
                                         Con un plan superior obtienes:
                                     </Text>
                                     <View style={styles.benefitsList}>
@@ -150,7 +154,7 @@ export const PlanLimitModal: React.FC<PlanLimitModalProps> = ({
                                                     size={20}
                                                     color="#10B981"
                                                 />
-                                                <Text style={styles.benefitText}>
+                                                <Text style={[styles.benefitText, { color: colors.textSecondary }]}>
                                                     {benefit.text}
                                                 </Text>
                                             </View>
@@ -171,11 +175,11 @@ export const PlanLimitModal: React.FC<PlanLimitModalProps> = ({
                                     </TouchableOpacity>
 
                                     <TouchableOpacity
-                                        style={styles.continueButton}
+                                        style={[styles.continueButton, { backgroundColor: isDark ? colors.border : '#F3F4F6' }]}
                                         onPress={onClose}
                                         activeOpacity={0.7}
                                     >
-                                        <Text style={styles.continueButtonText}>
+                                        <Text style={[styles.continueButtonText, { color: isDark ? colors.textSecondary : '#4B5563' }]}>
                                             Entendido
                                         </Text>
                                     </TouchableOpacity>

@@ -1,4 +1,4 @@
-// app/components/pricing/TrustBadges.tsx
+import { useTheme } from '@/app/context/theme';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -10,40 +10,45 @@ interface BadgeProps {
     bgColor: string;
 }
 
-const Badge = ({ icon, text, color, bgColor }: BadgeProps) => (
-    <View style={styles.badge}>
-        {/* Contenedor del icono estilo "TransactionItem" */}
-        <View style={[styles.iconContainer, { backgroundColor: bgColor }]}>
-            <Lucide name={icon} size={20} color={color} />
+const Badge = ({ icon, text, color, bgColor }: BadgeProps) => {
+    const { colors, isDark } = useTheme();
+    return (
+        <View style={[styles.badge, { backgroundColor: colors.card, shadowOpacity: isDark ? 0.1 : 0.03 }]}>
+            {/* Contenedor del icono estilo "TransactionItem" */}
+            <View style={[styles.iconContainer, { backgroundColor: bgColor }]}>
+                <Lucide name={icon} size={20} color={color} />
+            </View>
+            <Text style={[styles.badgeText, { color: colors.text }]}>{text}</Text>
         </View>
-        <Text style={styles.badgeText}>{text}</Text>
-    </View>
-);
+    );
+};
 
 export const TrustBadges = () => {
+    const { colors, isDark } = useTheme();
+
     return (
         <View style={styles.container}>
             {/* Título opcional pequeño para dar contexto */}
-            <Text style={styles.title}>Tu tranquilidad es primero</Text>
+            <Text style={[styles.title, { color: colors.textSecondary }]}>Tu tranquilidad es primero</Text>
 
             <View style={styles.badgesWrapper}>
                 <Badge
                     icon="shield-check"
                     text="Pagos 100% Seguros y Encriptados (SSL)"
                     color="#059669" // Green 600
-                    bgColor="#ECFDF5" // Green 50
+                    bgColor={isDark ? 'rgba(5, 150, 105, 0.1)' : "#ECFDF5"} // Green 50
                 />
                 <Badge
                     icon="calendar-off"
                     text="Cancela o cambia de plan cuando quieras"
                     color="#2563EB" // Blue 600
-                    bgColor="#EFF6FF" // Blue 50
+                    bgColor={isDark ? 'rgba(37, 99, 235, 0.1)' : "#EFF6FF"} // Blue 50
                 />
                 <Badge
                     icon="headphones"
                     text="Soporte técnico humano 24/7"
                     color="#7C3AED" // Violet 600
-                    bgColor="#F5F3FF" // Violet 50
+                    bgColor={isDark ? 'rgba(124, 58, 237, 0.1)' : "#F5F3FF"} // Violet 50
                 />
             </View>
         </View>

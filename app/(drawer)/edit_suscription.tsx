@@ -1,4 +1,5 @@
 import { TrustBadges } from '@/app/components/TrustBadges';
+import { useTheme } from '@/app/context/theme';
 import { ProfileService } from '@/services/profile';
 import { SubscriptionService } from '@/services/subscription';
 import { Lucide } from '@react-native-vector-icons/lucide';
@@ -138,24 +139,33 @@ const PlanCard = ({ item, isCurrent, isLoading, isSubscribed, onPress }: { item:
 };
 
 const StatusSection = ({ subscription, onCancel, onResume, isLoading }: StatusSectionProps) => {
+    const { colors, isDark } = useTheme();
     if (!subscription) return null;
 
     return (
-        <View style={styles.statusContainer}>
+        <View style={[
+            styles.statusContainer,
+            { backgroundColor: colors.card, borderColor: colors.border }
+        ]}>
             {/* Header de la tarjeta */}
             <View style={styles.statusHeader}>
-                <View style={[styles.iconContainer, subscription.isOnGracePeriod && styles.iconContainerWarning]}>
+                <View style={[
+                    styles.iconContainer,
+                    subscription.isOnGracePeriod
+                        ? (isDark ? { backgroundColor: 'rgba(217, 119, 6, 0.1)' } : styles.iconContainerWarning)
+                        : (isDark ? { backgroundColor: 'rgba(79, 70, 229, 0.1)' } : { backgroundColor: '#EEF2FF' })
+                ]}>
                     <Lucide
                         name={subscription.isOnGracePeriod ? "badge-alert" : "badge-check"}
                         size={24}
-                        color={subscription.isOnGracePeriod ? "#D97706" : "#4F46E5"}
+                        color={subscription.isOnGracePeriod ? "#D97706" : colors.primary}
                     />
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={styles.statusTitle}>
+                    <Text style={[styles.statusTitle, { color: colors.text }]}>
                         {subscription.isOnGracePeriod ? 'Cancelación Programada' : 'Suscripción Activa'}
                     </Text>
-                    <Text style={styles.statusSubtitle}>
+                    <Text style={[styles.statusSubtitle, { color: colors.textSecondary }]}>
                         Plan {subscription.planName}
                     </Text>
                 </View>
@@ -163,9 +173,17 @@ const StatusSection = ({ subscription, onCancel, onResume, isLoading }: StatusSe
 
             {/* Información de fecha */}
             {subscription.endsAt && (
-                <View style={[styles.infoBox, subscription.isOnGracePeriod && styles.infoBoxWarning]}>
-                    <Lucide name="calendar-clock" size={16} color={subscription.isOnGracePeriod ? "#B45309" : "#4F46E5"} />
-                    <Text style={[styles.infoText, subscription.isOnGracePeriod && styles.infoTextWarning]}>
+                <View style={[
+                    styles.infoBox,
+                    subscription.isOnGracePeriod
+                        ? (isDark ? { backgroundColor: 'rgba(254, 243, 199, 0.1)' } : styles.infoBoxWarning)
+                        : (isDark ? { backgroundColor: 'rgba(245, 243, 255, 0.1)' } : { backgroundColor: '#F5F3FF' })
+                ]}>
+                    <Lucide name="calendar-clock" size={16} color={subscription.isOnGracePeriod ? "#B45309" : colors.primary} />
+                    <Text style={[
+                        styles.infoText,
+                        subscription.isOnGracePeriod ? styles.infoTextWarning : { color: colors.primary }
+                    ]}>
                         {subscription.isOnGracePeriod
                             ? `Acceso disponible hasta el: ${subscription.endsAt}`
                             : `Próxima renovación: ${subscription.endsAt}`
@@ -175,11 +193,15 @@ const StatusSection = ({ subscription, onCancel, onResume, isLoading }: StatusSe
             )}
 
             {/* Botones de Acción */}
-            <View style={styles.statusActions}>
+            <View style={[styles.statusActions, { borderTopColor: colors.border }]}>
                 {subscription.isOnGracePeriod ? (
                     // Estado: Cancelado -> Mostrar REANUDAR
                     <TouchableOpacity
-                        style={[styles.actionBtn, styles.cancelBtn]}
+                        style={[
+                            styles.actionBtn,
+                            styles.cancelBtn,
+                            isDark && { backgroundColor: 'transparent', borderColor: colors.border }
+                        ]}
                         onPress={onResume}
                         disabled={isLoading}
                     >
@@ -188,21 +210,25 @@ const StatusSection = ({ subscription, onCancel, onResume, isLoading }: StatusSe
                         ) : (
                             <>
                                 {/* <ActivityIndicator size="small" color="#EF4444" /> */}
-                                <Text style={styles.cancelBtnText}>Ver Facturación</Text>
+                                <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>Ver Facturación</Text>
                             </>
                         )}
                     </TouchableOpacity>
                 ) : (
                     // Estado: Activo -> Mostrar CANCELAR
                     <TouchableOpacity
-                        style={[styles.actionBtn, styles.cancelBtn]}
+                        style={[
+                            styles.actionBtn,
+                            styles.cancelBtn,
+                            isDark && { backgroundColor: 'transparent', borderColor: colors.border }
+                        ]}
                         onPress={onCancel}
                         disabled={isLoading}
                     >
                         {isLoading ? (
                             <ActivityIndicator size="small" color="#EF4444" />
                         ) : (
-                            <Text style={styles.cancelBtnText} className='text-gray-600'>Ver Facturación</Text>
+                            <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]} className='text-gray-600'>Ver Facturación</Text>
                         )}
                     </TouchableOpacity>
                 )}
@@ -216,6 +242,7 @@ const StatusSection = ({ subscription, onCancel, onResume, isLoading }: StatusSe
 
 export default function ManageSubscriptionScreen() {
     const headerHeight = useHeaderHeight();
+    const { colors, isDark } = useTheme();
     const [statusLoading, setStatusLoading] = useState(false);
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
     const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
@@ -226,8 +253,8 @@ export default function ManageSubscriptionScreen() {
 
     if (!profile) {
         return (
-            <View style={[styles.centered, { paddingTop: headerHeight }]}>
-                <Text style={{ fontFamily: 'Inter_500Medium' }}>Cargando información...</Text>
+            <View style={[styles.centered, { paddingTop: headerHeight, backgroundColor: colors.background }]}>
+                <Text style={{ fontFamily: 'Inter_500Medium', color: colors.text }}>Cargando información...</Text>
             </View>
         );
     }
@@ -479,14 +506,14 @@ export default function ManageSubscriptionScreen() {
     };
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight }]}>
+        <View style={[styles.container, { paddingTop: headerHeight, backgroundColor: colors.background }]}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 40 }}
             >
                 <View style={styles.headerContainer}>
-                    <Text style={styles.pageTitle}>Gestionar cuenta</Text>
-                    <Text style={styles.pageSubtitle}>Elige el plan perfecto para tus finanzas</Text>
+                    <Text style={[styles.pageTitle, { color: colors.text }]}>Gestionar cuenta</Text>
+                    <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>Elige el plan perfecto para tus finanzas</Text>
                 </View>
 
                 {isSubscribed && currentPlanObj && (
@@ -543,13 +570,11 @@ export default function ManageSubscriptionScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
     },
     centered: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F8FAFC',
     },
     headerContainer: {
         paddingHorizontal: 20,
@@ -560,13 +585,11 @@ const styles = StyleSheet.create({
     pageTitle: {
         fontFamily: 'Inter_700Bold',
         fontSize: 24,
-        color: '#1E293B',
         marginBottom: 4,
     },
     pageSubtitle: {
         fontFamily: 'Inter_400Regular',
         fontSize: 14,
-        color: '#64748B',
     },
     carousel: {
         paddingVertical: 10,
@@ -691,7 +714,6 @@ const styles = StyleSheet.create({
         color: '#FFF',
     },
     statusContainer: {
-        backgroundColor: '#FFF',
         borderRadius: 24,
         padding: 20,
         shadowColor: "#000",
@@ -700,7 +722,6 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 3,
         borderWidth: 1,
-        borderColor: '#F1F5F9',
     },
     statusHeader: {
         flexDirection: 'row',
@@ -710,7 +731,6 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 16,
-        backgroundColor: '#EEF2FF', // Indigo muy claro
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -720,11 +740,9 @@ const styles = StyleSheet.create({
     statusTitle: {
         fontSize: 16,
         fontFamily: 'Inter_700Bold',
-        color: '#1E293B',
     },
     statusSubtitle: {
         fontSize: 14,
-        color: '#64748B',
         fontFamily: 'Inter_400Regular',
         marginTop: 2,
     },
@@ -734,7 +752,6 @@ const styles = StyleSheet.create({
         marginTop: 16,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F5F3FF', // Violeta muy claro
         paddingVertical: 10,
         paddingHorizontal: 14,
         borderRadius: 12,
@@ -743,7 +760,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#FEF3C7', // Ambar claro
     },
     infoText: {
-        color: '#4F46E5',
         marginLeft: 10,
         fontSize: 13,
         fontFamily: 'Inter_500Medium',
@@ -756,7 +772,6 @@ const styles = StyleSheet.create({
     statusActions: {
         marginTop: 20,
         borderTopWidth: 1,
-        borderTopColor: '#F1F5F9',
         paddingTop: 16,
     },
     actionBtn: {
@@ -783,7 +798,6 @@ const styles = StyleSheet.create({
     cancelBtnText: {
         fontFamily: 'Inter_700Bold',
         fontSize: 14,
-        color: '#64748B',
     },
 
 });

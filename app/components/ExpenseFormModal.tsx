@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { useInput } from '@/hooks/useInput';
 import { useUserFeatures } from '@/hooks/useUserFeatures';
 import { Account } from '@/models/account';
@@ -86,10 +87,12 @@ interface ExpenseFormModalProps {
     onClose: () => void;
     onSave: () => void;
     accounts: Account[];
+    selectedAccount: Account | null;
     editingTransaction?: any; // Using any for now to avoid circular dependency or strict type issues with Transaction vs Expense
 }
 
 export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedAccount, editingTransaction }: ExpenseFormModalProps) => {
+    const { colors, isDark } = useTheme();
     const [form, setForm] = useState<FormState>(initialFormState);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -275,9 +278,9 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
     };
 
     const accountItems = accounts.map(acc => ({ label: acc.name, value: acc.id }));
-    const categoryItems = all_categories.value.map(acc => ({ label: acc.name, value: acc.id }));
+    const categoryItems = (all_categories.value || []).map(acc => ({ label: acc.name, value: acc.id }));
     const projectItems = projects.map(acc => ({ label: acc.name, value: acc.id }));
-    const filteredSubCategoryItems = all_subcategories.value.filter(acc => acc.category_id == form.category_id);
+    const filteredSubCategoryItems = (all_subcategories.value || []).filter(acc => acc.category_id == form.category_id);
     const subCategoryItems = filteredSubCategoryItems.map(acc => ({ label: acc.name, value: acc.id }));
 
     return (
@@ -300,11 +303,11 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
 
-                <View style={styles.modalContent}>
-                    <View style={styles.header}>
-                        <Text style={styles.headerTitle}>{editingTransaction ? 'Editar Gasto' : 'Nuevo Gasto'}</Text>
+                <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.headerTitle, { color: colors.text }]}>{editingTransaction ? 'Editar Gasto' : 'Nuevo Gasto'}</Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Lucide name="x" size={24} color="#64748B" />
+                            <Lucide name="x" size={24} color={colors.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -313,12 +316,13 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                         keyboardShouldPersistTaps="handled"
                     >
                         {/* Monto */}
-                        <Text style={styles.label}>Monto *</Text>
-                        <View style={styles.amountContainer}>
-                            <Text style={styles.currencySymbol}>$</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Monto *</Text>
+                        <View style={[styles.amountContainer, { backgroundColor: colors.iconBg }]}>
+                            <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                             <TextInput
-                                style={styles.amountInput}
+                                style={[styles.amountInput, { color: colors.text }]}
                                 placeholder="0.00"
+                                placeholderTextColor={colors.textSecondary + '80'}
                                 keyboardType="decimal-pad"
                                 value={form.amount}
                                 onChangeText={(value) => handleInputChange('amount', value)}
@@ -329,10 +333,11 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                         )}
 
                         {/* Nombre del Gasto */}
-                        <Text style={styles.label}>Nombre del Gasto *</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Nombre del Gasto *</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: colors.iconBg, color: colors.text }]}
                             placeholder="Ej: Renta, Comida, Netflix..."
+                            placeholderTextColor={colors.textSecondary + '80'}
                             value={form.name}
                             onChangeText={(value) => handleInputChange('name', value)}
                         />
@@ -341,44 +346,56 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                         )}
 
                         {/* Cuenta de Origen */}
-                        <Text style={styles.label}>Cuenta de origen *</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Cuenta de origen *</Text>
                         <RNPickerSelect
                             value={form.account_id}
                             onValueChange={(value) => handleInputChange('account_id', value)}
                             items={accountItems}
-                            placeholder={{ label: "Seleccionar cuenta", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
+                            placeholder={{ label: "Seleccionar cuenta", value: null, color: colors.textSecondary }}
+                            style={{
+                                ...pickerSelectStyles,
+                                inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                            }}
                             useNativeAndroidPickerStyle={false}
                             Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                return <Lucide name="chevron-down" size={20} color={colors.textSecondary} />;
                             }}
                         />
 
                         {/* Categoría */}
-                        <Text style={styles.label}>Categoría *</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Categoría *</Text>
                         <RNPickerSelect
                             value={form.category_id}
                             onValueChange={(value) => handleInputChange('category_id', value)}
                             items={categoryItems}
-                            placeholder={{ label: "Seleccionar categoría", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
+                            placeholder={{ label: "Seleccionar categoría", value: null, color: colors.textSecondary }}
+                            style={{
+                                ...pickerSelectStyles,
+                                inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                            }}
                             useNativeAndroidPickerStyle={false}
                             Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                return <Lucide name="chevron-down" size={20} color={colors.textSecondary} />;
                             }}
                         />
 
                         {/* Subcategoria */}
-                        <Text style={styles.label}>Subcategoria *</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Subcategoria *</Text>
                         <RNPickerSelect
                             value={form.sub_category_id}
                             onValueChange={(value) => handleInputChange('sub_category_id', value)}
                             items={subCategoryItems}
-                            placeholder={{ label: "Seleccionar subcategoría", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
+                            placeholder={{ label: "Seleccionar subcategoría", value: null, color: colors.textSecondary }}
+                            style={{
+                                ...pickerSelectStyles,
+                                inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                            }}
                             useNativeAndroidPickerStyle={false}
                             Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                return <Lucide name="chevron-down" size={20} color={colors.textSecondary} />;
                             }}
                         />
                         {errors.sub_category_id && (
@@ -386,36 +403,44 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                         )}
 
                         {/* Proyecto */}
-                        <Text style={styles.label}>Proyecto</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Proyecto</Text>
                         <RNPickerSelect
                             value={form.project_id}
                             disabled={!hasFeature('freelancer_mode')}
                             onValueChange={(value) => handleInputChange('project_id', value)}
                             items={projectItems}
-                            placeholder={{ label: "Seleccionar proyecto", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
+                            placeholder={{ label: "Seleccionar proyecto", value: null, color: colors.textSecondary }}
+                            style={{
+                                ...pickerSelectStyles,
+                                inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                            }}
                             useNativeAndroidPickerStyle={false}
                             Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                return <Lucide name="chevron-down" size={20} color={colors.textSecondary} />;
                             }}
                         />
 
                         {/* Tipo */}
-                        <Text style={styles.label}>Tipo *</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Tipo *</Text>
                         <RNPickerSelect
                             value={form.type}
                             onValueChange={(value) => handleInputChange('type', value)}
                             items={[{ label: 'Fijo', value: 'fixed' }, { label: 'Variable', value: 'variable' }]}
-                            placeholder={{ label: "Seleccionar tipo", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
+                            placeholder={{ label: "Seleccionar tipo", value: null, color: colors.textSecondary }}
+                            style={{
+                                ...pickerSelectStyles,
+                                inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                            }}
                             useNativeAndroidPickerStyle={false}
                             Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                return <Lucide name="chevron-down" size={20} color={colors.textSecondary} />;
                             }}
                         />
 
                         {/* Frecuencia */}
-                        <Text style={styles.label}>Frecuencia *</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Frecuencia *</Text>
                         <RNPickerSelect
                             value={form.frequency}
                             onValueChange={(value) => handleInputChange('frequency', value)}
@@ -426,35 +451,42 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                                 { label: 'Mensual', value: 'monthly' },
                                 { label: 'Anual', value: 'yearly' },
                             ]}
-                            placeholder={{ label: "Seleccionar frecuencia", value: null, color: '#94A3B8' }}
-                            style={pickerSelectStyles}
+                            placeholder={{ label: "Seleccionar frecuencia", value: null, color: colors.textSecondary }}
+                            style={{
+                                ...pickerSelectStyles,
+                                inputIOS: { ...pickerSelectStyles.inputIOS, backgroundColor: colors.iconBg, color: colors.text },
+                                inputAndroid: { ...pickerSelectStyles.inputAndroid, backgroundColor: colors.iconBg, color: colors.text },
+                            }}
                             useNativeAndroidPickerStyle={false}
                             Icon={() => {
-                                return <Lucide name="chevron-down" size={20} color="#64748B" />;
+                                return <Lucide name="chevron-down" size={20} color={colors.textSecondary} />;
                             }}
                         />
 
                         {/* Etiqueta */}
-                        <Text style={styles.label}>Etiqueta *</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Etiqueta *</Text>
                         <View style={styles.radioGroup}>
                             {/* Opción: Personal */}
                             <TouchableOpacity
                                 style={[
                                     styles.radioOption,
-                                    form.scope === 'personal' && styles.radioOptionSelected
+                                    { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', borderColor: colors.border },
+                                    form.scope === 'personal' && { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.15)' : '#EEF2FF', borderColor: colors.primary }
                                 ]}
                                 onPress={() => handleInputChange('scope', 'personal')}
                                 activeOpacity={0.7}
                             >
                                 <View style={[
                                     styles.radioCircle,
-                                    form.scope === 'personal' && styles.radioCircleSelected
+                                    { borderColor: colors.textSecondary },
+                                    form.scope === 'personal' && { borderColor: colors.primary }
                                 ]}>
-                                    {form.scope === 'personal' && <View style={styles.radioInnerCircle} />}
+                                    {form.scope === 'personal' && <View style={[styles.radioInnerCircle, { backgroundColor: colors.primary }]} />}
                                 </View>
                                 <Text style={[
                                     styles.radioText,
-                                    form.scope === 'personal' && styles.radioTextSelected
+                                    { color: colors.textSecondary },
+                                    form.scope === 'personal' && { color: colors.text, fontFamily: 'Inter_700Bold' }
                                 ]}>Personal</Text>
                             </TouchableOpacity>
 
@@ -462,7 +494,8 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                             <TouchableOpacity
                                 style={[
                                     styles.radioOption,
-                                    form.scope === 'business' && styles.radioOptionSelected
+                                    { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', borderColor: colors.border },
+                                    form.scope === 'business' && { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.15)' : '#EEF2FF', borderColor: colors.primary }
                                 ]}
                                 disabled={!hasFeature('freelancer_mode')}
                                 onPress={() => handleInputChange('scope', 'business')}
@@ -470,13 +503,15 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                             >
                                 <View style={[
                                     styles.radioCircle,
-                                    form.scope === 'business' && styles.radioCircleSelected
+                                    { borderColor: colors.textSecondary },
+                                    form.scope === 'business' && { borderColor: colors.primary }
                                 ]}>
-                                    {form.scope === 'business' && <View style={styles.radioInnerCircle} />}
+                                    {form.scope === 'business' && <View style={[styles.radioInnerCircle, { backgroundColor: colors.primary }]} />}
                                 </View>
                                 <Text style={[
                                     styles.radioText,
-                                    form.scope === 'business' && styles.radioTextSelected
+                                    { color: colors.textSecondary },
+                                    form.scope === 'business' && { color: colors.text, fontFamily: 'Inter_700Bold' }
                                 ]}>Negocio</Text>
                             </TouchableOpacity>
                         </View>
@@ -486,10 +521,10 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                         )}
 
                         {/* Fecha */}
-                        <Text style={styles.label}>Fecha</Text>
-                        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                            <Text style={styles.datePickerText}>{form.due_date.toLocaleDateString()}</Text>
-                            <Lucide name="calendar" size={20} color="#64748B" />
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha</Text>
+                        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.datePickerButton, { backgroundColor: colors.iconBg }]}>
+                            <Text style={[styles.datePickerText, { color: colors.text }]}>{form.due_date.toLocaleDateString()}</Text>
+                            <Lucide name="calendar" size={20} color={colors.textSecondary} />
                         </TouchableOpacity>
                         {showDatePicker && (
                             <DateTimePicker
@@ -502,20 +537,20 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                         )}
 
                         {/* Imagen del Ticket */}
-                        <Text style={styles.label}>Imagen del ticket</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Imagen del ticket</Text>
 
                         {/* Caso 1: Imagen recién seleccionada */}
                         {form.ticket_image ? (
-                            <View style={styles.selectedFileContainer}>
+                            <View style={[styles.selectedFileContainer, { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : '#EEF2FF', borderColor: isDark ? 'rgba(79, 70, 229, 0.2)' : '#C7D2FE' }]}>
                                 <View style={styles.fileInfo}>
-                                    <Lucide name="image" size={20} color="#4F46E5" />
-                                    <Text style={styles.selectedFileName} numberOfLines={1}>
+                                    <Lucide name="image" size={20} color={colors.primary} />
+                                    <Text style={[styles.selectedFileName, { color: colors.primary }]} numberOfLines={1}>
                                         {form.ticket_image.fileName || 'Imagen seleccionada'}
                                     </Text>
                                 </View>
                                 <TouchableOpacity
                                     onPress={() => handleInputChange('ticket_image', null)}
-                                    style={styles.removeFileButton}
+                                    style={[styles.removeFileButton, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2', borderColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#FECACA' }]}
                                 >
                                     <Lucide name="x" size={16} color="#EF4444" />
                                 </TouchableOpacity>
@@ -523,34 +558,34 @@ export const ExpenseFormModal = ({ visible, onClose, onSave, accounts, selectedA
                         ) : (
                             /* Caso 2: Imagen existente en el servidor (y no marcada para borrar) */
                             form.ticket_image_url && !form.remove_ticket_image ? (
-                                <View style={styles.selectedFileContainer}>
+                                <View style={[styles.selectedFileContainer, { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : '#EEF2FF', borderColor: isDark ? 'rgba(79, 70, 229, 0.2)' : '#C7D2FE' }]}>
                                     <View style={styles.fileInfo}>
-                                        <Lucide name="image" size={20} color="#4F46E5" />
-                                        <Text style={styles.selectedFileName}>Ticket</Text>
+                                        <Lucide name="image" size={20} color={colors.primary} />
+                                        <Text style={[styles.selectedFileName, { color: colors.primary }]}>Ticket</Text>
                                     </View>
                                     <TouchableOpacity
                                         onPress={() => handleInputChange('remove_ticket_image', true)}
-                                        style={styles.removeFileButton}
+                                        style={[styles.removeFileButton, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2', borderColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#FECACA' }]}
                                     >
                                         <Lucide name="x" size={16} color="#EF4444" />
                                     </TouchableOpacity>
                                 </View>
                             ) : (
                                 /* Caso 3: Sin imagen (o borrada) */
-                                <TouchableOpacity onPress={handlePickImage} style={styles.filePickerButton}>
-                                    <Lucide name="camera" size={20} color="#4F46E5" />
-                                    <Text style={styles.filePickerText}>Adjuntar ticket</Text>
+                                <TouchableOpacity onPress={handlePickImage} style={[styles.filePickerButton, { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : '#EEF2FF', borderColor: isDark ? 'rgba(79, 70, 229, 0.2)' : '#C7D2FE' }]}>
+                                    <Lucide name="camera" size={20} color={colors.primary} />
+                                    <Text style={[styles.filePickerText, { color: colors.primary }]}>Adjuntar ticket</Text>
                                 </TouchableOpacity>
                             )
                         )}
                     </ScrollView>
 
                     {/* Footer */}
-                    <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-                        <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                    <View style={[styles.footer, { paddingBottom: insets.bottom + 10, borderTopColor: colors.border }]}>
+                        <TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={onClose} disabled={loading}>
+                            <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancelar</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                        <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={loading}>
                             {loading ? (
                                 <ActivityIndicator color="#FFF" size="small" />
                             ) : (

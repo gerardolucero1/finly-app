@@ -90,15 +90,17 @@ function RootLayoutInner() {
                 backgroundColor: '#FFF',
             }}
         >
-            <SheetProvider>
-                <AuthProvider>
-                    <ThemeProvider>
+            <ThemeProvider>
+                <SheetProvider>
+                    <AuthProvider>
+
                         <StripeProvider publishableKey="pk_test_51SLR5b6dZB8Inoh7iIyYyPFmtzg8yVMCPzyLH6iBfFETyyaae2uXosMLs6zd4xJOKJsrzUcfyp0Z574qJXa2LAVy00FTClFY6S">
                             <RootLayoutNav />
                         </StripeProvider>
-                    </ThemeProvider>
-                </AuthProvider>
-            </SheetProvider>
+
+                    </AuthProvider>
+                </SheetProvider>
+            </ThemeProvider>
         </SafeAreaView>
     );
 }

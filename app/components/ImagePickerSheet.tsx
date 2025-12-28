@@ -1,9 +1,14 @@
+import { useTheme } from '@/app/context/theme';
 import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ActionSheet, { SheetManager } from 'react-native-actions-sheet';
 
 export const ImagePickerSheet = (props: any) => {
+    // ✅ Primero los hooks
+    const { colors, isDark } = useTheme();
+
+    // Luego las funciones
     const pickFromCamera = async () => {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (status !== 'granted') {
@@ -31,21 +36,33 @@ export const ImagePickerSheet = (props: any) => {
     };
 
     return (
-        <ActionSheet id={props.sheetId}>
+        <ActionSheet
+            key={isDark ? 'dark' : 'light'}
+            id={props.sheetId}
+            containerStyle={{
+                backgroundColor: colors.card,
+                paddingBottom: 20,
+            }}
+            indicatorStyle={{
+                backgroundColor: isDark ? colors.border : '#E5E7EB',
+                width: 40,
+            }}
+            gestureEnabled={true}
+        >
             <View style={styles.container}>
-                <TouchableOpacity style={styles.button} onPress={pickFromCamera}>
+                <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={pickFromCamera}>
                     <Text style={styles.buttonText}>Tomar foto</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.button} onPress={pickFromLibrary}>
+                <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={pickFromLibrary}>
                     <Text style={styles.buttonText}>Elegir de galería</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={[styles.button, styles.cancelButton]}
+                    style={[styles.button, styles.cancelButton, { backgroundColor: isDark ? colors.background : '#F1F5F9' }]}
                     onPress={() => SheetManager.hide('image-picker')}
                 >
-                    <Text style={[styles.buttonText, styles.cancelText]}>Cancelar</Text>
+                    <Text style={[styles.buttonText, styles.cancelText, { color: colors.textSecondary }]}>Cancelar</Text>
                 </TouchableOpacity>
             </View>
         </ActionSheet>
@@ -70,9 +87,9 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter_700Bold',
     },
     cancelButton: {
-        backgroundColor: '#F1F5F9',
+        backgroundColor: '#F1F5F9', // Default light, will be overridden by theme
     },
     cancelText: {
-        color: '#64748B',
+        color: '#64748B', // Default light, will be overridden by theme
     },
 });

@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import React from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -9,20 +10,27 @@ interface SearchBarProps {
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({ value, onChangeText, onFilterPress }) => {
+    const { colors, isDark } = useTheme();
+
     return (
-        <View style={styles.container}>
-            <View style={styles.searchSection}>
-                <Lucide name="search" size={20} color="#94A3B8" style={styles.searchIcon} />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <View style={[styles.searchSection, { backgroundColor: colors.card }]}>
+                <Lucide
+                    name="search"
+                    size={20}
+                    color={colors.textSecondary}
+                    style={styles.searchIcon}
+                />
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: colors.text }]}
                     placeholder="Buscar transacciones..."
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={colors.textSecondary}
                     value={value}
                     onChangeText={onChangeText}
                 />
             </View>
             <Pressable style={styles.filterButton} onPress={onFilterPress}>
-                <Lucide name="sliders-horizontal" size={24} color="#4F46E5" />
+                <Lucide name="sliders-horizontal" size={24} color={colors.primary} />
             </Pressable>
         </View>
     );
@@ -34,13 +42,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 16,
         paddingVertical: 10,
-        backgroundColor: '#F8FAFC',
     },
     searchSection: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFF',
         borderRadius: 12,
         paddingHorizontal: 12,
         height: 48,
@@ -56,7 +62,6 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: 16,
-        color: '#1E293B',
         fontFamily: 'Inter_400Regular',
     },
     filterButton: {

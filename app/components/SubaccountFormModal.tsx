@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Account } from '@/models/account';
 import { SubaccountsService } from '@/services/subaccounts';
 import { Lucide } from '@react-native-vector-icons/lucide';
@@ -49,6 +50,7 @@ export const SubaccountFormModal = ({ visible, onClose, onSave, accountToEdit }:
     const insets = useSafeAreaInsets();
     const { showPlanLimit, PlanLimitComponent, hidePlanLimit } = usePlanLimitModal();
     const router = useRouter();
+    const { colors, isDark } = useTheme();
 
     useEffect(() => {
         if (visible) {
@@ -57,8 +59,8 @@ export const SubaccountFormModal = ({ visible, onClose, onSave, accountToEdit }:
                     name: accountToEdit.name,
                     type: accountToEdit.type,
                     tags: accountToEdit.tags,
-                    available_balance: accountToEdit.current_balance?.toString() || '',
-                    programmed_amount: accountToEdit.programmed_amount?.toString() || '',
+                    available_balance: accountToEdit.current_balance ? String(accountToEdit.current_balance) : '',
+                    programmed_amount: accountToEdit.programmed_amount ? String(accountToEdit.programmed_amount) : '',
                 });
             } else {
                 setForm(initialFormState);
@@ -154,13 +156,13 @@ export const SubaccountFormModal = ({ visible, onClose, onSave, accountToEdit }:
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
 
-                <View style={styles.modalContent}>
-                    <View style={styles.header}>
-                        <Text style={styles.headerTitle}>
+                <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.headerTitle, { color: colors.text }]}>
                             {accountToEdit ? 'Editar Apartado' : 'Nuevo Apartado'}
                         </Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Lucide name="x" size={24} color="#64748B" />
+                            <Lucide name="x" size={24} color={colors.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -177,22 +179,24 @@ export const SubaccountFormModal = ({ visible, onClose, onSave, accountToEdit }:
                             keyboardShouldPersistTaps="handled"
                         >
                             {/* Nombre */}
-                            <Text style={styles.label}>Nombre *</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Nombre *</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
                                 placeholder="Ej: Vacaciones, Fondo de Emergencia"
+                                placeholderTextColor={colors.textSecondary}
                                 value={form.name}
                                 onChangeText={(text) => handleInputChange('name', text)}
                             />
                             {errors.name && <Text style={styles.errorText}>{errors.name[0]}</Text>}
 
                             {/* Balance Actual (Solo editable al crear o si se permite ajustar manualmente) */}
-                            <Text style={styles.label}>Saldo Actual {accountToEdit ? '(Ajuste manual)' : '(Opcional)'}</Text>
-                            <View style={styles.amountContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Saldo Actual {accountToEdit ? '(Ajuste manual)' : '(Opcional)'}</Text>
+                            <View style={[styles.amountContainer, { backgroundColor: colors.background }]}>
+                                <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                                 <TextInput
-                                    style={styles.amountInput}
+                                    style={[styles.amountInput, { color: colors.text }]}
                                     placeholder="0.00"
+                                    placeholderTextColor={colors.textSecondary}
                                     keyboardType="decimal-pad"
                                     value={form.available_balance}
                                     onChangeText={(text) => handleInputChange('available_balance', text)}
@@ -201,12 +205,13 @@ export const SubaccountFormModal = ({ visible, onClose, onSave, accountToEdit }:
                             {errors.available_balance && <Text style={styles.errorText}>{errors.available_balance[0]}</Text>}
 
                             {/* Meta / Monto Programado */}
-                            <Text style={styles.label}>Meta / Monto Programado</Text>
-                            <View style={styles.amountContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Meta / Monto Programado</Text>
+                            <View style={[styles.amountContainer, { backgroundColor: colors.background }]}>
+                                <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                                 <TextInput
-                                    style={styles.amountInput}
+                                    style={[styles.amountInput, { color: colors.text }]}
                                     placeholder="0.00"
+                                    placeholderTextColor={colors.textSecondary}
                                     keyboardType="decimal-pad"
                                     value={form.programmed_amount}
                                     onChangeText={(text) => handleInputChange('programmed_amount', text)}
@@ -217,11 +222,15 @@ export const SubaccountFormModal = ({ visible, onClose, onSave, accountToEdit }:
                         </ScrollView>
 
                         {/* Footer */}
-                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10, borderTopColor: colors.border }]}>
+                            <TouchableOpacity
+                                style={[styles.cancelButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                onPress={onClose}
+                                disabled={loading}
+                            >
+                                <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancelar</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={loading}>
                                 {loading ? (
                                     <ActivityIndicator color="#FFF" size="small" />
                                 ) : (

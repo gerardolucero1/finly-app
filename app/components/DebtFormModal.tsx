@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Debt } from '@/models/debt';
 import { DebtsService } from '@/services/debts';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -81,6 +82,22 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
     const { showAlert, AlertComponent, hideAlert } = useCustomAlert();
     const { showPlanLimit, PlanLimitComponent, hidePlanLimit } = usePlanLimitModal();
     const router = useRouter();
+    const { colors, isDark } = useTheme();
+
+    const dynamicPickerStyles = {
+        inputIOS: {
+            ...pickerSelectStyles.inputIOS,
+            color: colors.text,
+            backgroundColor: colors.background,
+        },
+        inputAndroid: {
+            ...pickerSelectStyles.inputAndroid,
+            color: colors.text,
+            backgroundColor: colors.background,
+        },
+        iconContainer: pickerSelectStyles.iconContainer,
+        placeholder: { color: colors.textSecondary },
+    };
 
     // Efecto para cargar datos si es edición o limpiar si es nuevo
     useEffect(() => {
@@ -203,13 +220,13 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                     <View style={styles.modalOverlay} />
                 </TouchableWithoutFeedback>
 
-                <View style={styles.modalContent}>
-                    <View style={styles.header}>
-                        <Text style={styles.headerTitle}>
+                <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.headerTitle, { color: colors.text }]}>
                             {editingDebt ? 'Editar Deuda' : 'Nueva Deuda'}
                         </Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Lucide name="x" size={24} color="#64748B" />
+                            <Lucide name="x" size={24} color={colors.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -227,17 +244,18 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                         >
 
                             {/* Nombre */}
-                            <Text style={styles.label}>Nombre de la deuda <Text style={styles.required}>*</Text></Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Nombre de la deuda <Text style={styles.required}>*</Text></Text>
                             <TextInput
-                                style={[styles.input, errors.name && styles.inputError]}
+                                style={[styles.input, errors.name && styles.inputError, { backgroundColor: colors.background, color: colors.text }]}
                                 placeholder="Ej: Préstamo Auto, Hipoteca..."
+                                placeholderTextColor={colors.textSecondary}
                                 value={form.name}
                                 onChangeText={(value) => handleInputChange('name', value)}
                             />
                             {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
                             {/* Tipo de deuda */}
-                            <Text style={styles.label}>Tipo de deuda <Text style={styles.required}>*</Text></Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Tipo de deuda <Text style={styles.required}>*</Text></Text>
                             <View style={styles.col}>
                                 <RNPickerSelect
                                     value={form.type}
@@ -249,21 +267,22 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                                         { label: "Otro", value: "other" },
                                     ]}
                                     placeholder={{ label: "Seleccionar...", value: null }}
-                                    style={pickerSelectStyles}
+                                    style={dynamicPickerStyles}
                                     useNativeAndroidPickerStyle={false}
-                                    Icon={() => <Lucide name="chevron-down" size={20} color="#64748B" />}
+                                    Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
                                 />
                                 {errors.type && <Text style={styles.errorText}>{errors.type}</Text>}
                             </View>
 
 
                             {/* Monto Total */}
-                            <Text style={styles.label}>Monto Total Original <Text style={styles.required}>*</Text></Text>
-                            <View style={styles.currencyInputContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Monto Total Original <Text style={styles.required}>*</Text></Text>
+                            <View style={[styles.currencyInputContainer, { backgroundColor: colors.background }]}>
+                                <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                                 <TextInput
-                                    style={styles.currencyInput}
+                                    style={[styles.currencyInput, { color: colors.text }]}
                                     placeholder="0.00"
+                                    placeholderTextColor={colors.textSecondary}
                                     keyboardType="decimal-pad"
                                     value={form.total_amount}
                                     onChangeText={(value) => handleInputChange('total_amount', value)}
@@ -274,12 +293,13 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                             {/* Fila: Monto pendiente y Pago Fijo */}
                             <View style={styles.row}>
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Monto Pendiente <Text style={styles.required}>*</Text></Text>
-                                    <View style={styles.currencyInputContainer}>
-                                        <Text style={styles.currencySymbol}>$</Text>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Monto Pendiente <Text style={styles.required}>*</Text></Text>
+                                    <View style={[styles.currencyInputContainer, { backgroundColor: colors.background }]}>
+                                        <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                                         <TextInput
-                                            style={[styles.input, errors.remaining_amount && styles.inputError]}
+                                            style={[styles.input, errors.remaining_amount && styles.inputError, { backgroundColor: 'transparent', flex: 1, color: colors.text }]}
                                             placeholder="0.00"
+                                            placeholderTextColor={colors.textSecondary}
                                             keyboardType="decimal-pad"
                                             value={form.remaining_amount}
                                             onChangeText={(value) => handleInputChange('remaining_amount', value)}
@@ -287,12 +307,13 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                                     </View>
                                 </View>
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Pago Fijo <Text style={styles.required}>*</Text></Text>
-                                    <View style={styles.currencyInputContainer}>
-                                        <Text style={styles.currencySymbol}>$</Text>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Pago Fijo <Text style={styles.required}>*</Text></Text>
+                                    <View style={[styles.currencyInputContainer, { backgroundColor: colors.background }]}>
+                                        <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                                         <TextInput
-                                            style={[styles.input, errors.debt_payment && styles.inputError]}
+                                            style={[styles.input, errors.debt_payment && styles.inputError, { backgroundColor: 'transparent', flex: 1, color: colors.text }]}
                                             placeholder="0.00"
+                                            placeholderTextColor={colors.textSecondary}
                                             keyboardType="decimal-pad"
                                             value={form.debt_payment}
                                             onChangeText={(value) => handleInputChange('debt_payment', value)}
@@ -304,10 +325,11 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                             {/* Fila: Tasa Interés y Pago Fijo */}
                             <View style={styles.row}>
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Tasa Anual (%)</Text>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Tasa Anual (%)</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
                                         placeholder="Ej: 15.5"
+                                        placeholderTextColor={colors.textSecondary}
                                         keyboardType="decimal-pad"
                                         value={form.interest_rate}
                                         onChangeText={(value) => handleInputChange('interest_rate', value)}
@@ -315,10 +337,11 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                                 </View>
 
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Dia de pago*</Text>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Dia de pago*</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
                                         placeholder="Ej: 1"
+                                        placeholderTextColor={colors.textSecondary}
                                         keyboardType="decimal-pad"
                                         value={form.due_day}
                                         onChangeText={(value) => handleInputChange('due_day', value)}
@@ -329,20 +352,22 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
 
 
                             {/* Frecuencia */}
-                            <Text style={styles.label}>Frecuencia de Pagos</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Frecuencia de Pagos</Text>
                             <View style={styles.typeSelectorContainer}>
                                 {frequencyOptions.map((option) => (
                                     <TouchableOpacity
                                         key={option.value}
                                         style={[
                                             styles.typeButton,
-                                            form.frequency === option.value && styles.typeButtonSelected
+                                            { backgroundColor: colors.background, borderColor: colors.border },
+                                            form.frequency === option.value && { borderColor: colors.primary, backgroundColor: isDark ? 'rgba(99, 102, 241, 0.2)' : '#EEF2FF' }
                                         ]}
                                         onPress={() => handleInputChange('frequency', option.value)}
                                     >
                                         <Text style={[
                                             styles.typeButtonText,
-                                            form.frequency === option.value && styles.typeButtonTextSelected
+                                            { color: colors.textSecondary },
+                                            form.frequency === option.value && { color: colors.primary, fontFamily: 'Inter_700Bold' }
                                         ]}>
                                             {option.label}
                                         </Text>
@@ -353,26 +378,27 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                             {/* Fechas */}
                             <View style={styles.row}>
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Fecha Inicio</Text>
-                                    <TouchableOpacity onPress={() => setShowDatePicker('start_date')} style={styles.datePickerButton}>
-                                        <Text style={styles.datePickerText}>{form.start_date.toLocaleDateString()}</Text>
-                                        <Lucide name="calendar" size={18} color="#64748B" />
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Fecha Inicio</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker('start_date')} style={[styles.datePickerButton, { backgroundColor: colors.background }]}>
+                                        <Text style={[styles.datePickerText, { color: colors.text }]}>{form.start_date.toLocaleDateString()}</Text>
+                                        <Lucide name="calendar" size={18} color={colors.textSecondary} />
                                     </TouchableOpacity>
                                 </View>
                                 <View style={styles.col}>
-                                    <Text style={styles.label}>Próximo Pago</Text>
-                                    <TouchableOpacity onPress={() => setShowDatePicker('next_payment_date')} style={styles.datePickerButton}>
-                                        <Text style={styles.datePickerText}>{form.next_payment_date.toLocaleDateString()}</Text>
-                                        <Lucide name="calendar" size={18} color="#64748B" />
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Próximo Pago</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker('next_payment_date')} style={[styles.datePickerButton, { backgroundColor: colors.background }]}>
+                                        <Text style={[styles.datePickerText, { color: colors.text }]}>{form.next_payment_date.toLocaleDateString()}</Text>
+                                        <Lucide name="calendar" size={18} color={colors.textSecondary} />
                                     </TouchableOpacity>
                                 </View>
                             </View>
 
                             {/* Notas */}
-                            <Text style={styles.label}>Notas (Opcional)</Text>
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Notas (Opcional)</Text>
                             <TextInput
-                                style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+                                style={[styles.input, { height: 80, textAlignVertical: 'top', backgroundColor: colors.background, color: colors.text }]}
                                 placeholder="Detalles adicionales..."
+                                placeholderTextColor={colors.textSecondary}
                                 multiline
                                 numberOfLines={3}
                                 value={form.notes}
@@ -382,11 +408,15 @@ export const DebtFormModal = ({ visible, onClose, onSave, editingDebt }: DebtFor
                         </ScrollView>
 
                         {/* Botones de Acción */}
-                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-                            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={loading}>
-                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 10, borderTopColor: colors.border }]}>
+                            <TouchableOpacity
+                                style={[styles.cancelButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                onPress={onClose}
+                                disabled={loading}
+                            >
+                                <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancelar</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={loading}>
                                 {loading ? (
                                     <ActivityIndicator color="#FFF" size="small" />
                                 ) : (

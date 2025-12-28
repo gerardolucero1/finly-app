@@ -1,5 +1,6 @@
 import { useCustomAlert } from '@/app/components/CustomAlert';
 import { FormField } from '@/app/components/FormField';
+import { useTheme } from '@/app/context/theme';
 import { useInput } from '@/hooks/useInput';
 import { ProfileService } from '@/services/profile';
 import { useHeaderHeight } from '@react-navigation/elements';
@@ -22,6 +23,7 @@ interface UpdatePasswordData {
 }
 
 export default function EditPasswordScreen() {
+    const { colors } = useTheme();
     const current_password = useInput('')
     const new_password = useInput('')
     const new_password_confirmation = useInput('')
@@ -33,11 +35,6 @@ export default function EditPasswordScreen() {
     const [loading, setLoading] = useState(false);
     const headerHeight = useHeaderHeight();
     const { showAlert, AlertComponent } = useCustomAlert();
-
-    const binnie = () => {
-        console.log(111);
-        
-    }
 
     const handleSave = async () => {
         try {
@@ -79,13 +76,13 @@ export default function EditPasswordScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <ScrollView
-                style={styles.container}
+                style={[styles.container, { backgroundColor: colors.background }]}
                 contentContainerStyle={[styles.contentContainer, { paddingTop: headerHeight }]}
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.header}>
-                    <Text style={styles.title}>Editar Contraseña</Text>
-                    <Text style={styles.subtitle}>Actualiza tu contraseña desde aquí.</Text>
+                    <Text style={[styles.title, { color: colors.text }]}>Editar Contraseña</Text>
+                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Actualiza tu contraseña desde aquí.</Text>
                 </View>
 
                 <View style={styles.form}>
@@ -132,9 +129,9 @@ export default function EditPasswordScreen() {
                     />
                 </View>
 
-                <TouchableOpacity 
-                    style={[styles.saveButton, loading && styles.saveButtonDisabled]} 
-                    onPress={handleSave} 
+                <TouchableOpacity
+                    style={[styles.saveButton, { backgroundColor: colors.primary }, loading && styles.saveButtonDisabled]}
+                    onPress={handleSave}
                     disabled={loading}
                 >
                     {loading ? (
@@ -153,7 +150,6 @@ export default function EditPasswordScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
     },
     contentContainer: {
         flexGrow: 1,
@@ -165,11 +161,9 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontFamily: 'Inter_700Bold',
-        color: '#1E293B',
     },
     subtitle: {
         fontSize: 16,
-        color: '#64748B',
         marginTop: 8,
         fontFamily: 'Inter_500Medium',
     },
@@ -177,7 +171,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     saveButton: {
-        backgroundColor: '#4F46E5',
         borderRadius: 12,
         paddingVertical: 16,
         alignItems: 'center',
@@ -185,7 +178,7 @@ const styles = StyleSheet.create({
         marginTop: 24, // Espacio entre el último campo y el botón
     },
     saveButtonDisabled: {
-        backgroundColor: '#A5B4FC', // Un color más claro para el estado deshabilitado
+        opacity: 0.7,
     },
     saveButtonText: {
         color: '#FFFFFF',

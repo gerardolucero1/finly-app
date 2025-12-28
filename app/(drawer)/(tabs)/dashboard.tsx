@@ -73,6 +73,7 @@ const formatCurrency = (value: any = 0) => {
 
 // --- NUEVO COMPONENTE: SALUD FINANCIERA REDISEÑADO ---
 const FinancialHealthCard = ({ score, label, variation }: { score: number, label: string, variation: number }) => {
+    const { colors } = useTheme();
     // Determinar color según puntaje
     let color = '#EF4444'; // Rojo (Pobre)
     let message = "Requiere atención urgente";
@@ -89,25 +90,25 @@ const FinancialHealthCard = ({ score, label, variation }: { score: number, label
     }
 
     return (
-        <View style={styles.healthCard}>
+        <View style={[styles.healthCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.healthHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <View style={[styles.healthIconBg, { backgroundColor: `${color}15` }]}>
                         <Lucide name="activity" size={20} color={color} />
                     </View>
                     <View>
-                        <Text style={styles.healthTitle}>Salud Financiera</Text>
-                        <Text style={styles.healthSubtitle}>{message}</Text>
+                        <Text style={[styles.healthTitle, { color: colors.text }]}>Salud Financiera</Text>
+                        <Text style={[styles.healthSubtitle, { color: colors.textSecondary }]}>{message}</Text>
                     </View>
                 </View>
                 <View style={styles.scoreContainer}>
                     <Text style={[styles.scoreText, { color }]}>{score}</Text>
-                    <Text style={styles.scoreMax}>/100</Text>
+                    <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>/100</Text>
                 </View>
             </View>
 
             {/* Barra de Progreso Moderna */}
-            <View style={styles.progressContainer}>
+            <View style={[styles.progressContainer, { backgroundColor: colors.iconBg }]}>
                 <View style={[styles.progressBar, { width: `${score}%`, backgroundColor: color }]} />
             </View>
 
@@ -136,26 +137,23 @@ const FinancialHealthCard = ({ score, label, variation }: { score: number, label
 
 // --- NUEVO COMPONENTE: PASTEL DE LA REALIDAD (Personal vs Negocio) ---
 const ExpensesByScopeChart = ({ data }: { data: ExpensesByScope[] }) => {
+    const { colors } = useTheme();
     if (!data || data.length === 0) return null;
 
     const total = data.reduce((sum, item) => sum + item.total, 0);
 
     return (
-        <View style={styles.scopeChartCard}>
+        <View style={[styles.scopeChartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.scopeChartHeader}>
-                {/* <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Lucide name="message-circle-question-mark" size={16} color="#3b82f6" />
-                    <Text style={styles.compactTitle}>Pastel de la Realidad</Text>
-                </View> */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <View style={[styles.healthIconBg, { backgroundColor: `#3b82f615` }]}>
                         <Lucide name="chart-pie" size={20} color="#3b82f6" />
                     </View>
                     <View>
-                        <Text style={styles.healthTitle}>Pastel de la Realidad</Text>
+                        <Text style={[styles.healthTitle, { color: colors.text }]}>Pastel de la Realidad</Text>
                     </View>
                 </View>
-                <Text style={styles.compactTotal}>{formatCurrency(total)}</Text>
+                <Text style={[styles.compactTotal, { color: colors.text }]}>{formatCurrency(total)}</Text>
             </View>
 
             {/* Compact Chart */}
@@ -167,24 +165,16 @@ const ExpensesByScopeChart = ({ data }: { data: ExpensesByScope[] }) => {
                             <View style={styles.scopeBarHeader}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                     <View style={[styles.scopeColorDot, { backgroundColor: item.color }]} />
-                                    <Text style={styles.scopeLabel}>{item.label}</Text>
-                                    <Text style={styles.scopeAmount}>{formatCurrency(item.total)}</Text>
+                                    <Text style={[styles.scopeLabel, { color: colors.text }]}>{item.label}</Text>
+                                    <Text style={[styles.scopeAmount, { color: colors.textSecondary }]}>{formatCurrency(item.total)}</Text>
                                 </View>
                                 <Text style={[styles.scopePercentage, { color: item.color }]}>
                                     {percentage.toFixed(0)}%
                                 </Text>
                             </View>
-                            <View style={styles.progressContainer}>
+                            <View style={[styles.progressContainer, { backgroundColor: colors.iconBg }]}>
                                 <View style={[styles.progressBar, { width: `${percentage}%`, backgroundColor: item.color }]} />
                             </View>
-                            {/* <View style={styles.scopeBarBg}>
-                                <View
-                                    style={[
-                                        styles.scopeBarFill,
-                                        { width: `${percentage}%`, backgroundColor: item.color }
-                                    ]}
-                                />
-                            </View> */}
                         </View>
                     );
                 })}
@@ -195,24 +185,21 @@ const ExpensesByScopeChart = ({ data }: { data: ExpensesByScope[] }) => {
 
 // --- NUEVO COMPONENTE: INDICADOR DE SALUD REAL ---
 const RealHealthCard = ({ data }: { data: RealHealth }) => {
+    const { colors } = useTheme();
     const totalIncome = parseFloat(data.totalIncome);
     const businessExpenses = data.businessExpenses;
     const realProfit = data.realProfit;
     const profitPercentage = totalIncome > 0 ? (realProfit / totalIncome) * 100 : 0;
 
     return (
-        <View style={styles.realHealthCard}>
+        <View style={[styles.realHealthCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.scopeChartHeader}>
-                {/* <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Lucide name="trending-up" size={16} color="#10b981" />
-                    <Text style={styles.compactTitle}>Salud Real</Text>
-                </View> */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <View style={[styles.healthIconBg, { backgroundColor: `#10b98115` }]}>
                         <Lucide name="trending-up" size={20} color="#10b981" />
                     </View>
                     <View>
-                        <Text style={styles.healthTitle}>Salud Real</Text>
+                        <Text style={[styles.healthTitle, { color: colors.text }]}>Salud Real</Text>
                     </View>
                 </View>
                 <Text style={[styles.compactTotal, { color: '#10b981' }]}>{formatCurrency(realProfit)}</Text>
@@ -221,31 +208,22 @@ const RealHealthCard = ({ data }: { data: RealHealth }) => {
             {/* Compact Breakdown */}
             <View style={styles.realHealthBreakdown}>
                 <View style={styles.realHealthRow}>
-                    <Text style={styles.realHealthLabel}>Ingresos</Text>
+                    <Text style={[styles.realHealthLabel, { color: colors.textSecondary }]}>Ingresos</Text>
                     <Text style={[styles.realHealthValue, { color: '#10b981' }]}>
                         {formatCurrency(totalIncome)}
                     </Text>
                 </View>
 
                 <View style={styles.realHealthRow}>
-                    <Text style={styles.realHealthLabel}>Gastos Negocio</Text>
+                    <Text style={[styles.realHealthLabel, { color: colors.textSecondary }]}>Gastos Negocio</Text>
                     <Text style={[styles.realHealthValue, { color: '#f97316' }]}>
                         -{formatCurrency(businessExpenses)}
                     </Text>
                 </View>
 
-                <View style={styles.progressContainer}>
+                <View style={[styles.progressContainer, { backgroundColor: colors.iconBg }]}>
                     <View style={[styles.progressBar, { width: `${Math.min(profitPercentage, 100)}%`, backgroundColor: '#10b981' }]} />
                 </View>
-
-                {/* <View style={styles.realHealthProgressBg}>
-                    <View
-                        style={[
-                            styles.realHealthProgressFill,
-                            { width: `${Math.min(profitPercentage, 100)}%` }
-                        ]}
-                    />
-                </View> */}
             </View>
         </View>
     );
@@ -338,74 +316,82 @@ const StreakCard = ({ streakData }: { streakData: StreakData }) => {
 };
 
 // --- COMPONENTES PREVIOS (QuickAction, SectionCard, DebtItem) ---
-const QuickAction = ({ icon, label, color, onPress }: any) => (
-    <TouchableOpacity style={styles.quickActionContainer} onPress={onPress} activeOpacity={0.7}>
-        <View style={[styles.quickActionIcon, { backgroundColor: `${color}15` }]}>
-            <Lucide name={icon} size={24} color={color} />
-        </View>
-        <Text style={styles.quickActionLabel}>{label}</Text>
-    </TouchableOpacity>
-);
-
-const SectionCard = ({ title, value, subtitle, icon, color, buttonText, onPress, progress }: any) => (
-    <TouchableOpacity style={styles.sectionCard} onPress={onPress} activeOpacity={0.1}>
-        <View style={styles.sectionHeader}>
-            <View style={[styles.iconCircle, { backgroundColor: `${color}15` }]}>
-                <Lucide name={icon} size={20} color={color} />
+const QuickAction = ({ icon, label, color, onPress }: any) => {
+    const { colors } = useTheme();
+    return (
+        <TouchableOpacity style={styles.quickActionContainer} onPress={onPress} activeOpacity={0.7}>
+            <View style={[styles.quickActionIcon, { backgroundColor: `${color}15` }]}>
+                <Lucide name={icon} size={24} color={color} />
             </View>
-            {progress !== undefined && (
-                <View style={styles.miniProgressContainer}>
-                    <Text style={[styles.miniProgressText, { color }]}>{progress}%</Text>
-                </View>
-            )}
-        </View>
-        <View style={styles.sectionBody}>
-            <Text style={styles.cardTitle}>{title}</Text>
-            <Text style={styles.cardValue}>{value}</Text>
-            {subtitle && <Text style={styles.cardSubtitle}>{subtitle}</Text>}
-            {progress !== undefined && (
-                <View style={styles.progressBarBg}>
-                    <View style={[styles.progressBarFill, { width: `${Math.min(progress, 100)}%`, backgroundColor: color }]} />
-                </View>
-            )}
-        </View>
-        <TouchableOpacity style={styles.cardButton} onPress={onPress}>
-            <Text style={[styles.cardButtonText, { color }]}>{buttonText}</Text>
-            <Lucide name="arrow-right" size={14} color={color} />
+            <Text style={[styles.quickActionLabel, { color: colors.textSecondary }]}>{label}</Text>
         </TouchableOpacity>
-    </TouchableOpacity>
-);
+    );
+};
+
+const SectionCard = ({ title, value, subtitle, icon, color, buttonText, onPress, progress }: any) => {
+    const { colors } = useTheme();
+    return (
+        <TouchableOpacity style={[styles.sectionCard, { backgroundColor: colors.card }]} onPress={onPress} activeOpacity={0.1}>
+            <View style={styles.sectionHeader}>
+                <View style={[styles.iconCircle, { backgroundColor: `${color}15` }]}>
+                    <Lucide name={icon} size={20} color={color} />
+                </View>
+                {progress !== undefined && (
+                    <View style={[styles.miniProgressContainer, { backgroundColor: colors.iconBg }]}>
+                        <Text style={[styles.miniProgressText, { color }]}>{progress}%</Text>
+                    </View>
+                )}
+            </View>
+            <View style={styles.sectionBody}>
+                <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>{title}</Text>
+                <Text style={[styles.cardValue, { color: colors.text }]}>{value}</Text>
+                {subtitle && <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>}
+                {progress !== undefined && (
+                    <View style={[styles.progressBarBg, { backgroundColor: colors.iconBg }]}>
+                        <View style={[styles.progressBarFill, { width: `${Math.min(progress, 100)}%`, backgroundColor: color }]} />
+                    </View>
+                )}
+            </View>
+            <TouchableOpacity style={styles.cardButton} onPress={onPress}>
+                <Text style={[styles.cardButtonText, { color }]}>{buttonText}</Text>
+                <Lucide name="arrow-right" size={14} color={color} />
+            </TouchableOpacity>
+        </TouchableOpacity>
+    );
+};
 
 const ActiveDebtItem = ({ name, amount, date }: { name: string, amount: number, date: string }) => {
+    const { colors, isDark } = useTheme();
     const daysLeft = Math.ceil((new Date(date).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
     const isUrgent = daysLeft <= 3;
     return (
-        <View style={styles.debtItem}>
-            <View style={styles.debtIcon}>
+        <View style={[styles.debtItem, { borderBottomColor: colors.background }]}>
+            <View style={[styles.debtIcon, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2' }]}>
                 <Lucide name="file-warning" size={20} color="#EF4444" />
             </View>
             <View style={{ flex: 1, paddingHorizontal: 12 }}>
-                <Text style={styles.debtName}>{name}</Text>
-                <Text style={[styles.debtDate, isUrgent && { color: '#EF4444' }]}>
+                <Text style={[styles.debtName, { color: colors.text }]}>{name}</Text>
+                <Text style={[styles.debtDate, isUrgent ? { color: '#EF4444' } : { color: colors.textSecondary }]}>
                     {daysLeft < 0 ? 'Vencido' : (daysLeft === 0 ? 'Vence hoy' : `Vence en ${daysLeft} días`)}
                 </Text>
             </View>
-            <Text style={styles.debtAmount}>{formatCurrency(amount)}</Text>
+            <Text style={[styles.debtAmount, { color: colors.text }]}>{formatCurrency(amount)}</Text>
         </View>
     );
 };
 
 const FreelancerModeLockedCard = () => {
+    const { colors, isDark } = useTheme();
     const router = useRouter();
     return (
-        <View style={styles.lockedCard}>
+        <View style={[styles.lockedCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F8FAFC', borderColor: colors.border }]}>
             <View style={styles.lockedContent}>
-                <View style={styles.lockedIconBg}>
-                    <Lucide name="lock" size={20} color="#64748B" />
+                <View style={[styles.lockedIconBg, { backgroundColor: colors.iconBg }]}>
+                    <Lucide name="lock" size={20} color={colors.textSecondary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.lockedTitle}>Modo Freelancer</Text>
-                    <Text style={styles.lockedSubtitle}>
+                    <Text style={[styles.lockedTitle, { color: colors.text }]}>Modo Freelancer</Text>
+                    <Text style={[styles.lockedSubtitle, { color: colors.textSecondary }]}>
                         Separa tus finanzas personales de las de tu negocio y conoce tu utilidad real.
                     </Text>
                 </View>
@@ -455,7 +441,7 @@ export default function DashboardScreen() {
         useCallback(() => { fetchData(); }, [fetchData])
     );
 
-    if (loading && !data) return <View style={styles.centerContainer}><ActivityIndicator size="large" color="#4F46E5" /></View>;
+    if (loading && !data) return <View style={styles.centerContainer}><ActivityIndicator size="large" color={colors.primary} /></View>;
     if (!data) return null;
 
     const totalSpent = data.spendingChartData?.datasets[0]?.data.reduce((a, b) => a + b, 0) || 0;
@@ -465,10 +451,10 @@ export default function DashboardScreen() {
 
     return (
         <ScrollView
-            style={styles.container}
+            style={[styles.container, { backgroundColor: colors.background }]}
             contentContainerStyle={{ paddingTop: headerHeight + 20, paddingBottom: 40 }}
             showsVerticalScrollIndicator={false}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4F46E5']} />}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
         >
             <View style={styles.contentPadding}>
 
@@ -525,7 +511,7 @@ export default function DashboardScreen() {
                     <FreelancerModeLockedCard />
                 )}
 
-                <Text style={styles.sectionHeaderTitle}>Gestión</Text>
+                <Text style={[styles.sectionHeaderTitle, { color: colors.text }]}>Gestión</Text>
 
                 {/* 4. GRID */}
                 <View style={styles.gridContainer}>
@@ -572,12 +558,12 @@ export default function DashboardScreen() {
                 {activeDebts.length > 0 && (
                     <View style={styles.debtsSection}>
                         <View style={styles.sectionTitleRow}>
-                            <Text style={styles.sectionHeaderTitle}>Proximos Pagos</Text>
+                            <Text style={[styles.sectionHeaderTitle, { color: colors.text }]}>Proximos Pagos</Text>
                             {/* <TouchableOpacity onPress={() => handleNavigate('Deudas')}>
                                 <Text style={styles.linkText}>Ver todas</Text>
                             </TouchableOpacity> */}
                         </View>
-                        <View style={styles.debtList}>
+                        <View style={[styles.debtList, { backgroundColor: colors.card }]}>
                             {activeDebts.slice(0, 3).map((debt) => (
                                 <ActiveDebtItem key={debt.id} name={debt.name} amount={debt.amount} date={debt.next_payment_date} />
                             ))}

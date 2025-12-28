@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/context/theme';
 import { Notification } from '@/models/notification';
 import { NotificationsService } from '@/services/notifications';
 import { Lucide } from '@react-native-vector-icons/lucide';
@@ -25,21 +26,43 @@ import Reanimated, {
 import { useCustomAlert } from '../components/CustomAlert';
 
 // --- HELPER (Igual que antes) ---
-const getNotificationConfig = (type: string) => {
+const getNotificationConfig = (type: string, isDark: boolean) => {
     const lowerType = type.toLowerCase();
+
+    // Adjust backgrounds for dark mode to be darker/transparent
     if (lowerType.includes('payment') || lowerType.includes('invoice')) {
-        return { icon: 'receipt' as const, color: '#10B981', bg: '#ECFDF5' };
+        return {
+            icon: 'receipt' as const,
+            color: '#10B981',
+            bg: isDark ? 'rgba(16, 185, 129, 0.1)' : '#ECFDF5'
+        };
     }
     if (lowerType.includes('alert') || lowerType.includes('warning')) {
-        return { icon: 'triangle-alert' as const, color: '#F59E0B', bg: '#FFFBEB' };
+        return {
+            icon: 'triangle-alert' as const,
+            color: '#F59E0B',
+            bg: isDark ? 'rgba(245, 158, 11, 0.1)' : '#FFFBEB'
+        };
     }
     if (lowerType.includes('welcome') || lowerType.includes('success')) {
-        return { icon: 'party-popper' as const, color: '#4F46E5', bg: '#EEF2FF' };
+        return {
+            icon: 'party-popper' as const,
+            color: '#4F46E5',
+            bg: isDark ? 'rgba(79, 70, 229, 0.1)' : '#EEF2FF'
+        };
     }
     if (lowerType.includes('debt') || lowerType.includes('due')) {
-        return { icon: 'clock' as const, color: '#EF4444', bg: '#FEF2F2' };
+        return {
+            icon: 'clock' as const,
+            color: '#EF4444',
+            bg: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2'
+        };
     }
-    return { icon: 'bell' as const, color: '#64748B', bg: '#F1F5F9' };
+    return {
+        icon: 'bell' as const,
+        color: isDark ? '#94A3B8' : '#64748B',
+        bg: isDark ? 'rgba(148, 163, 184, 0.1)' : '#F1F5F9'
+    };
 };
 
 // --- COMPONENTE ITEM (Actualizado con onPress) ---
@@ -52,7 +75,8 @@ const NotificationItem = ({
     onDelete: (id: number) => void;
     onPress: (item: Notification) => void;
 }) => {
-    const config = getNotificationConfig(item.type);
+    const { colors, isDark } = useTheme();
+    const config = getNotificationConfig(item.type, isDark);
     const isUnread = item.read_at === null;
 
     const data = item.data || {};
@@ -89,7 +113,14 @@ const NotificationItem = ({
             containerStyle={styles.swipeableContainer}
         >
             <TouchableOpacity
-                style={[styles.itemContainer, isUnread && styles.itemUnread]}
+                style={[
+                    styles.itemContainer,
+                    { backgroundColor: colors.card },
+                    isUnread && {
+                        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#F0F9FF',
+                        borderColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#E0F2FE'
+                    }
+                ]}
                 activeOpacity={0.7}
                 // Agregamos la acción al presionar
                 onPress={() => onPress(item)}
@@ -102,12 +133,16 @@ const NotificationItem = ({
 
                 <View style={styles.contentContainer}>
                     <View style={styles.headerRow}>
-                        <Text style={[styles.title, isUnread && styles.titleBold]} numberOfLines={1}>
+                        <Text style={[
+                            styles.title,
+                            { color: colors.text },
+                            isUnread && styles.titleBold
+                        ]} numberOfLines={1}>
                             {title}
                         </Text>
-                        <Text style={styles.timeText}>{timeAgo}</Text>
+                        <Text style={[styles.timeText, { color: colors.textSecondary }]}>{timeAgo}</Text>
                     </View>
-                    <Text style={styles.message} numberOfLines={2}>
+                    <Text style={[styles.message, { color: colors.textSecondary }]} numberOfLines={2}>
                         {message}
                     </Text>
                 </View>
@@ -118,6 +153,7 @@ const NotificationItem = ({
 
 // --- PANTALLA PRINCIPAL ---
 export default function NotificationsScreen() {
+    const { colors, isDark } = useTheme();
     const headerHeight = useHeaderHeight();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
@@ -271,14 +307,17 @@ export default function NotificationsScreen() {
 
         return (
             <View style={styles.listHeaderContainer}>
-                <Text style={styles.listTitle}>Tus notificaciones</Text>
+                <Text style={[styles.listTitle, { color: colors.text }]}>Tus notificaciones</Text>
                 <TouchableOpacity
                     onPress={handleMarkAllAsRead}
-                    style={styles.markAllButton}
+                    style={[
+                        styles.markAllButton,
+                        { backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : '#EEF2FF' }
+                    ]}
                     activeOpacity={0.6}
                 >
-                    <Lucide name="check-check" size={16} color="#4F46E5" style={{ marginRight: 4 }} />
-                    <Text style={styles.markAllText}>Marcar todas</Text>
+                    <Lucide name="check-check" size={16} color={colors.primary} style={{ marginRight: 4 }} />
+                    <Text style={[styles.markAllText, { color: colors.primary }]}>Marcar todas</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -288,7 +327,7 @@ export default function NotificationsScreen() {
         if (!loadingMore) return <View style={{ height: 20 }} />;
         return (
             <View style={{ paddingVertical: 20 }}>
-                <ActivityIndicator size="small" color="#4F46E5" />
+                <ActivityIndicator size="small" color={colors.primary} />
             </View>
         );
     };
@@ -296,20 +335,23 @@ export default function NotificationsScreen() {
     const renderEmpty = () => (
         !loading ? (
             <View style={styles.emptyContainer}>
-                <View style={styles.emptyIconBg}>
-                    <Lucide name="bell-off" size={32} color="#94A3B8" />
+                <View style={[
+                    styles.emptyIconBg,
+                    { backgroundColor: isDark ? colors.card : '#F1F5F9' }
+                ]}>
+                    <Lucide name="bell-off" size={32} color={colors.textSecondary} />
                 </View>
-                <Text style={styles.emptyText}>Sin notificaciones</Text>
-                <Text style={styles.emptySubText}>Estás al día con todas tus novedades.</Text>
+                <Text style={[styles.emptyText, { color: colors.text }]}>Sin notificaciones</Text>
+                <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>Estás al día con todas tus novedades.</Text>
             </View>
         ) : null
     );
 
     return (
-        <View style={[styles.container, { paddingTop: headerHeight }]}>
+        <View style={[styles.container, { paddingTop: headerHeight, backgroundColor: colors.background }]}>
             {loading && !refreshing && notifications.length === 0 ? (
                 <View style={styles.centerLoading}>
-                    <ActivityIndicator size="large" color="#4F46E5" />
+                    <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -326,7 +368,12 @@ export default function NotificationsScreen() {
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#4F46E5']} />
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={handleRefresh}
+                            colors={[colors.primary]}
+                            tintColor={colors.primary}
+                        />
                     }
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.5}
@@ -343,7 +390,6 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
     },
     centerLoading: {
         flex: 1,
@@ -367,12 +413,10 @@ const styles = StyleSheet.create({
     listTitle: {
         fontSize: 18,
         fontFamily: 'Inter_700Bold',
-        color: '#0F172A',
     },
     markAllButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#EEF2FF', // Fondo suave Indigo
         paddingVertical: 6,
         paddingHorizontal: 12,
         borderRadius: 20,
@@ -380,7 +424,6 @@ const styles = StyleSheet.create({
     markAllText: {
         fontSize: 12,
         fontFamily: 'Inter_500Medium',
-        color: '#4F46E5',
     },
     // --- ESTILOS DE ITEM ---
     swipeableContainer: {
@@ -391,7 +434,6 @@ const styles = StyleSheet.create({
     },
     itemContainer: {
         flexDirection: 'row',
-        backgroundColor: '#FFFFFF',
         padding: 16,
         borderRadius: 16,
         alignItems: 'flex-start',
@@ -402,10 +444,6 @@ const styles = StyleSheet.create({
         elevation: 1,
         borderWidth: 1,
         borderColor: 'transparent',
-    },
-    itemUnread: {
-        backgroundColor: '#F0F9FF',
-        borderColor: '#E0F2FE',
     },
     unreadDot: {
         position: 'absolute',
@@ -437,23 +475,19 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 15,
         fontFamily: 'Inter_500Medium',
-        color: '#1E293B',
         flex: 1,
         marginRight: 8,
     },
     titleBold: {
         fontFamily: 'Inter_700Bold',
-        color: '#0F172A',
     },
     timeText: {
         fontSize: 11,
         fontFamily: 'Inter_400Regular',
-        color: '#94A3B8',
     },
     message: {
         fontSize: 13,
         fontFamily: 'Inter_400Regular',
-        color: '#64748B',
         lineHeight: 18,
     },
     // --- EMPTY STATE ---
@@ -468,7 +502,6 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 32,
-        backgroundColor: '#F1F5F9',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
@@ -476,12 +509,10 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 18,
         fontFamily: 'Inter_500Medium',
-        color: '#334155',
         marginBottom: 8,
     },
     emptySubText: {
         fontSize: 14,
-        color: '#94A3B8',
         textAlign: 'center',
         fontFamily: 'Inter_400Regular',
         lineHeight: 20,
