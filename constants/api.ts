@@ -1,10 +1,13 @@
-export const API_BASE_URL = 'https://holafinly.com/api';
-// export const API_BASE_URL = 'http://192.168.8.18:8000/api';
+// export const API_BASE_URL = 'https://holafinly.com/api';
+export const API_BASE_URL = 'http://192.168.1.134:8000/api';
 // export const API_BASE_URL = 'http://192.168.1.92:80/api';
 export const WEB_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
+export const GOOGLE_DEBUG_CLIENT_ID = '356916697234-n94penpvkf2isfgblapd9ctj2lhk3r83.apps.googleusercontent.com';
+export const GOOGLE_CLIENT_ID = '356916697234-n94penpvkf2isfgblapd9ctj2lhk3r83.apps.googleusercontent.com';
 
 export const API_ENDPOINTS = {
     LOGIN: '/login',
+    LOGIN_GOOGLE: '/auth/google',
     LOGOUT: '/logout',
     REGISTER: '/register',
     ME: '/me',

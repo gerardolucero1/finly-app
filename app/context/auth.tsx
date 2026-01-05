@@ -11,6 +11,7 @@ interface AuthContextType {
     token: string | null;
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
+    loginWithGoogle: (idToken: string) => Promise<void>;
     register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>;
     logout: () => Promise<void>;
 }
@@ -82,6 +83,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const loginWithGoogle = async (idToken: string) => {
+        try {
+            const response = await api.post(API_ENDPOINTS.LOGIN_GOOGLE, { id_token: idToken });
+
+            const data = await response.data;
+            const userToken = data.access_token;
+
+            if (Platform.OS === 'web') {
+                await AsyncStorage.setItem('userToken', userToken);
+            } else {
+                await SecureStore.setItemAsync('userToken', userToken);
+            }
+
+            setToken(userToken);
+            setIsAuthenticated(true);
+
+            if (data.user) {
+                console.log(data.user);
+                setProfile(data.user);
+            }
+        } catch (error) {
+            console.error('Google login error:', error);
+            throw error;
+        }
+    };
+
     const register = async (name: string, email: string, password: string, password_confirmation: string) => {
         try {
             const response = await api.post(API_ENDPOINTS.REGISTER, { name, email, password, password_confirmation });
@@ -128,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, isLoading, token, login, logout, register }}>
+        <AuthContext.Provider value={{ isAuthenticated, isLoading, token, login, loginWithGoogle, logout, register }}>
             {children}
         </AuthContext.Provider>
     );
