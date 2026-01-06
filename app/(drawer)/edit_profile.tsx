@@ -24,12 +24,25 @@ import RNPickerSelect from 'react-native-picker-select';
 
 const COUNTRY_CODES = [
     { label: "MX (+52)", value: "52" },
-    { label: "USA (+1)", value: "1" },
-    { label: "CO (+57)", value: "57" },
-    { label: "ES (+34)", value: "34" },
     { label: "AR (+54)", value: "54" },
+    { label: "BO (+591)", value: "591" },
     { label: "CL (+56)", value: "56" },
+    { label: "CO (+57)", value: "57" },
+    { label: "CR (+506)", value: "506" },
+    { label: "CU (+53)", value: "53" },
+    { label: "EC (+593)", value: "593" },
+    { label: "SV (+503)", value: "503" },
+    { label: "GT (+502)", value: "502" },
+    { label: "HN (+504)", value: "504" },
+    { label: "NI (+505)", value: "505" },
+    { label: "PA (+507)", value: "507" },
+    { label: "PY (+595)", value: "595" },
     { label: "PE (+51)", value: "51" },
+    { label: "PR (+1)", value: "1" },
+    { label: "DO (+1)", value: "1" },
+    { label: "UY (+598)", value: "598" },
+    { label: "VE (+58)", value: "58" },
+    { label: "ES (+34)", value: "34" },
 ];
 
 export default function EditProfileScreen() {
@@ -208,7 +221,18 @@ export default function EditProfileScreen() {
                     {/* WhatsApp Phone Field */}
                     <View style={styles.fieldContainer}>
                         <Text style={[styles.label, { color: colors.textSecondary }]}>WhatsApp</Text>
-                        <View style={styles.phoneContainer}>
+
+                        {/* Mensaje si el correo no está verificado */}
+                        {!profile.email_verified_at && (
+                            <View style={[styles.verificationWarning, { backgroundColor: isDark ? 'rgba(251, 191, 36, 0.1)' : '#FFFBEB' }]}>
+                                <Lucide name="triangle-alert" size={16} color="#F59E0B" />
+                                <Text style={styles.verificationWarningText}>
+                                    Verifica tu correo electrónico para editar tu número de WhatsApp.
+                                </Text>
+                            </View>
+                        )}
+
+                        <View style={[styles.phoneContainer, !profile.email_verified_at && styles.disabledContainer]}>
                             <View style={[styles.countryPickerContainer, { backgroundColor: colors.card }]}>
                                 <RNPickerSelect
                                     value={countryCode}
@@ -219,16 +243,18 @@ export default function EditProfileScreen() {
                                     useNativeAndroidPickerStyle={false}
                                     Icon={() => <Lucide name="chevron-down" size={20} color={colors.textSecondary} />}
                                     darkTheme={isDark}
+                                    disabled={!profile.email_verified_at}
                                 />
                             </View>
                             <View style={[styles.phoneNumberContainer, { backgroundColor: colors.card }]}>
                                 <TextInput
-                                    style={[styles.phoneInput, { color: colors.text }]}
+                                    style={[styles.phoneInput, { color: !profile.email_verified_at ? colors.textSecondary : colors.text }]}
                                     value={phoneNumber}
                                     onChangeText={setPhoneNumber}
                                     placeholder="Número"
                                     keyboardType="phone-pad"
                                     placeholderTextColor={colors.textSecondary}
+                                    editable={!!profile.email_verified_at}
                                 />
                             </View>
                         </View>
@@ -484,5 +510,22 @@ const styles = StyleSheet.create({
     refreshingText: {
         fontSize: 14,
         fontFamily: 'Inter_500Medium',
+    },
+    verificationWarning: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 12,
+        gap: 8,
+    },
+    verificationWarningText: {
+        flex: 1,
+        fontSize: 13,
+        fontFamily: 'Inter_400Regular',
+        color: '#92400E',
+    },
+    disabledContainer: {
+        opacity: 0.5,
     },
 });

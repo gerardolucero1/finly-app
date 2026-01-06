@@ -1,9 +1,13 @@
-// export const API_BASE_URL = 'https://holafinly.com/api';
-export const API_BASE_URL = 'http://192.168.1.134:8000/api';
+export const API_BASE_URL = 'https://holafinly.com/api';
+// export const API_BASE_URL = 'http://192.168.1.134:8000/api';
 // export const API_BASE_URL = 'http://192.168.1.92:80/api';
 export const WEB_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
-export const GOOGLE_DEBUG_CLIENT_ID = '356916697234-n94penpvkf2isfgblapd9ctj2lhk3r83.apps.googleusercontent.com';
-export const GOOGLE_CLIENT_ID = '356916697234-n94penpvkf2isfgblapd9ctj2lhk3r83.apps.googleusercontent.com';
+
+// Google OAuth Client IDs
+// WEB: Para desarrollo en Expo Go (usa flujo web)
+export const GOOGLE_WEB_CLIENT_ID = '356916697234-fs7lf77chcocg0n2u5d9blsbft0pj07p.apps.googleusercontent.com';
+// ANDROID: Para APK de producción (usa SHA-1 del keystore)
+export const GOOGLE_ANDROID_CLIENT_ID = '356916697234-5hco08jfgc84ekkclf868d63geiq5i26.apps.googleusercontent.com';
 
 export const API_ENDPOINTS = {
     LOGIN: '/login',

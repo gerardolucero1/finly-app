@@ -1,8 +1,7 @@
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { Lucide } from '@react-native-vector-icons/lucide';
-import * as Google from 'expo-auth-session/providers/google';
 import { router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
@@ -19,15 +18,18 @@ import {
     View
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { GOOGLE_DEBUG_CLIENT_ID } from '../../constants/api';
+import { GOOGLE_WEB_CLIENT_ID } from '../../constants/api';
 import { useInput } from '../../hooks/useInput';
 import { useAuth } from '../context/auth';
 
-// Completar cualquier autenticación web pendiente
-WebBrowser.maybeCompleteAuthSession();
-
 // Obtenemos las dimensiones para cálculos responsivos
 const { width, height } = Dimensions.get('window');
+
+// Configurar Google Sign-In
+// webClientId es necesario para obtener el idToken
+GoogleSignin.configure({
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+});
 
 export default function RegisterPage() {
     const name = useInput('');
@@ -41,28 +43,6 @@ export default function RegisterPage() {
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [isPasswordConfirmationVisible, setIsPasswordConfirmationVisible] = useState(false);
-
-    // Hook de Google Auth
-    const [request, response, promptAsync] = Google.useAuthRequest({
-        webClientId: GOOGLE_DEBUG_CLIENT_ID,
-        iosClientId: GOOGLE_DEBUG_CLIENT_ID,
-        androidClientId: GOOGLE_DEBUG_CLIENT_ID,
-    });
-
-    // Manejar respuesta de Google
-    useEffect(() => {
-        if (response?.type === 'success') {
-            const { authentication } = response;
-            if (authentication?.idToken) {
-                handleGoogleRegister(authentication.idToken);
-            } else if (authentication?.accessToken) {
-                handleGoogleRegister(authentication.accessToken);
-            }
-        } else if (response?.type === 'error') {
-            error.onChangeText('Error al registrarse con Google');
-            setIsGoogleLoading(false);
-        }
-    }, [response]);
 
     const handleGoogleRegister = async (idToken: string) => {
         try {
@@ -78,7 +58,27 @@ export default function RegisterPage() {
         Keyboard.dismiss();
         setIsGoogleLoading(true);
         error.onChangeText('');
-        await promptAsync();
+
+        try {
+            await GoogleSignin.hasPlayServices();
+            // Forzar mostrar selector de cuentas
+            await GoogleSignin.signOut();
+            const userInfo = await GoogleSignin.signIn();
+            const idToken = userInfo.data?.idToken;
+
+            if (idToken) {
+                await handleGoogleRegister(idToken);
+            } else {
+                error.onChangeText('No se pudo obtener el token de Google');
+                setIsGoogleLoading(false);
+            }
+        } catch (err: any) {
+            console.log('Google Sign-In Error:', err);
+            if (err.code !== 'SIGN_IN_CANCELLED') {
+                error.onChangeText('Error al registrarse con Google');
+            }
+            setIsGoogleLoading(false);
+        }
     };
 
     const handleRegister = async () => {
@@ -242,7 +242,7 @@ export default function RegisterPage() {
                             <TouchableOpacity
                                 style={styles.googleButton}
                                 onPress={handleGooglePress}
-                                disabled={isGoogleLoading || !request}
+                                disabled={isGoogleLoading}
                                 activeOpacity={0.8}
                             >
                                 {isGoogleLoading ? (
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     googleButtonText: {
         color: '#1E293B',
         fontSize: 16,
-        fontFamily: 'Inter_600SemiBold',
+        fontFamily: 'Inter_500Medium',
     },
     // --- FOOTER ---
     footer: {

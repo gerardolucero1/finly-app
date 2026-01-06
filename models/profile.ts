@@ -4,6 +4,7 @@ export interface Profile {
     id: number;
     name: string;
     email: string;
+    email_verified_at: string | null;
     whatsapp_phone: string;
     whatsapp_notifications_enabled: boolean;
     daily_tips_enabled: boolean;
