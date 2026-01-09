@@ -3,7 +3,7 @@ import axios from 'axios';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { API_BASE_URL } from '../constants/api';
+import { API_BASE_URL, API_ENDPOINTS } from '../constants/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -30,7 +30,9 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        const isLoginRequest = error.config?.url?.endsWith(API_ENDPOINTS.LOGIN);
+
+        if (error.response?.status === 401 && !isLoginRequest) {
             console.warn('Token inválido o expirado');
             // Acá podrías forzar logout si querés
             SecureStore.deleteItemAsync('userToken');

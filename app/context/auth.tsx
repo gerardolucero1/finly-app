@@ -77,8 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 setProfile(data.user);
             }
-        } catch (error) {
-            console.error('Login error:', error);
+        } catch (error: any) {
+            // console.error('Login error:', error.response.data.message);
             throw error;
         }
     };

@@ -43,6 +43,15 @@ export default function LoginPage() {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const insets = useSafeAreaInsets();
 
+    React.useEffect(() => {
+        // console.log('LoginPage MOUNTED');
+        // return () => console.log('LoginPage UNMOUNTED');
+    }, []);
+
+    // React.useEffect(() => {
+    //     console.log('Error value changed to:', error.value);
+    // }, [error.value]);
+
     const handleGoogleLogin = async (idToken: string) => {
         try {
             await loginWithGoogle(idToken);
@@ -92,8 +101,10 @@ export default function LoginPage() {
 
         try {
             await login(email.value, password.value);
-        } catch (err) {
-            error.onChangeText('Invalid credentials, please try again.');
+        } catch (err: any) {
+            console.log("Login: ", err.response.data.message);
+            error.onChangeText(err.response.data.message);
+
         } finally {
             setIsLoading(false);
         }
